@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { currentUser, type User } from "./auth";
-import { db } from "./db";
+import { sql } from "./db";
 
 export class HttpError extends Error {
   constructor(public status: number, message: string) {
@@ -28,25 +28,23 @@ export function route<P = Record<string, string>>(
   };
 }
 
-export function requireMember(boardId: string, userId: string) {
-  const row = db.prepare("select role from board_members where board_id = ? and user_id = ?").get(boardId, userId) as
-    | { role: string }
-    | undefined;
+export async function requireMember(boardId: string, userId: string) {
+  const [row] = await sql<{ role: string }[]>`select role from board_members where board_id = ${boardId} and user_id = ${userId}`;
   if (!row) throw new HttpError(404, "Board tidak ditemukan");
   return row.role;
 }
 
-export function requireAdmin(boardId: string, userId: string) {
-  const role = requireMember(boardId, userId);
+export async function requireAdmin(boardId: string, userId: string) {
+  const role = await requireMember(boardId, userId);
   if (role === "member") throw new HttpError(403, "Hanya admin board yang bisa melakukan ini");
   return role;
 }
 
 // resolve the board an entity belongs to, then check membership
-export function boardOf(table: "lists" | "cards" | "labels", id: string, userId: string) {
-  const row = db.prepare(`select board_id from ${table} where id = ?`).get(id) as { board_id: string } | undefined;
+export async function boardOf(table: "lists" | "cards" | "labels", id: string, userId: string) {
+  const [row] = await sql<{ board_id: string }[]>`select board_id from ${sql(table)} where id = ${id}`;
   if (!row) throw new HttpError(404, "Data tidak ditemukan");
-  requireMember(row.board_id, userId);
+  await requireMember(row.board_id, userId);
   return row.board_id;
 }
 

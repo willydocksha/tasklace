@@ -31,8 +31,8 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
     <div className="flex min-h-screen items-center justify-center p-4" style={{ background: "linear-gradient(135deg,#0c66e4,#5e4db2)" }}>
       <form onSubmit={submit} className="w-full max-w-sm space-y-4 rounded-2xl bg-white p-8 shadow-2xl">
         <div className="text-center">
-          <div className="text-3xl">🗂️</div>
-          <h1 className="mt-2 text-2xl font-bold text-slate-800">Taskboard</h1>
+          <div className="text-3xl">🧶</div>
+          <h1 className="mt-2 text-2xl font-bold text-slate-800">Rajutin</h1>
           <p className="text-sm text-slate-500">{isLogin ? "Masuk ke akunmu" : "Buat akun gratis, tanpa batas member"}</p>
         </div>
         {!isLogin && <input className={field} placeholder="Nama" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />}

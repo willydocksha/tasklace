@@ -4,6 +4,7 @@ import { Avatar } from "@/components/Avatar";
 import { TopBar } from "@/components/TopBar";
 import type { User } from "@/lib/auth";
 import { api } from "@/lib/client";
+import { realtimeEnabled, useBoardChannel } from "@/lib/realtime";
 import { boardBg, TYPE_META } from "@/lib/theme";
 import type { BoardData, Card } from "@/lib/types";
 import { CardModal } from "./CardModal";
@@ -13,7 +14,8 @@ import { Settings } from "./Settings";
 import { Storyline } from "./Storyline";
 
 type View = "board" | "storyline";
-const POLL_MS = 4000;
+// realtime pushes changes; polling is only a fallback
+const POLL_MS = realtimeEnabled ? 60_000 : 4000;
 
 export function BoardClient({ user, initial }: { user: User; initial: BoardData }) {
   const [data, setData] = useState(initial);
@@ -29,24 +31,35 @@ export function BoardClient({ user, initial }: { user: User; initial: BoardData 
     setData(await api<BoardData>(`/api/boards/${initial.board.id}`));
   }, [initial.board.id]);
 
+  // reload when another member changes the board (skipped mid-drag)
+  const ping = useBoardChannel(initial.board.id, () => {
+    if (!dragging.current) refresh().catch(() => {});
+  });
+
   const mutate = useCallback(
     async (fn: () => Promise<unknown>) => {
       try {
         await fn();
+        ping();
       } catch (e) {
         alert((e as Error).message);
       }
       await refresh().catch(() => {});
     },
-    [refresh],
+    [refresh, ping],
   );
 
-  // poll so changes from other members show up without reload
+  // poll as a safety net and catch up when the tab regains focus
   useEffect(() => {
-    const t = setInterval(() => {
+    const tick = () => {
       if (!dragging.current && document.visibilityState === "visible") refresh().catch(() => {});
-    }, POLL_MS);
-    return () => clearInterval(t);
+    };
+    const t = setInterval(tick, POLL_MS);
+    document.addEventListener("visibilitychange", tick);
+    return () => {
+      clearInterval(t);
+      document.removeEventListener("visibilitychange", tick);
+    };
   }, [refresh]);
 
   // remember the chosen view per board

@@ -13,13 +13,13 @@ async function session(name, email, password) {
   };
 }
 
-const owner = await session("Demo Owner", "demo@taskboard.test", "demo1234");
-const rina = await session("Rina Pratiwi", "rina@taskboard.test", "demo1234");
+const owner = await session("Demo Owner", "demo@rajutin.test", "demo1234");
+const rina = await session("Rina Pratiwi", "rina@rajutin.test", "demo1234");
 
 const { id } = await owner("/api/boards", "POST", { name: "Website Toko Online", color: "ocean", description: "Rilis v1 akhir tahun" });
 const board = await owner(`/api/boards/${id}`);
 await rina(`/api/boards/${id}`).catch(() => {});
-await owner(`/api/boards/${id}/members`, "POST", { email: "rina@taskboard.test" });
+await owner(`/api/boards/${id}/members`, "POST", { email: "rina@rajutin.test" });
 const [backlog, todo, doing, review, done] = board.lists.map((l) => l.id);
 const label = (n) => board.labels.find((l) => l.name === n).id;
 const me = board.members[0].id;
@@ -45,4 +45,4 @@ await card("Integrasi payment gateway", todo, "story", { priority: "urgent", lab
 await card("Email konfirmasi pesanan", backlog, "task", {}, e2);
 await card("Grafik penjualan harian", backlog, "story", { labels: [label("Frontend")] }, e3);
 await card("Setup CI/CD", doing, "task", { assignees: [me], labels: [label("Backend")] });
-console.log(`seeded board ${base}/b/${id} (login demo@taskboard.test / demo1234)`);
+console.log(`seeded board ${base}/b/${id} (login demo@rajutin.test / demo1234)`);

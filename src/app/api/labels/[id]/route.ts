@@ -1,16 +1,16 @@
 import { body, boardOf, route } from "@/lib/api";
-import { db } from "@/lib/db";
+import { sql } from "@/lib/db";
 
 type P = { id: string };
 
 export const PATCH = route<P>(async ({ req, user, params }) => {
-  boardOf("labels", params.id, user.id);
+  await boardOf("labels", params.id, user.id);
   const b = await body<{ name?: string; color?: string }>(req);
-  if (b.name?.trim()) db.prepare("update labels set name = ? where id = ?").run(b.name.trim(), params.id);
-  if (b.color) db.prepare("update labels set color = ? where id = ?").run(b.color, params.id);
+  if (b.name?.trim()) await sql`update labels set name = ${b.name.trim()} where id = ${params.id}`;
+  if (b.color) await sql`update labels set color = ${b.color} where id = ${params.id}`;
 });
 
-export const DELETE = route<P>(({ user, params }) => {
-  boardOf("labels", params.id, user.id);
-  db.prepare("delete from labels where id = ?").run(params.id);
+export const DELETE = route<P>(async ({ user, params }) => {
+  await boardOf("labels", params.id, user.id);
+  await sql`delete from labels where id = ${params.id}`;
 });
