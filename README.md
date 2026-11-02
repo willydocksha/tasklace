@@ -45,7 +45,7 @@ node scripts/seed-demo.mjs
 
 1. Push repo ini ke GitHub, lalu **Import Project** di https://vercel.com.
 2. Di **Environment Variables** isi `DATABASE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (sama dengan `.env.local`).
-3. Deploy. Cookie otomatis `secure` di Vercel.
+3. Deploy. Cookie otomatis `secure` di Vercel. Fungsi server dijalankan di Dublin (`vercel.json`) supaya dekat dengan database Supabase di eu-west-1; ganti kalau region Supabase-mu berbeda.
 
 Catatan batas gratis:
 
