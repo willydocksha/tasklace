@@ -10,6 +10,9 @@ Project board ala Trello/Jira/ClickUp yang **gratis**: tidak ada batas member, b
 - **Sprint & Backlog**: buat sprint, isi dari backlog, mulai sprint (tanggal + sprint goal), selesaikan sprint dan pindahkan issue yang belum beres ke sprint berikutnya atau backlog, riwayat sprint dengan poin yang selesai. Board menampilkan banner sprint aktif (sisa hari, progress poin)
 - **List**: semua issue dalam tabel yang bisa diurutkan per kolom
 - **Storyline**: susun Epic → Story/Task, progress otomatis dari list yang ditandai "selesai", plus timeline (gantt) epic
+- **Tim**: kelompokkan orang dan board. Satu board boleh masuk ke beberapa tim (Tim 1: A, B, C; Tim 2: B, C, D), semua member tim bisa membukanya, dan orang tetap bisa diundang langsung ke board. Admin/owner tim otomatis jadi admin board-nya
+- **Import dari Trello**: upload file JSON export board Trello; list, kartu, label, checklist, lampiran (link) dan komentar ikut pindah
+- **Akun**: daftar dengan email + verifikasi (klik link di email langsung masuk), atau masuk lewat GitHub / Google
 - **Member tanpa batas**: undang lewat link atau email, role owner / admin / member. Login memakai akun Rajutin sendiri (bukan Supabase Auth), jadi tidak kena batas MAU Supabase.
 - **Filter**: cari judul atau kode issue, filter tipe, sprint, "tugas saya"
 - **Sinkron real-time** antar member lewat Supabase Realtime (fallback polling kalau belum diatur)
@@ -29,6 +32,23 @@ Project board ala Trello/Jira/ClickUp yang **gratis**: tidak ada batas member, b
    (Atau tempel isi `db/schema.sql` di Supabase → SQL Editor → Run.)
 
 Semua tabel memakai Row Level Security tanpa policy, jadi tidak bisa dibaca lewat anon key. Anon key hanya dipakai untuk channel Realtime yang mengirim sinyal "board berubah", tanpa isi data.
+
+## Email verifikasi (opsional)
+
+Isi `SMTP_*` di `.env.local` dan di Vercel (lihat `.env.example`). Paling gampang pakai Gmail:
+
+1. Buat akun Gmail khusus, misalnya `rajutin.app@gmail.com`, aktifkan **2-Step Verification**.
+2. Buka https://myaccount.google.com/apppasswords, buat App Password, isi ke `SMTP_PASS`.
+3. Batas kirim Gmail sekitar 500 email/hari.
+
+Tanpa `SMTP_HOST`, production langsung mengaktifkan akun tanpa verifikasi, sedangkan di lokal link verifikasi dicetak di log server.
+
+## Login GitHub / Google (opsional)
+
+- **GitHub**: https://github.com/settings/developers → *New OAuth App*. Homepage: URL aplikasi. Callback: `https://<domain>/api/auth/oauth/github/callback`. Isi `GITHUB_CLIENT_ID` dan `GITHUB_CLIENT_SECRET`.
+- **Google**: https://console.cloud.google.com → *APIs & Services* → *OAuth consent screen* (External), lalu *Credentials* → *OAuth client ID* (Web). Redirect URI: `https://<domain>/api/auth/oauth/google/callback`. Isi `GOOGLE_CLIENT_ID` dan `GOOGLE_CLIENT_SECRET`.
+
+Tombolnya muncul otomatis di halaman masuk/daftar begitu kredensialnya diisi. Untuk dev lokal, tambahkan juga callback `http://localhost:3100/...` di masing-masing app.
 
 ## Menjalankan lokal
 

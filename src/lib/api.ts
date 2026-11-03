@@ -28,10 +28,18 @@ export function route<P = Record<string, string>>(
   };
 }
 
+// best role a user has on a board, directly or through a team; null if none
+export async function boardRole(boardId: string, userId: string) {
+  const [row] = await sql<{ role: string }[]>`
+    select role from board_access where board_id = ${boardId} and user_id = ${userId}
+    order by case role when 'owner' then 0 when 'admin' then 1 else 2 end limit 1`;
+  return row?.role ?? null;
+}
+
 export async function requireMember(boardId: string, userId: string) {
-  const [row] = await sql<{ role: string }[]>`select role from board_members where board_id = ${boardId} and user_id = ${userId}`;
-  if (!row) throw new HttpError(404, "Board tidak ditemukan");
-  return row.role;
+  const role = await boardRole(boardId, userId);
+  if (!role) throw new HttpError(404, "Board tidak ditemukan");
+  return role;
 }
 
 export async function requireAdmin(boardId: string, userId: string) {

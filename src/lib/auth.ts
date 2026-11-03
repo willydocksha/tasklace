@@ -16,15 +16,17 @@ export function checkPassword(pw: string, hash: string) {
   return bcrypt.compare(pw, hash);
 }
 
-export async function createUser(name: string, email: string, password: string): Promise<User> {
+// password is null for github/google accounts; verified marks the email as confirmed
+export async function createUser(name: string, email: string, password: string | null, verified = false): Promise<User> {
   const user = {
     id: newId(),
     name,
     email: email.toLowerCase(),
     color: AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)],
   };
-  await sql`insert into users (id, name, email, password_hash, color, created_at)
-    values (${user.id}, ${user.name}, ${user.email}, ${await hashPassword(password)}, ${user.color}, ${Date.now()})`;
+  const now = Date.now();
+  await sql`insert into users (id, name, email, password_hash, color, created_at, email_verified_at)
+    values (${user.id}, ${user.name}, ${user.email}, ${password ? await hashPassword(password) : null}, ${user.color}, ${now}, ${verified ? now : null})`;
   return user;
 }
 

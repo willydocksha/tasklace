@@ -1,3 +1,4 @@
+import { boardRole } from "./api";
 import { newId, sql, type Sql } from "./db";
 import type { BoardData, Card } from "./types";
 
@@ -16,14 +17,18 @@ export async function nextNumber(q: Sql, boardId: string) {
 
 export async function loadBoard(boardId: string, userId: string): Promise<BoardData> {
   // fetch every part of the board in parallel
-  const [[board], [member], lists, labels, members, rows, cardLabels, cardAssignees, sprints] = await Promise.all([
+  const [[board], role, lists, labels, members, rows, cardLabels, cardAssignees, sprints] = await Promise.all([
     sql<BoardData["board"][]>`select id, name, description, color, key, invite_code, owner_id from boards where id = ${boardId}`,
-    sql<{ role: string }[]>`select role from board_members where board_id = ${boardId} and user_id = ${userId}`,
+    boardRole(boardId, userId),
     sql<BoardData["lists"]>`select id, name, position, is_done from lists where board_id = ${boardId} order by position`,
     sql<BoardData["labels"]>`select id, name, color from labels where board_id = ${boardId} order by seq`,
+    // direct members and team members, each with their best role
     sql<BoardData["members"]>`
-      select u.id, u.name, u.email, u.color, m.role from board_members m
-      join users u on u.id = m.user_id where m.board_id = ${boardId} order by m.role = 'owner' desc, u.name`,
+      select u.id, u.name, u.email, u.color,
+        (array_agg(a.role order by case a.role when 'owner' then 0 when 'admin' then 1 else 2 end))[1] as role,
+        bool_or(a.direct) as direct
+      from board_access a join users u on u.id = a.user_id where a.board_id = ${boardId}
+      group by u.id order by bool_or(a.role = 'owner') desc, u.name`,
     sql<Omit<Card, "labels" | "assignees">[]>`
       select c.*, (select count(*) from comments where card_id = c.id) as comment_count
       from cards c where c.board_id = ${boardId} order by c.position`,
@@ -41,7 +46,7 @@ export async function loadBoard(boardId: string, userId: string): Promise<BoardD
   for (const r of cardLabels) byId.get(r.card_id)?.labels.push(r.label_id);
   for (const r of cardAssignees) byId.get(r.card_id)?.assignees.push(r.user_id);
 
-  return { board, lists: [...lists], cards: [...byId.values()], labels: [...labels], members: [...members], sprints: [...sprints], role: member.role };
+  return { board, lists: [...lists], cards: [...byId.values()], labels: [...labels], members: [...members], sprints: [...sprints], role: role ?? "member" };
 }
 
 const DEFAULT_LISTS: [string, number][] = [["Backlog", 0], ["To Do", 0], ["In Progress", 0], ["Review", 0], ["Done", 1]];

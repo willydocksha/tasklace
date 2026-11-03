@@ -71,7 +71,7 @@ export const PATCH = route<P>(async ({ req, user, params }) => {
       await tx`delete from card_assignees where card_id = ${params.id}`;
       if (b.assignees.length)
         await tx`insert into card_assignees (card_id, user_id)
-          select ${params.id}, user_id from board_members where user_id in ${tx(b.assignees)} and board_id = ${boardId}`;
+          select distinct ${params.id}, user_id from board_access where user_id in ${tx(b.assignees)} and board_id = ${boardId}`;
     }
   });
 });

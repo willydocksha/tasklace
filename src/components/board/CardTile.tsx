@@ -2,7 +2,7 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Avatar } from "@/components/Avatar";
-import { PRIORITY_META, TYPE_META } from "@/lib/theme";
+import { PRIORITY_META, TYPE_META, labelText } from "@/lib/theme";
 import type { Card } from "@/lib/types";
 import { cardHelpers, formatDate, today, useBoard } from "./context";
 
@@ -26,7 +26,7 @@ export function CardView({ card, overlay }: { card: Card; overlay?: boolean }) {
       {labels.length > 0 && (
         <div className="mb-1.5 flex flex-wrap gap-1">
           {labels.map((l) => (
-            <span key={l.id} className="rounded px-1.5 py-0.5 text-[11px] font-medium text-slate-900" style={{ background: l.color }}>
+            <span key={l.id} className="rounded px-1.5 py-0.5 text-[11px] font-medium" style={{ background: l.color, color: labelText(l.color) }}>
               {l.name}
             </span>
           ))}

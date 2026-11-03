@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { Modal } from "@/components/Modal";
 import { api } from "@/lib/client";
-import { BOARD_COLORS, boardBg, LABEL_COLORS } from "@/lib/theme";
+import { BOARD_COLORS, boardBg, LABEL_COLORS, labelText } from "@/lib/theme";
 import { useBoard } from "./context";
 
 type Tab = "members" | "look" | "labels";
@@ -69,9 +69,12 @@ function Members() {
               <Avatar name={m.name} color={m.color} />
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-medium">{m.name}{m.id === user.id && " (kamu)"}</div>
-                <div className="truncate text-xs text-slate-500">{m.email}</div>
+                <div className="truncate text-xs text-slate-500">
+                  {m.email}
+                  {!m.direct && <span className="ml-1.5 rounded bg-blue-50 px-1 text-blue-700">via tim</span>}
+                </div>
               </div>
-              {m.role === "owner" || !isAdmin ? (
+              {m.role === "owner" || !isAdmin || !m.direct ? (
                 <span className="text-xs text-slate-500 capitalize">{m.role}</span>
               ) : (
                 <select value={m.role} onChange={(e) => mutate(() => api(`/api/boards/${data.board.id}/members/${m.id}`, "PATCH", { role: e.target.value }))} className="rounded border px-1 py-0.5 text-xs">
@@ -79,7 +82,7 @@ function Members() {
                   <option value="admin">Admin</option>
                 </select>
               )}
-              {m.role !== "owner" && (isAdmin || m.id === user.id) && (
+              {m.direct && m.role !== "owner" && (isAdmin || m.id === user.id) && (
                 <button
                   title={m.id === user.id ? "Keluar dari board" : "Keluarkan"}
                   onClick={() => { if (confirm(m.id === user.id ? "Keluar dari board ini?" : `Keluarkan ${m.name}?`)) void mutate(() => api(`/api/boards/${data.board.id}/members/${m.id}`, "DELETE")).then(() => m.id === user.id && (window.location.href = "/boards")); }}
@@ -145,7 +148,7 @@ function Labels() {
       <div className="space-y-1.5">
         {data.labels.map((l) => (
           <div key={l.id} className="flex items-center gap-2">
-            <span className="flex-1 rounded px-2.5 py-1.5 text-sm font-medium" style={{ background: l.color }}>{l.name}</span>
+            <span className="flex-1 rounded px-2.5 py-1.5 text-sm font-medium" style={{ background: l.color, color: labelText(l.color) }}>{l.name}</span>
             <div className="flex gap-0.5">
               {LABEL_COLORS.slice(0, 6).map((c) => (
                 <button key={c} onClick={() => mutate(() => api(`/api/labels/${l.id}`, "PATCH", { color: c }))} className="h-4 w-4 rounded-full" style={{ background: c }} />

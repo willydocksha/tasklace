@@ -114,6 +114,65 @@ update boards b set next_number = m.n + 1
   from (select board_id, max(number) as n from cards group by board_id) m
   where m.board_id = b.id and b.next_number <= m.n;
 
+-- teams: a group of people sharing a set of boards (a board can be in many teams)
+create table if not exists teams (
+  id text primary key,
+  name text not null,
+  invite_code text not null unique,
+  owner_id text not null references users(id),
+  created_at bigint not null
+);
+
+create table if not exists team_members (
+  team_id text not null references teams(id) on delete cascade,
+  user_id text not null references users(id) on delete cascade,
+  role text not null default 'member',
+  primary key (team_id, user_id)
+);
+
+create table if not exists team_boards (
+  team_id text not null references teams(id) on delete cascade,
+  board_id text not null references boards(id) on delete cascade,
+  primary key (team_id, board_id)
+);
+
+-- who can open a board: direct board members plus members of every team the board is in.
+-- team owners/admins act as board admins. security_invoker keeps it behind the tables' rls.
+create or replace view board_access with (security_invoker = true) as
+  select board_id, user_id, role, true as direct from board_members
+  union all
+  select tb.board_id, tm.user_id, case when tm.role in ('owner', 'admin') then 'admin' else 'member' end, false
+  from team_boards tb join team_members tm on tm.team_id = tb.team_id;
+
+-- email verification: accounts created before this existed count as verified
+do $$ begin
+  if not exists (select 1 from information_schema.columns where table_name = 'users' and column_name = 'email_verified_at') then
+    alter table users add column email_verified_at bigint;
+    update users set email_verified_at = created_at;
+  end if;
+end $$;
+-- accounts made through github/google may have no password
+alter table users alter column password_hash drop not null;
+
+-- one-time email links; only a sha-256 of the token is stored
+create table if not exists email_tokens (
+  token_hash text primary key,
+  user_id text not null references users(id) on delete cascade,
+  purpose text not null,
+  next text,
+  expires_at bigint not null,
+  created_at bigint not null
+);
+
+-- github / google identities linked to a user
+create table if not exists oauth_accounts (
+  provider text not null,
+  provider_user_id text not null,
+  user_id text not null references users(id) on delete cascade,
+  created_at bigint not null,
+  primary key (provider, provider_user_id)
+);
+
 create index if not exists idx_sessions_user on sessions(user_id);
 create index if not exists idx_members_user on board_members(user_id);
 create index if not exists idx_cards_board on cards(board_id);
@@ -123,6 +182,10 @@ create index if not exists idx_labels_board on labels(board_id);
 create index if not exists idx_comments_card on comments(card_id);
 create index if not exists idx_sprints_board on sprints(board_id);
 create unique index if not exists idx_cards_number on cards(board_id, number);
+create index if not exists idx_team_members_user on team_members(user_id);
+create index if not exists idx_team_boards_board on team_boards(board_id);
+create index if not exists idx_email_tokens_user on email_tokens(user_id);
+create index if not exists idx_oauth_user on oauth_accounts(user_id);
 
 -- lock tables away from supabase's public rest api (anon key).
 -- the app connects as the postgres role, which bypasses rls.
@@ -137,3 +200,15 @@ alter table card_labels enable row level security;
 alter table card_assignees enable row level security;
 alter table comments enable row level security;
 alter table sprints enable row level security;
+alter table teams enable row level security;
+alter table team_members enable row level security;
+alter table team_boards enable row level security;
+alter table email_tokens enable row level security;
+alter table oauth_accounts enable row level security;
+
+-- the view is never needed through supabase's rest api
+do $$ begin
+  if exists (select 1 from pg_roles where rolname = 'anon') then
+    revoke all on board_access from anon, authenticated;
+  end if;
+end $$;

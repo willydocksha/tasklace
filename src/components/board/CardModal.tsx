@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { Modal } from "@/components/Modal";
 import { api } from "@/lib/client";
-import { EPIC_COLORS, PRIORITY_META, TYPE_META } from "@/lib/theme";
+import { EPIC_COLORS, PRIORITY_META, TYPE_META, labelText } from "@/lib/theme";
 import type { Card, CardType, Comment, Priority } from "@/lib/types";
 import { cardHelpers, useBoard } from "./context";
 
@@ -69,7 +69,7 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
                 <span className={lbl}>Label</span>
                 <div className="flex flex-wrap gap-1">
                   {data.labels.filter((l) => card.labels.includes(l.id)).map((l) => (
-                    <span key={l.id} className="rounded px-2 py-1 text-xs font-medium" style={{ background: l.color }}>{l.name}</span>
+                    <span key={l.id} className="rounded px-2 py-1 text-xs font-medium" style={{ background: l.color, color: labelText(l.color) }}>{l.name}</span>
                   ))}
                 </div>
               </div>
@@ -232,7 +232,7 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
               {data.labels.map((l) => {
                 const on = card.labels.includes(l.id);
                 return (
-                  <button key={l.id} onClick={() => patch({ labels: toggle(card.labels, l.id) })} className={`rounded px-2 py-1 text-xs font-medium ${on ? "ring-2 ring-slate-800" : "opacity-50 hover:opacity-100"}`} style={{ background: l.color }}>
+                  <button key={l.id} onClick={() => patch({ labels: toggle(card.labels, l.id) })} className={`rounded px-2 py-1 text-xs font-medium ${on ? "ring-2 ring-slate-800" : "opacity-50 hover:opacity-100"}`} style={{ background: l.color, color: labelText(l.color) }}>
                     {l.name}
                   </button>
                 );

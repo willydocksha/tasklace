@@ -1,7 +1,8 @@
 export type CardType = "epic" | "story" | "task" | "bug";
 export type Priority = "low" | "medium" | "high" | "urgent";
 
-export type Member = { id: string; name: string; email: string; color: string; role: string };
+// direct is false when the user only has access through a team
+export type Member = { id: string; name: string; email: string; color: string; role: string; direct: boolean };
 export type Label = { id: string; name: string; color: string };
 export type List = { id: string; name: string; position: number; is_done: number };
 export type Card = {
