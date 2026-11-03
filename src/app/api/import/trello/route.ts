@@ -28,16 +28,16 @@ export const POST = route(async ({ req, user }) => {
   const members = new Map(t.members.map((m) => [m.id, m.fullName || m.username]));
   const cardIds = new Map(cards.map((c) => [c.id, newId()]));
 
-  // checklists, attachments and trello assignees are folded into the description
+  // checklists, attachments and trello assignees are folded into the (markdown) description
   const describe = (c: (typeof cards)[number]) => {
     const parts = [c.desc.trim()];
     for (const cl of c.idChecklists.map((id) => checklists.get(id)).filter((x) => !!x).sort((a, b) => a.pos - b.pos)) {
-      const items = [...cl.checkItems].sort((a, b) => a.pos - b.pos).map((i) => `${i.state === "complete" ? "☑" : "☐"} ${i.name}`);
-      parts.push(`Checklist: ${cl.name}\n${items.join("\n")}`);
+      const items = [...cl.checkItems].sort((a, b) => a.pos - b.pos).map((i) => `- [${i.state === "complete" ? "x" : " "}] ${i.name}`);
+      parts.push(`### ${cl.name}\n\n${items.join("\n")}`);
     }
-    if (c.attachments.length) parts.push(`Lampiran:\n${c.attachments.map((a) => `- ${a.name || "file"}: ${a.url}`).join("\n")}`);
+    if (c.attachments.length) parts.push(`### Lampiran\n\n${c.attachments.map((a) => `- [${(a.name || "file").replace(/[[\]]/g, "")}](<${a.url}>)`).join("\n")}`);
     const names = c.idMembers.map((id) => members.get(id)).filter(Boolean);
-    if (names.length) parts.push(`Di Trello ditugaskan ke: ${names.join(", ")}`);
+    if (names.length) parts.push(`_Di Trello ditugaskan ke: ${names.join(", ")}_`);
     return parts.filter(Boolean).join("\n\n");
   };
 

@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { Modal } from "@/components/Modal";
+import { RichText } from "@/components/RichText";
 import { api } from "@/lib/client";
 import { EPIC_COLORS, PRIORITY_META, TYPE_META, labelText } from "@/lib/theme";
 import type { Card, CardType, Comment, Priority } from "@/lib/types";
@@ -11,8 +12,6 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
   const { data, mutate, openCard, user } = useBoard();
   const { childrenOf, progress, isDone, keyOf, points } = cardHelpers(data);
   const [title, setTitle] = useState(card.title);
-  const [desc, setDesc] = useState(card.description);
-  const [editingDesc, setEditingDesc] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
   const [text, setText] = useState("");
   const [pts, setPts] = useState(card.points?.toString() ?? "");
@@ -22,8 +21,6 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
 
   useEffect(() => {
     setTitle(card.title);
-    setDesc(card.description);
-    setEditingDesc(false);
     setPts(card.points?.toString() ?? "");
     void loadComments();
   }, [card.id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -86,19 +83,7 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
 
           <div>
             <span className={lbl}>Deskripsi</span>
-            {editingDesc ? (
-              <div className="space-y-2">
-                <textarea autoFocus rows={6} className="w-full rounded-md border border-slate-300 p-2 text-sm outline-none focus:ring-2 focus:ring-blue-400" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Tulis detail, acceptance criteria, catatan…" />
-                <div className="flex gap-2">
-                  <button className="rounded bg-blue-600 px-3 py-1.5 text-sm text-white" onClick={() => { setEditingDesc(false); void patch({ description: desc }); }}>Simpan</button>
-                  <button className="rounded px-3 py-1.5 text-sm hover:bg-slate-100" onClick={() => { setEditingDesc(false); setDesc(card.description); }}>Batal</button>
-                </div>
-              </div>
-            ) : (
-              <div onClick={() => setEditingDesc(true)} className="min-h-16 cursor-text rounded-md bg-slate-50 p-2.5 text-sm whitespace-pre-wrap hover:bg-slate-100">
-                {card.description || <span className="text-slate-400">Klik untuk menambah deskripsi…</span>}
-              </div>
-            )}
+            <RichText key={card.id} value={card.description} onSave={(md) => void patch({ description: md })} placeholder="Tulis detail, acceptance criteria, catatan…" />
           </div>
 
           {card.type === "epic" && (

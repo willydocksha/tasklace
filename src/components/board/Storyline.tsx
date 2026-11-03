@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { api } from "@/lib/client";
+import { plainText } from "@/lib/text";
 import { TYPE_META } from "@/lib/theme";
 import type { Card } from "@/lib/types";
 import { cardHelpers, formatDate, today, useBoard } from "./context";
@@ -90,7 +91,7 @@ function EpicBlock({ epic, index, visible }: { epic: Card; index: number; visibl
       </div>
       {open && (
         <div className="border-t px-4 py-2 sm:pl-16">
-          {epic.description && <p className="mb-2 line-clamp-2 text-sm text-slate-600">{epic.description}</p>}
+          {epic.description && <p className="mb-2 line-clamp-2 text-sm text-slate-600">{plainText(epic.description)}</p>}
           <div className="divide-y">{kids.map((c) => <StoryRow key={c.id} card={c} />)}</div>
           <input className="my-2 w-full rounded-md border border-dashed px-3 py-1.5 text-sm" placeholder="+ Tambah story ke epic ini (Enter)" value={adding} onChange={(e) => setAdding(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addStory()} />
         </div>
