@@ -88,7 +88,7 @@ export function BoardClient({ user, initial }: { user: User; initial: BoardData 
 
   const activeSprint = data.sprints.find((s) => s.status === "active");
   const { keyOf, points } = cardHelpers(data);
-  // search matches title or issue key (e.g. "rjt-12")
+  // search matches title or issue key (e.g. "tlc-12")
   const matchQ = (c: Card) => !q || c.title.toLowerCase().includes(q.toLowerCase()) || keyOf(c).toLowerCase() === q.trim().toLowerCase();
   const matchSprint = (c: Card) =>
     !fSprint || (fSprint === "none" ? !c.sprint_id : fSprint === "active" ? !!activeSprint && c.sprint_id === activeSprint.id : c.sprint_id === fSprint);

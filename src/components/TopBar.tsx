@@ -12,7 +12,7 @@ export function TopBar({ user, dark }: { user: User; dark?: boolean }) {
   return (
     <header className={`flex h-12 items-center gap-3 px-4 ${dark ? "bg-black/25 text-white backdrop-blur" : "bg-blue-700 text-white shadow-sm"}`}>
       <Link href="/boards" className="flex items-center gap-2 font-bold">
-        <span>🧶</span> Rajutin
+        <span>🧶</span> Tasklace
       </Link>
       <Link href="/boards" className="rounded px-2 py-1 text-sm hover:bg-white/20">
         Board saya

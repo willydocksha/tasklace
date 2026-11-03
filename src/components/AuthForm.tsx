@@ -87,7 +87,7 @@ export function AuthForm({ mode, providers }: { mode: "login" | "register"; prov
         <div className="text-4xl">📬</div>
         <h1 className="text-xl font-bold text-slate-800">Cek email kamu</h1>
         <p className="text-sm text-slate-600">
-          Kami kirim link verifikasi ke <b>{sentTo}</b>. Klik link itu, dan kamu langsung masuk ke Rajutin.
+          Kami kirim link verifikasi ke <b>{sentTo}</b>. Klik link itu, dan kamu langsung masuk ke Tasklace.
         </p>
         <p className="text-xs text-slate-400">Tidak ada? Cek folder spam, atau kirim ulang.</p>
         <button onClick={() => resend(sentTo)} className="w-full rounded-lg border border-blue-200 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50">
@@ -104,7 +104,7 @@ export function AuthForm({ mode, providers }: { mode: "login" | "register"; prov
     <form onSubmit={submit} className="space-y-4">
       <div className="text-center">
         <div className="text-3xl">🧶</div>
-        <h1 className="mt-2 text-2xl font-bold text-slate-800">Rajutin</h1>
+        <h1 className="mt-2 text-2xl font-bold text-slate-800">Tasklace</h1>
         <p className="text-sm text-slate-500">{isLogin ? "Masuk ke akunmu" : "Buat akun gratis, tanpa batas member"}</p>
       </div>
 

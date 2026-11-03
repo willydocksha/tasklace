@@ -26,7 +26,7 @@ export function cardHelpers(data: BoardData) {
     const done = kids.filter(isDone).length;
     return { total: kids.length, done, pct: kids.length ? Math.round((done / kids.length) * 100) : 0 };
   };
-  // jira-style issue key, e.g. RJT-12
+  // jira-style issue key, e.g. TLC-12
   const keyOf = (c: Card) => `${data.board.key}-${c.number}`;
   // story point totals of a set of cards
   const points = (cards: Card[]) => {

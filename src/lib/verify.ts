@@ -8,7 +8,7 @@ const sha = (s: string) => createHash("sha256").update(s).digest("hex");
 // only same-site relative paths are allowed as a redirect target
 export const safeNext = (next: unknown) => (typeof next === "string" && next.startsWith("/") && !next.startsWith("//") ? next : "/boards");
 
-// public base url, e.g. https://rajutin-plum.vercel.app
+// public base url, e.g. https://tasklace-plum.vercel.app
 export const originOf = (req: Request) => process.env.APP_URL?.replace(/\/$/, "") || new URL(req.url).origin;
 
 // email a fresh verification link; older links for this user stop working
@@ -20,12 +20,12 @@ export async function sendVerification(user: { id: string; name: string; email: 
   const link = `${origin}/api/auth/verify?token=${token}`;
   await sendMail(
     user.email,
-    "Verifikasi email Rajutin",
-    `Halo ${user.name},\n\nKlik link ini untuk mengaktifkan akun Rajutin kamu:\n${link}\n\nLink berlaku ${HOURS} jam. Abaikan email ini kalau kamu tidak mendaftar.`,
+    "Verifikasi email Tasklace",
+    `Halo ${user.name},\n\nKlik link ini untuk mengaktifkan akun Tasklace kamu:\n${link}\n\nLink berlaku ${HOURS} jam. Abaikan email ini kalau kamu tidak mendaftar.`,
     `<div style="font-family:sans-serif;max-width:480px;margin:auto;padding:24px">
-      <h2 style="color:#0c66e4;margin:0 0 12px">🧶 Rajutin</h2>
+      <h2 style="color:#0c66e4;margin:0 0 12px">🧶 Tasklace</h2>
       <p>Halo ${escape(user.name)},</p>
-      <p>Klik tombol di bawah untuk mengaktifkan akun Rajutin kamu.</p>
+      <p>Klik tombol di bawah untuk mengaktifkan akun Tasklace kamu.</p>
       <p><a href="${link}" style="display:inline-block;background:#0c66e4;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600">Verifikasi email</a></p>
       <p style="color:#64748b;font-size:13px">Link berlaku ${HOURS} jam. Abaikan email ini kalau kamu tidak mendaftar.</p>
     </div>`,

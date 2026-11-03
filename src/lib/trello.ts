@@ -28,7 +28,7 @@ export type TrelloExport = {
 };
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// keep only the fields rajutin uses; throws if it does not look like a trello export
+// keep only the fields tasklace uses; throws if it does not look like a trello export
 export function slimTrello(raw: any): TrelloExport {
   if (!raw || typeof raw !== "object" || !Array.isArray(raw.lists) || !Array.isArray(raw.cards))
     throw new Error("File ini bukan export JSON board Trello");
@@ -79,7 +79,7 @@ export const TRELLO_LABEL_COLORS: Record<string, string> = {
   blue_light: "#cce0ff", sky_light: "#c6edfb", lime_light: "#d3f1a7", pink_light: "#fdd0ec", black_light: "#dcdfe4",
 };
 
-// trello background color names -> rajutin board colors
+// trello background color names -> tasklace board colors
 export const TRELLO_BOARD_COLORS: Record<string, string> = {
   blue: "blue", orange: "orange", green: "green", red: "red", purple: "purple",
   pink: "pink", lime: "forest", sky: "ocean", grey: "slate",

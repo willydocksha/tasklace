@@ -29,7 +29,7 @@ export const PROVIDERS: Record<string, Provider> = {
     async profile(code, redirectUri, p) {
       const tok = await postForm("https://github.com/login/oauth/access_token", { client_id: p.clientId!, client_secret: p.clientSecret!, code, redirect_uri: redirectUri });
       if (!tok.access_token) throw new Error("github: no access token");
-      const h = { authorization: `Bearer ${tok.access_token}`, accept: "application/vnd.github+json", "user-agent": "rajutin" };
+      const h = { authorization: `Bearer ${tok.access_token}`, accept: "application/vnd.github+json", "user-agent": "tasklace" };
       const [u, emails] = await Promise.all([fetch("https://api.github.com/user", { headers: h }).then((r) => r.json()), fetch("https://api.github.com/user/emails", { headers: h }).then((r) => r.json())]);
       // only a verified address can link to an existing account
       const list = Array.isArray(emails) ? (emails as { email: string; primary: boolean; verified: boolean }[]) : [];

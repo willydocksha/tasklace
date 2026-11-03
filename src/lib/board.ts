@@ -6,7 +6,7 @@ import type { BoardData, Card } from "./types";
 export function makeKey(name: string) {
   const words = name.toUpperCase().replace(/[^A-Z0-9 ]/g, "").split(/\s+/).filter(Boolean);
   const key = words.length > 1 ? words.map((w) => w[0]).join("").slice(0, 4) : (words[0] ?? "").slice(0, 3);
-  return /^[A-Z]/.test(key) && key.length >= 2 ? key : "RJ";
+  return /^[A-Z]/.test(key) && key.length >= 2 ? key : "TL";
 }
 
 // reserve the next issue number of a board (atomic)

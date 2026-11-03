@@ -1,4 +1,4 @@
--- rajutin schema for postgres (supabase). safe to run more than once.
+-- tasklace schema for postgres (supabase). safe to run more than once.
 -- timestamps are unix milliseconds (bigint) to match the app code.
 
 create table if not exists users (
@@ -98,7 +98,7 @@ create table if not exists sprints (
   created_at bigint not null
 );
 
--- issue keys (RJT-12), story points, sprint membership
+-- issue keys (TLC-12), story points, sprint membership
 alter table boards add column if not exists key text;
 alter table boards add column if not exists next_number integer not null default 1;
 alter table cards add column if not exists number integer;
@@ -106,7 +106,7 @@ alter table cards add column if not exists points integer;
 alter table cards add column if not exists sprint_id text references sprints(id) on delete set null;
 
 -- backfill keys and numbers for rows created before these columns existed
-update boards set key = coalesce(nullif(upper(substr(regexp_replace(name, '[^A-Za-z]', '', 'g'), 1, 3)), ''), 'RJ') where key is null;
+update boards set key = coalesce(nullif(upper(substr(regexp_replace(name, '[^A-Za-z]', '', 'g'), 1, 3)), ''), 'TL') where key is null;
 update cards c set number = r.n
   from (select id, row_number() over (partition by board_id order by created_at, id) as n from cards) r
   where r.id = c.id and c.number is null;

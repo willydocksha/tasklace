@@ -17,9 +17,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ provider
   // the state must match what we set when sign-in started
   let saved: { state: string; next: string; provider: string } | null = null;
   try {
-    saved = JSON.parse(jar.get("rj_oauth")?.value ?? "null");
+    saved = JSON.parse(jar.get("tl_oauth")?.value ?? "null");
   } catch {}
-  jar.delete("rj_oauth");
+  jar.delete("tl_oauth");
   if (!p?.clientId || !saved || saved.provider !== provider || saved.state !== q.get("state") || !q.get("code")) return fail();
 
   let profile;

@@ -15,7 +15,7 @@ export const PATCH = route<P>(async ({ req, user, params }) => {
   const b = await body<{ name?: string; color?: string; description?: string; key?: string }>(req);
   if (b.name?.trim()) await sql`update boards set name = ${b.name.trim()} where id = ${params.id}`;
   if (b.color && BOARD_COLORS[b.color]) await sql`update boards set color = ${b.color} where id = ${params.id}`;
-  // issue key prefix, e.g. RJT
+  // issue key prefix, e.g. TLC
   if (b.key !== undefined) {
     const key = b.key.trim().toUpperCase();
     if (!/^[A-Z][A-Z0-9]{1,9}$/.test(key)) throw new HttpError(400, "Kode issue 2-10 huruf/angka, diawali huruf");

@@ -1,4 +1,4 @@
-# Rajutin
+# Tasklace
 
 Project board ala Trello/Jira/ClickUp yang **gratis**: tidak ada batas member, board, atau kartu. Jalan di **Vercel (Hobby)** + **Supabase (Free)**.
 
@@ -6,14 +6,14 @@ Project board ala Trello/Jira/ClickUp yang **gratis**: tidak ada batas member, b
 
 - **Board** dengan 12 pilihan warna/gradient, deskripsi, dan template list (Backlog → To Do → In Progress → Review → Done)
 - **Kanban drag & drop**: geser kartu antar list dan urutkan list (di HP: tekan lama untuk drag)
-- **Kartu / issue**: tipe Epic / Story / Task / Bug, kode issue ala Jira (`RJT-12`, kode bisa diganti di pengaturan board), story points, prioritas, tanggal mulai & deadline, label berwarna, assignee, deskripsi, komentar
+- **Kartu / issue**: tipe Epic / Story / Task / Bug, kode issue ala Jira (`TLC-12`, kode bisa diganti di pengaturan board), story points, prioritas, tanggal mulai & deadline, label berwarna, assignee, deskripsi, komentar
 - **Sprint & Backlog**: buat sprint, isi dari backlog, mulai sprint (tanggal + sprint goal), selesaikan sprint dan pindahkan issue yang belum beres ke sprint berikutnya atau backlog, riwayat sprint dengan poin yang selesai. Board menampilkan banner sprint aktif (sisa hari, progress poin)
 - **List**: semua issue dalam tabel yang bisa diurutkan per kolom
 - **Storyline**: susun Epic → Story/Task, progress otomatis dari list yang ditandai "selesai", plus timeline (gantt) epic
 - **Tim**: kelompokkan orang dan board. Satu board boleh masuk ke beberapa tim (Tim 1: A, B, C; Tim 2: B, C, D), semua member tim bisa membukanya, dan orang tetap bisa diundang langsung ke board. Admin/owner tim otomatis jadi admin board-nya
 - **Import dari Trello**: upload file JSON export board Trello; list, kartu, label, checklist, lampiran (link) dan komentar ikut pindah
 - **Akun**: daftar dengan email + verifikasi (klik link di email langsung masuk), atau masuk lewat GitHub / Google
-- **Member tanpa batas**: undang lewat link atau email, role owner / admin / member. Login memakai akun Rajutin sendiri (bukan Supabase Auth), jadi tidak kena batas MAU Supabase.
+- **Member tanpa batas**: undang lewat link atau email, role owner / admin / member. Login memakai akun Tasklace sendiri (bukan Supabase Auth), jadi tidak kena batas MAU Supabase.
 - **Filter**: cari judul atau kode issue, filter tipe, sprint, "tugas saya"
 - **Sinkron real-time** antar member lewat Supabase Realtime (fallback polling kalau belum diatur)
 
@@ -37,7 +37,7 @@ Semua tabel memakai Row Level Security tanpa policy, jadi tidak bisa dibaca lewa
 
 Isi `SMTP_*` di `.env.local` dan di Vercel (lihat `.env.example`). Paling gampang pakai Gmail:
 
-1. Buat akun Gmail khusus, misalnya `rajutin.app@gmail.com`, aktifkan **2-Step Verification**.
+1. Buat akun Gmail khusus, misalnya `tasklace.app@gmail.com`, aktifkan **2-Step Verification**.
 2. Buka https://myaccount.google.com/apppasswords, buat App Password, isi ke `SMTP_PASS`.
 3. Batas kirim Gmail sekitar 500 email/hari.
 

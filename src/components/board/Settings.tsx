@@ -124,7 +124,7 @@ function Look({ onClose }: { onClose: () => void }) {
           onChange={(e) => setKey(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
           onBlur={() => key !== data.board.key && patch({ key })}
         />
-        <span className="text-xs text-slate-400">contoh: {key || "RJT"}-12</span>
+        <span className="text-xs text-slate-400">contoh: {key || "TLC"}-12</span>
       </label>
       <textarea rows={2} className="w-full rounded-md border px-3 py-2 text-sm" value={desc} onChange={(e) => setDesc(e.target.value)} onBlur={() => desc !== data.board.description && patch({ description: desc })} placeholder="Deskripsi board" />
       {data.role === "owner" && (

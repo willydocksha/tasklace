@@ -11,7 +11,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ provider
   if (!p?.clientId) return NextResponse.redirect(`${origin}/login?error=oauth`);
   const state = crypto.randomUUID();
   const next = safeNext(new URL(req.url).searchParams.get("next"));
-  (await cookies()).set("rj_oauth", JSON.stringify({ state, next, provider }), {
+  (await cookies()).set("tl_oauth", JSON.stringify({ state, next, provider }), {
     httpOnly: true,
     sameSite: "lax",
     secure: origin.startsWith("https"),

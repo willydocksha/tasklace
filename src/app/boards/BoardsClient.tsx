@@ -52,7 +52,7 @@ export function BoardsClient({ user, openTeam }: { user: User; openTeam?: string
     setManaging(id);
   }
 
-  // read a trello json export in the browser, send only what rajutin needs
+  // read a trello json export in the browser, send only what tasklace needs
   async function importTrello(file: File) {
     setImporting(true);
     try {
