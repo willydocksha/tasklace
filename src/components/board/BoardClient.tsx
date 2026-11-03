@@ -5,6 +5,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { TopBar } from "@/components/TopBar";
+import { Select } from "@/components/ui/Select";
 import type { User } from "@/lib/auth";
 import { api } from "@/lib/client";
 import { realtimeEnabled, useBoardChannel } from "@/lib/realtime";
@@ -166,25 +167,41 @@ export function BoardClient({ user, initial }: { user: User; initial: BoardData 
           <h1 className="mr-2 text-lg font-bold drop-shadow">{data.board.name}</h1>
           <ViewTabs view={view} onSelect={switchView} />
           <div className="flex flex-wrap items-center gap-1.5 text-sm">
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="🔍 Cari kartu" className="w-36 rounded-md bg-white/20 px-2 py-1 placeholder-white/70 outline-none focus:bg-white focus:text-slate-800 focus:placeholder-slate-400" />
-            <select value={fType} onChange={(e) => setFType(e.target.value)} className="rounded-md bg-white/20 px-1.5 py-1 [&>option]:text-slate-800">
-              <option value="">Semua tipe</option>
-              {Object.entries(TYPE_META).map(([k, v]) => <option key={k} value={k}>{v.icon} {v.label}</option>)}
-            </select>
-            <select value={fMember} onChange={(e) => setFMember(e.target.value)} className="rounded-md bg-white/20 px-1.5 py-1 [&>option]:text-slate-800">
-              <option value="">Semua member</option>
-              <option value={user.id}>Tugas saya</option>
-              {data.members.filter((m) => m.id !== user.id).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-            </select>
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="🔍 Cari kartu" className="h-8 w-40 rounded-lg bg-white/15 px-2.5 ring-1 ring-white/15 placeholder-white/70 outline-none transition focus:w-52 focus:bg-white focus:text-slate-800 focus:placeholder-slate-400 focus:ring-blue-200" />
+            <Select
+              variant="dark"
+              value={fType}
+              options={[{ value: "", label: "Semua tipe" }, ...Object.entries(TYPE_META).map(([k, v]) => ({ value: k, label: v.label, icon: <span style={{ color: v.color }}>{v.icon}</span> }))]}
+              onChange={setFType}
+              menuWidth={190}
+            />
+            <Select
+              variant="dark"
+              value={fMember}
+              searchable={data.members.length > 6}
+              options={[
+                { value: "", label: "Semua member" },
+                { value: user.id, label: "Tugas saya", icon: <Avatar name={user.name} color={user.color} size={20} /> },
+                ...data.members.filter((m) => m.id !== user.id).map((m) => ({ value: m.id, label: m.name, icon: <Avatar name={m.name} color={m.color} size={20} /> })),
+              ]}
+              onChange={setFMember}
+              menuWidth={220}
+            />
             {data.sprints.some((s) => s.status !== "completed") && (
-              <select value={fSprint} onChange={(e) => setFSprint(e.target.value)} className="rounded-md bg-white/20 px-1.5 py-1 [&>option]:text-slate-800">
-                <option value="">Semua sprint</option>
-                {activeSprint && <option value="active">Sprint aktif</option>}
-                {data.sprints.filter((s) => s.status === "planned").map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                <option value="none">Belum masuk sprint</option>
-              </select>
+              <Select
+                variant="dark"
+                value={fSprint}
+                options={[
+                  { value: "", label: "Semua sprint" },
+                  ...(activeSprint ? [{ value: "active", label: "Sprint aktif", description: activeSprint.name, icon: <span className="block h-2 w-2 rounded-full bg-green-500" /> }] : []),
+                  ...data.sprints.filter((s) => s.status === "planned").map((s) => ({ value: s.id, label: s.name, icon: <span className="block h-2 w-2 rounded-full bg-slate-300" /> })),
+                  { value: "none", label: "Belum masuk sprint", icon: <span className="text-slate-400">☰</span> },
+                ]}
+                onChange={setFSprint}
+                menuWidth={220}
+              />
             )}
-            {filtering && <button onClick={() => (setQ(""), setFType(""), setFMember(""), setFSprint(""))} className="rounded-md px-2 py-1 hover:bg-white/20">Reset</button>}
+            {filtering && <button onClick={() => (setQ(""), setFType(""), setFMember(""), setFSprint(""))} className="h-8 rounded-lg px-2.5 hover:bg-white/20">Reset</button>}
           </div>
           <div className="ml-auto flex items-center gap-2">
             <button onClick={() => setSettings(true)} className="flex -space-x-2" title="Member">

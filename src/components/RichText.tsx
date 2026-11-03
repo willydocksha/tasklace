@@ -9,6 +9,7 @@ import { EditorContent, useEditor, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { common, createLowlight } from "lowlight";
 import { useEffect, useRef, useState } from "react";
+import { Kbd, Select, type Option } from "@/components/ui/Select";
 import { FORMATTABLE, formatCode } from "@/lib/codeFormat";
 
 const lowlight = createLowlight(common);
@@ -141,7 +142,7 @@ export function RichText({ value, onSave, placeholder = "Tulis sesuatu…", empt
     <div>
       <div
         onClick={(e) => !editing && !(e.target as HTMLElement).closest("a, label, input") && start()}
-        className={editing ? "rounded-md border border-slate-300 focus-within:ring-2 focus-within:ring-blue-400" : "min-h-16 cursor-text rounded-md bg-slate-50 p-2.5 hover:bg-slate-100"}
+        className={editing ? "rounded-lg border border-blue-400 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05)] ring-3 ring-blue-100" : "min-h-16 cursor-text rounded-lg border border-transparent bg-slate-50 p-2.5 transition hover:border-slate-200 hover:bg-slate-100/70"}
       >
         {editing && editor && <Toolbar editor={editor} />}
         {!editing && isEmpty && <span className="text-sm text-slate-400">{empty}</span>}
@@ -151,8 +152,8 @@ export function RichText({ value, onSave, placeholder = "Tulis sesuatu…", empt
       </div>
       {editing && (
         <div className="mt-2 flex items-center gap-2">
-          <button className="rounded bg-blue-600 px-3 py-1.5 text-sm text-white" onClick={() => stop(true)}>Simpan</button>
-          <button className="rounded px-3 py-1.5 text-sm hover:bg-slate-100" onClick={() => stop(false)}>Batal</button>
+          <button className="rounded-lg bg-blue-600 px-3.5 py-1.5 text-sm font-medium text-white shadow-sm hover:bg-blue-700" onClick={() => stop(true)}>Simpan</button>
+          <button className="rounded-lg px-3.5 py-1.5 text-sm text-slate-600 hover:bg-slate-100" onClick={() => stop(false)}>Batal</button>
           <span className="ml-auto hidden text-xs text-slate-400 sm:block">Tips: ketik <code>#</code> <code>-</code> <code>1.</code> <code>[]</code> + spasi, atau <code>```</code></span>
         </div>
       )}
@@ -160,17 +161,32 @@ export function RichText({ value, onSave, placeholder = "Tulis sesuatu…", empt
   );
 }
 
+// text style menu rows: live preview of each style + its shortcut
+const HEADING_CLS = ["", "text-2xl font-bold", "text-xl font-bold", "text-lg font-semibold", "text-base font-semibold", "text-sm font-semibold", "text-xs font-semibold uppercase tracking-wide text-slate-500"];
+const STYLES: Option<string>[] = [
+  { value: "p", label: "Teks biasa", icon: <span className="text-sm font-semibold text-slate-500">Tt</span>, hint: <Kbd>⌘⌥0</Kbd> },
+  ...[1, 2, 3, 4, 5, 6].map((l) => ({
+    value: `h${l}`,
+    label: `Judul ${l}`,
+    icon: <span className="text-xs font-semibold text-slate-500">H<sub>{l}</sub></span>,
+    render: <span className={`block truncate leading-tight ${HEADING_CLS[l]}`}>Judul {l}</span>,
+    hint: <Kbd>⌘⌥{l}</Kbd>,
+  })),
+  { value: "code", label: "Blok kode", icon: <span className="font-mono text-xs whitespace-nowrap text-slate-500">{"{}"}</span>, render: <span className="font-mono text-[13px]">Blok kode</span>, hint: <Kbd><span className="font-mono">```</span></Kbd> },
+];
+
 // formatting toolbar for the editor
 function Toolbar({ editor }: { editor: Editor }) {
   const c = () => editor.chain().focus();
   const inCode = editor.isActive("codeBlock");
 
   // current block type for the style picker
-  const block = editor.isActive("heading", { level: 1 }) ? "h1" : editor.isActive("heading", { level: 2 }) ? "h2" : editor.isActive("heading", { level: 3 }) ? "h3" : inCode ? "code" : "p";
+  const level = ([1, 2, 3, 4, 5, 6] as const).find((l) => editor.isActive("heading", { level: l }));
+  const block = level ? `h${level}` : inCode ? "code" : "p";
   function setBlock(v: string) {
     if (v === "p") c().setParagraph().run();
     else if (v === "code") c().setCodeBlock().run();
-    else c().setHeading({ level: Number(v[1]) as 1 | 2 | 3 }).run();
+    else c().setHeading({ level: Number(v[1]) as 1 | 2 | 3 | 4 | 5 | 6 }).run();
   }
 
   // prompt for a link; empty input removes it
@@ -196,14 +212,16 @@ function Toolbar({ editor }: { editor: Editor }) {
   const sep = <span className="mx-0.5 h-5 w-px bg-slate-200" />;
 
   return (
-    <div className="sticky top-0 z-10 flex flex-wrap items-center gap-0.5 rounded-t-md border-b border-slate-200 bg-white px-1.5 py-1">
-      <select value={block} onChange={(e) => setBlock(e.target.value)} onMouseDown={(e) => e.stopPropagation()} className="h-7 rounded px-1 text-sm text-slate-700 hover:bg-slate-100" title="Gaya teks">
-        <option value="p">Teks biasa</option>
-        <option value="h1">Judul 1</option>
-        <option value="h2">Judul 2</option>
-        <option value="h3">Judul 3</option>
-        <option value="code">Kode</option>
-      </select>
+    <div className="sticky top-0 z-10 flex flex-wrap items-center gap-0.5 rounded-t-lg border-b border-slate-200 bg-white px-1.5 py-1">
+      <Select
+        variant="toolbar"
+        value={block}
+        options={STYLES}
+        onChange={setBlock}
+        menuWidth={300}
+        title="Gaya teks"
+        renderValue={(o) => <span className="font-semibold">{o?.value === "p" ? "Tt" : o?.value === "code" ? "{ }" : o?.value.toUpperCase()}</span>}
+      />
       {sep}
       {btn(editor.isActive("bold"), () => c().toggleBold().run(), "Tebal (⌘B)", <b>B</b>)}
       {btn(editor.isActive("italic"), () => c().toggleItalic().run(), "Miring (⌘I)", <i className="font-serif">I</i>)}
@@ -248,14 +266,16 @@ function CodeBar({ editor }: { editor: Editor }) {
 
   return (
     <div className="flex w-full flex-wrap items-center gap-2 border-t border-slate-100 pt-1">
-      <select
+      <Select
+        variant="toolbar"
+        searchable
         value={lang}
-        onChange={(e) => editor.chain().focus().updateAttributes("codeBlock", { language: e.target.value || null }).run()}
-        className="h-7 rounded border border-slate-200 px-1 font-mono text-xs text-slate-700"
+        options={LANGS.map(([v, l]) => ({ value: v, label: l, hint: FORMATTABLE.has(v) ? <span className="text-[11px]">✨</span> : undefined }))}
+        onChange={(v) => editor.chain().focus().updateAttributes("codeBlock", { language: v || null }).run()}
+        menuWidth={220}
         title="Bahasa kode"
-      >
-        {LANGS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-      </select>
+        className="border border-slate-200 font-mono text-xs"
+      />
       <button
         type="button"
         onMouseDown={(e) => e.preventDefault()}

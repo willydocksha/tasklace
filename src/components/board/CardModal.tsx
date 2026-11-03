@@ -3,6 +3,8 @@ import { useCallback, useEffect, useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { Modal } from "@/components/Modal";
 import { RichText } from "@/components/RichText";
+import { DatePicker } from "@/components/ui/DatePicker";
+import { Select } from "@/components/ui/Select";
 import { api } from "@/lib/client";
 import { EPIC_COLORS, PRIORITY_META, TYPE_META, labelText } from "@/lib/theme";
 import type { Card, CardType, Comment, Priority } from "@/lib/types";
@@ -14,14 +16,12 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
   const [title, setTitle] = useState(card.title);
   const [comments, setComments] = useState<Comment[]>([]);
   const [text, setText] = useState("");
-  const [pts, setPts] = useState(card.points?.toString() ?? "");
 
   const patch = (p: Record<string, unknown>) => mutate(() => api(`/api/cards/${card.id}`, "PATCH", p));
   const loadComments = useCallback(() => api<Comment[]>(`/api/cards/${card.id}/comments`).then(setComments), [card.id]);
 
   useEffect(() => {
     setTitle(card.title);
-    setPts(card.points?.toString() ?? "");
     void loadComments();
   }, [card.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -39,7 +39,6 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
     void mutate(async () => {});
   }
 
-  const sel = "w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm";
   const lbl = "mb-1 block text-xs font-semibold tracking-wide text-slate-500 uppercase";
 
   return (
@@ -58,7 +57,7 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
         <button onClick={onClose} className="rounded-full px-2.5 py-1 text-slate-500 hover:bg-slate-100">✕</button>
       </div>
 
-      <div className="grid gap-6 p-5 pt-2 md:grid-cols-[1fr_220px]">
+      <div className="grid gap-6 p-5 pt-2 md:grid-cols-[1fr_250px]">
         <div className="min-w-0 space-y-5">
           <div className="flex flex-wrap gap-4">
             {card.labels.length > 0 && (
@@ -114,8 +113,8 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
             <div className="flex gap-2">
               <Avatar name={user.name} color={user.color} size={30} />
               <div className="flex-1 space-y-2">
-                <textarea rows={2} className="w-full rounded-md border border-slate-300 p-2 text-sm outline-none focus:ring-2 focus:ring-blue-400" placeholder="Tulis komentar…" value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) void sendComment(); }} />
-                {text && <button onClick={sendComment} className="rounded bg-blue-600 px-3 py-1.5 text-sm text-white">Kirim</button>}
+                <textarea rows={2} className="w-full resize-y rounded-lg border border-slate-200 bg-white p-2.5 text-sm shadow-[0_1px_2px_rgba(15,23,42,0.05)] transition outline-none placeholder:text-slate-400 hover:border-slate-300 focus:border-blue-400 focus:ring-3 focus:ring-blue-100" placeholder="Tulis komentar… (⌘Enter untuk kirim)" value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) void sendComment(); }} />
+                {text && <button onClick={sendComment} className="rounded-lg bg-blue-600 px-3.5 py-1.5 text-sm font-medium text-white shadow-sm hover:bg-blue-700">Kirim</button>}
               </div>
             </div>
             <div className="mt-3 space-y-3">
@@ -132,118 +131,185 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
           </div>
         </div>
 
-        <aside className="space-y-3">
-          <div>
-            <span className={lbl}>Tipe</span>
-            <select className={sel} value={card.type} onChange={(e) => patch({ type: e.target.value as CardType, ...(e.target.value === "epic" ? { parent_id: null, color: card.color ?? EPIC_COLORS[0] } : {}) })}>
-              {Object.entries(TYPE_META).map(([k, v]) => <option key={k} value={k}>{v.icon} {v.label}</option>)}
-            </select>
-          </div>
-          <div>
-            <span className={lbl}>Status (list)</span>
-            <select className={sel} value={card.list_id} onChange={(e) => patch({ list_id: e.target.value })}>
-              {data.lists.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
-            </select>
-          </div>
+        <aside className="space-y-3.5 self-start rounded-xl bg-slate-50/80 p-3.5 ring-1 ring-slate-200/70">
+          <Field label="Tipe">
+            <Select
+              value={card.type}
+              options={Object.entries(TYPE_META).map(([k, v]) => ({ value: k as CardType, label: v.label, icon: <TypeIcon color={v.color} icon={v.icon} /> }))}
+              onChange={(v) => patch({ type: v, ...(v === "epic" ? { parent_id: null, color: card.color ?? EPIC_COLORS[0] } : {}) })}
+            />
+          </Field>
+          <Field label="Status">
+            <Select
+              value={card.list_id}
+              options={data.lists.map((l) => ({ value: l.id, label: l.name, icon: <StatusDot done={!!l.is_done} />, hint: l.is_done ? <span className="text-[11px] text-green-600">selesai</span> : undefined }))}
+              onChange={(v) => patch({ list_id: v })}
+            />
+          </Field>
           {card.type !== "epic" ? (
-            <div>
-              <span className={lbl}>Bagian dari epic</span>
-              <select className={sel} value={card.parent_id ?? ""} onChange={(e) => patch({ parent_id: e.target.value || null })}>
-                <option value="">— tidak ada —</option>
-                {epics.map((e) => <option key={e.id} value={e.id}>⚡ {e.title}</option>)}
-              </select>
-            </div>
+            <Field label="Bagian dari epic">
+              <Select
+                value={card.parent_id ?? ""}
+                searchable={epics.length > 6}
+                placeholder="Tidak ada"
+                options={[
+                  { value: "", label: "Tidak ada", icon: <span className="text-slate-300">—</span> },
+                  ...epics.map((e) => ({ value: e.id, label: e.title, description: keyOf(e), icon: <span className="block h-2.5 w-2.5 rounded-sm" style={{ background: e.color ?? TYPE_META.epic.color }} /> })),
+                ]}
+                onChange={(v) => patch({ parent_id: v || null })}
+              />
+            </Field>
           ) : (
-            <div>
-              <span className={lbl}>Warna epic</span>
+            <Field label="Warna epic">
               <div className="flex flex-wrap gap-1.5">
                 {EPIC_COLORS.map((c) => (
-                  <button key={c} onClick={() => patch({ color: c })} className={`h-6 w-6 rounded-full ${card.color === c ? "ring-2 ring-slate-800 ring-offset-2" : ""}`} style={{ background: c }} />
+                  <button key={c} onClick={() => patch({ color: c })} className={`h-6 w-6 rounded-full transition hover:scale-110 ${card.color === c ? "ring-2 ring-slate-800 ring-offset-2" : ""}`} style={{ background: c }} />
                 ))}
               </div>
-            </div>
+            </Field>
           )}
           {card.type !== "epic" && (
-            <div className="grid grid-cols-[1fr_80px] gap-2">
-              <div>
-                <span className={lbl}>Sprint</span>
-                <select className={sel} value={card.sprint_id ?? ""} onChange={(e) => patch({ sprint_id: e.target.value || null })}>
-                  <option value="">Backlog</option>
-                  {data.sprints
-                    .filter((s) => s.status !== "completed" || s.id === card.sprint_id)
-                    .map((s) => (
-                      <option key={s.id} value={s.id} disabled={s.status === "completed"}>
-                        {s.name}
-                        {s.status === "active" ? " (aktif)" : s.status === "completed" ? " (selesai)" : ""}
-                      </option>
-                    ))}
-                </select>
-              </div>
-              <div>
-                <span className={lbl}>Poin</span>
-                <input
-                  type="number"
-                  min={0}
-                  max={999}
-                  className={sel}
-                  value={pts}
-                  placeholder="–"
-                  onChange={(e) => setPts(e.target.value)}
-                  onBlur={() => pts !== (card.points?.toString() ?? "") && patch({ points: pts === "" ? null : Number(pts) })}
-                  onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
+            <div className="grid grid-cols-[1fr_96px] gap-2">
+              <Field label="Sprint">
+                <Select
+                  value={card.sprint_id ?? ""}
+                  options={[
+                    { value: "", label: "Backlog", icon: <span className="text-slate-400">☰</span> },
+                    ...data.sprints
+                      .filter((s) => s.status !== "completed" || s.id === card.sprint_id)
+                      .map((s) => ({
+                        value: s.id,
+                        label: s.name,
+                        disabled: s.status === "completed",
+                        icon: <span className={`block h-2 w-2 rounded-full ${s.status === "active" ? "bg-green-500" : "bg-slate-300"}`} />,
+                        hint: s.status === "active" ? <span className="text-[11px] font-medium text-green-600">aktif</span> : s.status === "completed" ? <span className="text-[11px]">selesai</span> : undefined,
+                      })),
+                  ]}
+                  onChange={(v) => patch({ sprint_id: v || null })}
                 />
-              </div>
+              </Field>
+              <Field label="Poin">
+                <Stepper value={card.points} onChange={(v) => patch({ points: v })} />
+              </Field>
             </div>
           )}
-          <div>
-            <span className={lbl}>Prioritas</span>
-            <select className={sel} value={card.priority} onChange={(e) => patch({ priority: e.target.value as Priority })}>
-              {Object.entries(PRIORITY_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-            </select>
-          </div>
+          <Field label="Prioritas">
+            <Select
+              value={card.priority}
+              options={Object.entries(PRIORITY_META).map(([k, v]) => ({ value: k as Priority, label: v.label, icon: <PriorityIcon level={k as Priority} color={v.color} /> }))}
+              onChange={(v) => patch({ priority: v })}
+            />
+          </Field>
           <div className="grid grid-cols-2 gap-2 md:grid-cols-1">
-            <div>
-              <span className={lbl}>Mulai</span>
-              <input type="date" className={sel} value={card.start_date ?? ""} onChange={(e) => patch({ start_date: e.target.value || null })} />
-            </div>
-            <div>
-              <span className={lbl}>Deadline</span>
-              <input type="date" className={sel} value={card.due_date ?? ""} onChange={(e) => patch({ due_date: e.target.value || null })} />
-            </div>
+            <Field label="Mulai">
+              <DatePicker value={card.start_date} onChange={(v) => patch({ start_date: v })} placeholder="Belum diatur" />
+            </Field>
+            <Field label="Deadline">
+              <DatePicker value={card.due_date} onChange={(v) => patch({ due_date: v })} placeholder="Belum diatur" deadline min={card.start_date} />
+            </Field>
           </div>
-          <div>
-            <span className={lbl}>Label</span>
-            <div className="flex flex-wrap gap-1">
+          <Field label="Label">
+            <div className="flex flex-wrap gap-1.5">
               {data.labels.map((l) => {
                 const on = card.labels.includes(l.id);
                 return (
-                  <button key={l.id} onClick={() => patch({ labels: toggle(card.labels, l.id) })} className={`rounded px-2 py-1 text-xs font-medium ${on ? "ring-2 ring-slate-800" : "opacity-50 hover:opacity-100"}`} style={{ background: l.color, color: labelText(l.color) }}>
+                  <button
+                    key={l.id}
+                    onClick={() => patch({ labels: toggle(card.labels, l.id) })}
+                    className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition ${on ? "shadow-sm ring-2 ring-white ring-offset-1 ring-offset-slate-400" : "opacity-45 saturate-50 hover:opacity-90 hover:saturate-100"}`}
+                    style={{ background: l.color, color: labelText(l.color) }}
+                  >
+                    {on && <span>✓</span>}
                     {l.name}
                   </button>
                 );
               })}
             </div>
-          </div>
-          <div>
-            <span className={lbl}>Member</span>
-            <div className="space-y-1">
+          </Field>
+          <Field label="Member">
+            <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
               {data.members.map((m) => {
                 const on = card.assignees.includes(m.id);
                 return (
-                  <button key={m.id} onClick={() => patch({ assignees: toggle(card.assignees, m.id) })} className={`flex w-full items-center gap-2 rounded px-1.5 py-1 text-left text-sm ${on ? "bg-blue-50" : "hover:bg-slate-100"}`}>
+                  <button key={m.id} onClick={() => patch({ assignees: toggle(card.assignees, m.id) })} className={`flex w-full items-center gap-2 border-b border-slate-100 px-2 py-1.5 text-left text-sm transition last:border-0 ${on ? "bg-blue-50/70" : "hover:bg-slate-50"}`}>
                     <Avatar name={m.name} color={m.color} size={22} />
                     <span className="flex-1 truncate">{m.name}</span>
-                    {on && <span className="text-blue-600">✓</span>}
+                    <span className={`flex h-4 w-4 items-center justify-center rounded border text-[10px] ${on ? "border-blue-600 bg-blue-600 text-white" : "border-slate-300"}`}>{on && "✓"}</span>
                   </button>
                 );
               })}
             </div>
-          </div>
-          <button onClick={() => { if (confirm("Hapus kartu ini?")) { onClose(); void mutate(() => api(`/api/cards/${card.id}`, "DELETE")); } }} className="w-full rounded-md bg-red-50 py-1.5 text-sm text-red-600 hover:bg-red-100">
+          </Field>
+          <button onClick={() => { if (confirm("Hapus kartu ini?")) { onClose(); void mutate(() => api(`/api/cards/${card.id}`, "DELETE")); } }} className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-red-100 bg-white py-2 text-sm font-medium text-red-600 transition hover:border-red-200 hover:bg-red-50">
+            <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M4 6h12M8 6V4.5h4V6m-6 0 .7 10h6.6L14 6" strokeLinecap="round" strokeLinejoin="round" /></svg>
             Hapus kartu
           </button>
         </aside>
       </div>
     </Modal>
+  );
+}
+
+// sidebar field: small caps label above a control
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div className="mb-1 text-[11px] font-semibold tracking-wide text-slate-500 uppercase">{label}</div>
+      {children}
+    </div>
+  );
+}
+
+// issue type badge: emoji on a tinted square
+function TypeIcon({ color, icon }: { color: string; icon: string }) {
+  return <span className="flex h-5 w-5 items-center justify-center rounded text-[11px]" style={{ background: `${color}22`, color }}>{icon}</span>;
+}
+
+// list status dot: green when the list counts as done
+function StatusDot({ done }: { done: boolean }) {
+  return <span className={`block h-2.5 w-2.5 rounded-full ring-2 ${done ? "bg-green-500 ring-green-100" : "bg-slate-400 ring-slate-100"}`} />;
+}
+
+// jira-like priority chevrons
+function PriorityIcon({ level, color }: { level: Priority; color: string }) {
+  const paths: Record<Priority, string> = {
+    low: "M4 7l4 4 4-4",
+    medium: "M4 6h8M4 10h8",
+    high: "M4 9l4-4 4 4",
+    urgent: "M4 8l4-4 4 4M4 12l4-4 4 4",
+  };
+  return (
+    <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d={paths[level]} />
+    </svg>
+  );
+}
+
+// story points: -/+ buttons around a small number input
+function Stepper({ value, onChange }: { value: number | null; onChange: (v: number | null) => void }) {
+  const [txt, setTxt] = useState(value?.toString() ?? "");
+  useEffect(() => setTxt(value?.toString() ?? ""), [value]);
+  // commit typed text: empty clears, otherwise clamp 0..999
+  const commit = (t: string) => {
+    const v = t.trim() === "" ? null : Math.max(0, Math.min(999, Math.round(Number(t)) || 0));
+    if (v !== value) onChange(v);
+    else setTxt(value?.toString() ?? "");
+  };
+  const bump = (d: number) => onChange(Math.max(0, Math.min(999, (value ?? 0) + d)));
+  const btn = "flex w-7 shrink-0 items-center justify-center text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 disabled:opacity-30";
+  return (
+    <div className="flex h-9 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05)] focus-within:border-blue-400 focus-within:ring-3 focus-within:ring-blue-100">
+      <button type="button" className={btn} onClick={() => bump(-1)} disabled={!value} aria-label="Kurangi poin">−</button>
+      <input
+        inputMode="numeric"
+        className="w-0 flex-1 text-center text-sm font-medium outline-none placeholder:text-slate-300"
+        value={txt}
+        placeholder="–"
+        onChange={(e) => setTxt(e.target.value.replace(/[^0-9]/g, ""))}
+        onBlur={() => commit(txt)}
+        onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
+      />
+      <button type="button" className={btn} onClick={() => bump(1)} aria-label="Tambah poin">+</button>
+    </div>
   );
 }
