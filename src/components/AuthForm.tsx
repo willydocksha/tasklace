@@ -76,7 +76,7 @@ function BrandPanel() {
       <div className="absolute inset-0 [background-image:radial-gradient(rgba(255,255,255,.12)_1px,transparent_1px)] [background-size:22px_22px] [mask-image:linear-gradient(to_bottom,black,transparent_85%)]" />
 
       <div className="relative flex flex-1 flex-col p-10 xl:p-14">
-        <Logo size={32} className="text-lg" />
+        <Logo size={32} tone="dark" className="text-lg" />
 
         <div className="mt-auto mb-10 max-w-md">
           <h2 className="text-4xl leading-tight font-semibold tracking-tight xl:text-[2.75rem]">
@@ -177,7 +177,7 @@ export function AuthForm({ mode, providers }: { mode: "login" | "register"; prov
     <div className="grid min-h-screen bg-white lg:grid-cols-[1.05fr_1fr]">
       <BrandPanel />
       <main className="relative flex flex-col bg-[radial-gradient(80%_60%_at_50%_0%,#eff6ff_0%,#fff_60%)] px-5 py-8 sm:px-10">
-        <Logo size={30} className="text-slate-900 lg:hidden" />
+        <Logo size={34} className="text-lg lg:hidden" />
         <div className="mx-auto flex w-full max-w-[400px] flex-1 flex-col justify-center py-10">{children}</div>
         <p className="text-center text-xs text-slate-400">© {new Date().getFullYear()} Tasklace · Gratis untuk semua tim</p>
       </main>
