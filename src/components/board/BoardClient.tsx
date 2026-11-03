@@ -1,4 +1,7 @@
 "use client";
+import { closestCenter, DndContext, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
+import { arrayMove, horizontalListSortingStrategy, SortableContext, useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { TopBar } from "@/components/TopBar";
@@ -22,6 +25,61 @@ const VIEWS: { id: View; label: string }[] = [
   { id: "list", label: "☰ List" },
   { id: "storyline", label: "📚 Storyline" },
 ];
+const ORDER_KEY = "tl-view-order";
+
+// view switcher; tabs can be dragged into a new order (remembered on this device)
+function ViewTabs({ view, onSelect }: { view: View; onSelect: (v: View) => void }) {
+  const [order, setOrder] = useState<View[]>(VIEWS.map((v) => v.id));
+  // small drag distance so a plain click still switches the view
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+
+  // load the saved order, keeping only known views and appending new ones
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(ORDER_KEY) ?? "[]") as View[];
+      const known = saved.filter((id) => VIEWS.some((v) => v.id === id));
+      setOrder([...known, ...VIEWS.map((v) => v.id).filter((id) => !known.includes(id))]);
+    } catch {}
+  }, []);
+
+  function onDragEnd({ active, over }: DragEndEvent) {
+    if (!over || active.id === over.id) return;
+    const next = arrayMove(order, order.indexOf(active.id as View), order.indexOf(over.id as View));
+    setOrder(next);
+    try {
+      localStorage.setItem(ORDER_KEY, JSON.stringify(next));
+    } catch {}
+  }
+
+  return (
+    <DndContext id="view-tabs" sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+      <SortableContext items={order} strategy={horizontalListSortingStrategy}>
+        <div className="flex rounded-lg bg-black/20 p-0.5 text-sm" title="Geser untuk mengatur urutan">
+          {order.map((id) => <ViewTab key={id} id={id} active={view === id} onSelect={onSelect} />)}
+        </div>
+      </SortableContext>
+    </DndContext>
+  );
+}
+
+// one draggable tab
+function ViewTab({ id, active, onSelect }: { id: View; active: boolean; onSelect: (v: View) => void }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const label = VIEWS.find((v) => v.id === id)!.label;
+  return (
+    <button
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      onClick={() => onSelect(id)}
+      style={{ transform: CSS.Translate.toString(transform), transition }}
+      className={`touch-none rounded-md px-2.5 py-1 whitespace-nowrap select-none ${active ? "bg-white font-medium text-slate-800" : "hover:bg-white/15"} ${isDragging ? "relative z-10 cursor-grabbing shadow-lg ring-2 ring-white/60" : "cursor-pointer"}`}
+    >
+      {label}
+    </button>
+  );
+}
+
 // realtime pushes changes; polling is only a fallback
 const POLL_MS = realtimeEnabled ? 60_000 : 4000;
 
@@ -106,13 +164,7 @@ export function BoardClient({ user, initial }: { user: User; initial: BoardData 
         <TopBar user={user} dark />
         <div className="flex flex-wrap items-center gap-2 bg-black/15 px-3 py-2 text-white sm:px-4">
           <h1 className="mr-2 text-lg font-bold drop-shadow">{data.board.name}</h1>
-          <div className="flex rounded-lg bg-black/20 p-0.5 text-sm">
-            {VIEWS.map((v) => (
-              <button key={v.id} onClick={() => switchView(v.id)} className={`rounded-md px-2.5 py-1 whitespace-nowrap ${view === v.id ? "bg-white font-medium text-slate-800" : "hover:bg-white/15"}`}>
-                {v.label}
-              </button>
-            ))}
-          </div>
+          <ViewTabs view={view} onSelect={switchView} />
           <div className="flex flex-wrap items-center gap-1.5 text-sm">
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="🔍 Cari kartu" className="w-36 rounded-md bg-white/20 px-2 py-1 placeholder-white/70 outline-none focus:bg-white focus:text-slate-800 focus:placeholder-slate-400" />
             <select value={fType} onChange={(e) => setFType(e.target.value)} className="rounded-md bg-white/20 px-1.5 py-1 [&>option]:text-slate-800">

@@ -115,7 +115,7 @@ export function Kanban({ visible, draggingRef }: { visible: (c: Card) => boolean
   const activeList = active?.startsWith("l:") ? listById.get(strip(active)) : undefined;
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={onStart} onDragOver={onOver} onDragEnd={onEnd} onDragCancel={() => ((draggingRef.current = false), setActive(null))}>
+    <DndContext id="kanban" sensors={sensors} collisionDetection={closestCorners} onDragStart={onStart} onDragOver={onOver} onDragEnd={onEnd} onDragCancel={() => ((draggingRef.current = false), setActive(null))}>
       <div className="scroll-thin flex h-full items-start gap-3 overflow-x-auto p-3 sm:p-4">
         <SortableContext items={listOrder.map((id) => "l:" + id)} strategy={horizontalListSortingStrategy}>
           {listOrder.map((id) => {
