@@ -8,7 +8,7 @@ const sha = (s: string) => createHash("sha256").update(s).digest("hex");
 // only same-site relative paths are allowed as a redirect target
 export const safeNext = (next: unknown) => (typeof next === "string" && next.startsWith("/") && !next.startsWith("//") ? next : "/boards");
 
-// public base url, e.g. https://tasklace-plum.vercel.app
+// public base url, e.g. https://tasklace.vercel.app
 export const originOf = (req: Request) => process.env.APP_URL?.replace(/\/$/, "") || new URL(req.url).origin;
 
 // email a fresh verification link; older links for this user stop working
