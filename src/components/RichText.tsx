@@ -1,6 +1,7 @@
 "use client";
 import { CodeBlockLowlight } from "@tiptap/extension-code-block-lowlight";
 import { TaskItem, TaskList } from "@tiptap/extension-list";
+import { Extension } from "@tiptap/core";
 import { Placeholder } from "@tiptap/extensions";
 import { Markdown } from "@tiptap/markdown";
 import type { Node as PMNode } from "@tiptap/pm/model";
@@ -8,6 +9,7 @@ import { EditorContent, useEditor, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { common, createLowlight } from "lowlight";
 import { useEffect, useRef, useState } from "react";
+import { FORMATTABLE, formatCode } from "@/lib/codeFormat";
 
 const lowlight = createLowlight(common);
 
@@ -17,10 +19,52 @@ const LANGS: [string, string][] = [
   ["bash", "Bash"], ["python", "Python"], ["go", "Go"], ["php", "PHP"], ["java", "Java"], ["xml", "HTML / XML"], ["css", "CSS"], ["yaml", "YAML"],
 ];
 
+// replace the code block around the cursor with its formatted version
+async function formatBlock(editor: Editor) {
+  const { $from } = editor.state.selection;
+  if ($from.parent.type.name !== "codeBlock") return;
+  const lang = ($from.parent.attrs.language as string | null) ?? "";
+  const code = $from.parent.textContent;
+  if (!code.trim()) return;
+  const out = await formatCode(lang, code);
+  // the doc may have changed while a formatter loaded; re-find the block
+  const { $from: now } = editor.state.selection;
+  if (now.parent.type.name !== "codeBlock" || now.parent.textContent !== code) return;
+  const start = now.start();
+  editor.chain().focus().command(({ tr }) => (tr.replaceWith(start, now.end(), editor.schema.text(out)), true)).run();
+}
+
+// code block extras: enter keeps indentation, shift+alt+f formats
+const CodeHelpers = Extension.create({
+  name: "codeHelpers",
+  addKeyboardShortcuts() {
+    return {
+      Enter: ({ editor }) => {
+        const { $from, empty } = editor.state.selection;
+        if (!empty || $from.parent.type.name !== "codeBlock") return false;
+        // current line up to the cursor
+        const before = $from.parent.textBetween(0, $from.parentOffset, "\n");
+        const line = before.slice(before.lastIndexOf("\n") + 1);
+        // blank lines fall through so triple-enter can still leave the block
+        if (!line.trim()) return false;
+        const indent = line.match(/^\s*/)![0] + (/[{[(]\s*$/.test(line) ? "  " : "");
+        return editor.commands.insertContent("\n" + indent);
+      },
+      "Shift-Alt-f": ({ editor }) => {
+        if (!editor.isActive("codeBlock")) return false;
+        void formatBlock(editor).catch((e) => alert((e as Error).message));
+        return true;
+      },
+    };
+  },
+});
+
 // shared extension set: markdown in/out, gfm task lists, highlighted code blocks
 const extensions = (placeholder: string, onTick: (node: PMNode, checked: boolean) => boolean) => [
   StarterKit.configure({ codeBlock: false, link: { openOnClick: false, autolink: true, defaultProtocol: "https" } }),
-  CodeBlockLowlight.configure({ lowlight, defaultLanguage: null }),
+  // tab / shift+tab indent inside code blocks instead of moving focus
+  CodeBlockLowlight.configure({ lowlight, defaultLanguage: null, enableTabIndentation: true, tabSize: 2 }),
+  CodeHelpers,
   TaskList,
   // checklists can be ticked in view mode too
   TaskItem.configure({ nested: true, onReadOnlyChecked: onTick }),
@@ -109,7 +153,7 @@ export function RichText({ value, onSave, placeholder = "Tulis sesuatu…", empt
         <div className="mt-2 flex items-center gap-2">
           <button className="rounded bg-blue-600 px-3 py-1.5 text-sm text-white" onClick={() => stop(true)}>Simpan</button>
           <button className="rounded px-3 py-1.5 text-sm hover:bg-slate-100" onClick={() => stop(false)}>Batal</button>
-          <span className="ml-auto hidden text-xs text-slate-400 sm:block">Tips: ketik <code># </code>, <code>- </code>, <code>1. </code>, <code>[] </code> atau <code>```</code></span>
+          <span className="ml-auto hidden text-xs text-slate-400 sm:block">Tips: ketik <code>#</code> <code>-</code> <code>1.</code> <code>[]</code> + spasi, atau <code>```</code></span>
         </div>
       )}
     </div>
@@ -175,16 +219,55 @@ function Toolbar({ editor }: { editor: Editor }) {
       {btn(editor.isActive("blockquote"), () => c().toggleBlockquote().run(), "Kutipan", "❝")}
       {btn(inCode, () => c().toggleCodeBlock().run(), "Blok kode", <span className="font-mono text-xs">{"{ }"}</span>)}
       {btn(false, () => c().setHorizontalRule().run(), "Garis pemisah", "―")}
-      {inCode && (
-        <select
-          value={(editor.getAttributes("codeBlock").language as string | null) ?? ""}
-          onChange={(e) => c().updateAttributes("codeBlock", { language: e.target.value || null }).run()}
-          className="ml-auto h-7 rounded border border-slate-200 px-1 font-mono text-xs text-slate-700"
-          title="Bahasa kode"
-        >
-          {LANGS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-        </select>
-      )}
+      {inCode && <CodeBar editor={editor} />}
+    </div>
+  );
+}
+
+// second toolbar row while the cursor is in a code block: language + format
+function CodeBar({ editor }: { editor: Editor }) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const lang = (editor.getAttributes("codeBlock").language as string | null) ?? "";
+
+  // clear a stale error when the code or language changes
+  const code = editor.state.selection.$from.parent.textContent;
+  useEffect(() => setErr(""), [code, lang]);
+
+  async function run() {
+    setBusy(true);
+    try {
+      await formatBlock(editor);
+      setErr("");
+    } catch (e) {
+      setErr((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="flex w-full flex-wrap items-center gap-2 border-t border-slate-100 pt-1">
+      <select
+        value={lang}
+        onChange={(e) => editor.chain().focus().updateAttributes("codeBlock", { language: e.target.value || null }).run()}
+        className="h-7 rounded border border-slate-200 px-1 font-mono text-xs text-slate-700"
+        title="Bahasa kode"
+      >
+        {LANGS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+      </select>
+      <button
+        type="button"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={run}
+        disabled={busy || !FORMATTABLE.has(lang)}
+        title={FORMATTABLE.has(lang) ? "Rapikan kode (⇧⌥F)" : "Pilih bahasa yang didukung: JSON, JS, TS, SQL, HTML, CSS, YAML"}
+        className="flex h-7 items-center gap-1 rounded border border-slate-200 px-2 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-40"
+      >
+        {busy ? "Merapikan…" : "✨ Format"}
+      </button>
+      <span className="text-xs text-slate-400">Tab = indent, ⇧Tab = mundur</span>
+      {err && <span className="w-full truncate text-xs text-red-600" title={err}>{err}</span>}
     </div>
   );
 }
