@@ -68,7 +68,7 @@ export function BoardsClient({ user, openTeam }: { user: User; openTeam?: string
 
   const myTeamIds = new Set(teams.map((t) => t.id));
   const personal = boards?.filter((b) => !b.team_ids.some((id) => myTeamIds.has(id))) ?? [];
-  const tile = "flex h-28 items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-white/60 text-sm text-slate-500 hover:border-blue-400 hover:text-blue-600";
+  const tile = "flex h-28 items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-surface/60 text-sm text-slate-500 hover:border-blue-400 hover:text-blue-600";
 
   // one board tile
   const card = (b: Row) => (
@@ -92,7 +92,7 @@ export function BoardsClient({ user, openTeam }: { user: User; openTeam?: string
             <h1 className="mb-1 text-2xl font-bold">Halo, {user.name.split(" ")[0]} 👋</h1>
             <p className="text-slate-500">Semua board dan tim kamu. Undang member sebanyak apa pun, gratis.</p>
           </div>
-          <button onClick={createTeam} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
+          <button onClick={createTeam} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 dark:hover:bg-blue-500">
             + Buat tim
           </button>
         </div>
@@ -102,7 +102,7 @@ export function BoardsClient({ user, openTeam }: { user: User; openTeam?: string
             <div className="mb-3 flex items-center gap-2">
               <h2 className="text-lg font-bold">👥 {t.name}</h2>
               <span className="text-sm text-slate-500">{t.member_count} member</span>
-              <button onClick={() => setManaging(t.id)} className="ml-auto rounded-md border bg-white px-3 py-1 text-sm hover:bg-slate-50">
+              <button onClick={() => setManaging(t.id)} className="ml-auto rounded-md border bg-surface px-3 py-1 text-sm hover:bg-slate-50">
                 {t.role === "member" ? "Lihat tim" : "Kelola tim"}
               </button>
             </div>
@@ -161,7 +161,7 @@ export function BoardsClient({ user, openTeam }: { user: User; openTeam?: string
             <p className="text-xs text-slate-500">Board baru otomatis berisi list Backlog → To Do → In Progress → Review → Done.</p>
             <div className="flex justify-end gap-2">
               <button type="button" onClick={() => setCreating(null)} className="rounded-lg px-4 py-2 hover:bg-slate-100">Batal</button>
-              <button className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700">Buat</button>
+              <button className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 dark:hover:bg-blue-500">Buat</button>
             </div>
           </form>
         </Modal>

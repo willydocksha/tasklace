@@ -124,11 +124,11 @@ export function ActivityFeed({ activity, comments, user, doneLists, onComment }:
       {/* comment box (not on the activity-only tab) */}
       {tab !== "activity" && (
         <div className="mb-4 flex gap-2">
-          <Avatar name={user.name} color={user.color} size={30} />
+          <Avatar name={user.name} color={user.color} src={user.avatar} size={30} />
           <div className="flex-1 space-y-2">
             <textarea
               rows={2}
-              className="w-full resize-y rounded-lg border border-slate-200 bg-white p-2.5 text-sm shadow-[0_1px_2px_rgba(15,23,42,0.05)] transition outline-none placeholder:text-slate-400 hover:border-slate-300 focus:border-blue-400 focus:ring-3 focus:ring-blue-100"
+              className="w-full resize-y rounded-lg border border-slate-200 bg-surface p-2.5 text-sm shadow-[0_1px_2px_rgba(15,23,42,0.05)] transition outline-none placeholder:text-slate-400 hover:border-slate-300 focus:border-blue-400 focus:ring-3 focus:ring-blue-100"
               placeholder="Tulis komentar… (⌘Enter untuk kirim)"
               value={text}
               onChange={(e) => setText(e.target.value)}
@@ -137,7 +137,7 @@ export function ActivityFeed({ activity, comments, user, doneLists, onComment }:
               }}
             />
             {text && (
-              <button onClick={send} disabled={sending} className="rounded-lg bg-blue-600 px-3.5 py-1.5 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:opacity-60">
+              <button onClick={send} disabled={sending} className="rounded-lg bg-blue-600 px-3.5 py-1.5 text-sm font-medium text-white shadow-sm hover:bg-blue-700 dark:hover:bg-blue-500 disabled:opacity-60">
                 {sending ? "Mengirim…" : "Kirim"}
               </button>
             )}
@@ -151,12 +151,12 @@ export function ActivityFeed({ activity, comments, user, doneLists, onComment }:
         {items.map((it) =>
           it.comment ? (
             <li key={`c${it.comment.id}`} className="flex gap-2">
-              <Avatar name={it.comment.name} color={it.comment.color} size={30} />
+              <Avatar name={it.comment.name} color={it.comment.color} src={it.comment.avatar} size={30} />
               <div className="min-w-0 flex-1">
                 <div className="text-xs">
                   <b>{it.comment.name}</b> <span className="text-slate-400" title={full(it.at)}>{ago(it.at)}</span>
                 </div>
-                <div className="mt-1 rounded-lg rounded-tl-sm bg-white p-2.5 text-sm whitespace-pre-wrap shadow-sm ring-1 ring-slate-200">{it.comment.body}</div>
+                <div className="mt-1 rounded-lg rounded-tl-sm bg-surface p-2.5 text-sm whitespace-pre-wrap shadow-sm ring-1 ring-slate-200">{it.comment.body}</div>
               </div>
             </li>
           ) : (
@@ -174,7 +174,7 @@ function ActivityRowView({ a, doneLists }: { a: Activity; doneLists: Set<string>
   return (
     <li className="flex gap-2 text-sm">
       <span className="flex h-[30px] w-[30px] shrink-0 items-center justify-center">
-        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-xs text-slate-500 ring-4 ring-white">{icon}</span>
+        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-xs text-slate-500 ring-4 ring-surface">{icon}</span>
       </span>
       <div className="min-w-0 flex-1 pt-1 leading-relaxed text-slate-600">
         <b className="text-slate-800">{a.name ?? "Pengguna terhapus"}</b> {text}

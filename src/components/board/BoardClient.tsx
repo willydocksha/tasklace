@@ -74,7 +74,7 @@ function ViewTab({ id, active, onSelect }: { id: View; active: boolean; onSelect
       {...listeners}
       onClick={() => onSelect(id)}
       style={{ transform: CSS.Translate.toString(transform), transition }}
-      className={`touch-none rounded-md px-2.5 py-1 whitespace-nowrap select-none ${active ? "bg-white font-medium text-slate-800" : "hover:bg-white/15"} ${isDragging ? "relative z-10 cursor-grabbing shadow-lg ring-2 ring-white/60" : "cursor-pointer"}`}
+      className={`touch-none rounded-md px-2.5 py-1 whitespace-nowrap select-none ${active ? "bg-surface font-medium text-slate-800" : "hover:bg-white/15"} ${isDragging ? "relative z-10 cursor-grabbing shadow-lg ring-2 ring-white/60" : "cursor-pointer"}`}
     >
       {label}
     </button>
@@ -161,13 +161,13 @@ export function BoardClient({ user, initial }: { user: User; initial: BoardData 
 
   return (
     <Ctx.Provider value={{ data, user, refresh, mutate, openCard: setOpenId, isAdmin }}>
-      <div className="flex h-screen flex-col" style={{ background: boardBg(data.board.color) }}>
+      <div className="flex h-screen flex-col" style={{ background: `linear-gradient(var(--board-dim), var(--board-dim)), ${boardBg(data.board.color)}` }}>
         <TopBar user={user} dark />
         <div className="flex flex-wrap items-center gap-2 bg-black/15 px-3 py-2 text-white sm:px-4">
           <h1 className="mr-2 text-lg font-bold drop-shadow">{data.board.name}</h1>
           <ViewTabs view={view} onSelect={switchView} />
           <div className="flex flex-wrap items-center gap-1.5 text-sm">
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="🔍 Cari kartu" className="h-8 w-40 rounded-lg bg-white/15 px-2.5 ring-1 ring-white/15 placeholder-white/70 outline-none transition focus:w-52 focus:bg-white focus:text-slate-800 focus:placeholder-slate-400 focus:ring-blue-200" />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="🔍 Cari kartu" className="h-8 w-40 rounded-lg bg-white/15 px-2.5 ring-1 ring-white/15 placeholder-white/70 outline-none transition focus:w-52 focus:bg-surface focus:text-slate-800 focus:placeholder-slate-400 focus:ring-blue-200" />
             <Select
               variant="dark"
               value={fType}
@@ -181,8 +181,8 @@ export function BoardClient({ user, initial }: { user: User; initial: BoardData 
               searchable={data.members.length > 6}
               options={[
                 { value: "", label: "Semua member" },
-                { value: user.id, label: "Tugas saya", icon: <Avatar name={user.name} color={user.color} size={20} /> },
-                ...data.members.filter((m) => m.id !== user.id).map((m) => ({ value: m.id, label: m.name, icon: <Avatar name={m.name} color={m.color} size={20} /> })),
+                { value: user.id, label: "Tugas saya", icon: <Avatar name={user.name} color={user.color} src={user.avatar} size={20} /> },
+                ...data.members.filter((m) => m.id !== user.id).map((m) => ({ value: m.id, label: m.name, icon: <Avatar name={m.name} color={m.color} src={m.avatar} size={20} /> })),
               ]}
               onChange={setFMember}
               menuWidth={220}
@@ -205,10 +205,10 @@ export function BoardClient({ user, initial }: { user: User; initial: BoardData 
           </div>
           <div className="ml-auto flex items-center gap-2">
             <button onClick={() => setSettings(true)} className="flex -space-x-2" title="Member">
-              {data.members.slice(0, 5).map((m) => <Avatar key={m.id} name={m.name} color={m.color} size={28} ring />)}
-              {data.members.length > 5 && <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/30 text-xs ring-2 ring-white">+{data.members.length - 5}</span>}
+              {data.members.slice(0, 5).map((m) => <Avatar key={m.id} name={m.name} color={m.color} src={m.avatar} size={28} ring />)}
+              {data.members.length > 5 && <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/30 text-xs ring-2 ring-surface">+{data.members.length - 5}</span>}
             </button>
-            <button onClick={() => setSettings(true)} className="rounded-md bg-white px-3 py-1 text-sm font-medium text-slate-800 hover:bg-slate-100">
+            <button onClick={() => setSettings(true)} className="rounded-md bg-surface px-3 py-1 text-sm font-medium text-slate-800 hover:bg-slate-100">
               Bagikan / Atur
             </button>
           </div>

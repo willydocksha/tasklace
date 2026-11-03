@@ -5,6 +5,6 @@ import { sql } from "@/lib/db";
 export const GET = route<{ id: string }>(async ({ user, params }) => {
   await boardOf("cards", params.id, user.id);
   return sql`
-    select a.id, a.kind, a.data, a.created_at, a.user_id, u.name, u.color from card_activity a
+    select a.id, a.kind, a.data, a.created_at, a.user_id, u.name, u.color, u.avatar_url as avatar from card_activity a
     left join users u on u.id = a.user_id where a.card_id = ${params.id} order by a.created_at, a.id`;
 });

@@ -149,7 +149,7 @@ function Column({ list, cards, dragDisabled }: { list: List; cards: Card[]; drag
   }
 
   return (
-    <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }} className="flex max-h-full w-72 shrink-0 flex-col rounded-xl bg-[#f1f2f4] shadow-sm">
+    <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }} className="flex max-h-full w-72 shrink-0 flex-col rounded-xl bg-column shadow-sm">
       <div className="relative flex items-center gap-2 px-3 pt-2.5 pb-1.5" {...attributes} {...listeners}>
         {editing ? (
           <input autoFocus className="w-full rounded border-2 border-blue-500 px-1.5 py-0.5 text-sm font-semibold" value={name} onChange={(e) => setName(e.target.value)} onBlur={rename} onKeyDown={(e) => e.key === "Enter" && rename()} onPointerDown={(e) => e.stopPropagation()} />
@@ -164,7 +164,7 @@ function Column({ list, cards, dragDisabled }: { list: List; cards: Card[]; drag
           ⋯
         </button>
         {menu && (
-          <div className="absolute top-9 right-2 z-20 w-56 rounded-lg bg-white py-1 text-sm shadow-xl ring-1 ring-slate-200" onPointerDown={(e) => e.stopPropagation()}>
+          <div className="absolute top-9 right-2 z-20 w-56 rounded-lg bg-surface py-1 text-sm shadow-xl ring-1 ring-slate-200" onPointerDown={(e) => e.stopPropagation()}>
             <button className="block w-full px-3 py-2 text-left hover:bg-slate-100" onClick={() => (setMenu(false), mutate(() => api(`/api/lists/${list.id}`, "PATCH", { is_done: !list.is_done })))}>
               {list.is_done ? "Hapus tanda 'selesai'" : "Tandai sebagai list selesai ✅"}
             </button>
@@ -209,8 +209,8 @@ function AddCard({ listId }: { listId: string }) {
     <div className="space-y-2 p-2">
       <textarea autoFocus rows={2} className="w-full resize-none rounded-lg p-2 text-sm shadow outline-none" placeholder="Judul kartu…" value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void add(); } if (e.key === "Escape") setOpen(false); }} />
       <div className="flex items-center gap-1.5">
-        <button onClick={add} className="rounded bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700">Tambah</button>
-        <select value={type} onChange={(e) => setType(e.target.value as CardType)} className="rounded border bg-white px-1.5 py-1 text-xs">
+        <button onClick={add} className="rounded bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 dark:hover:bg-blue-500">Tambah</button>
+        <select value={type} onChange={(e) => setType(e.target.value as CardType)} className="rounded border bg-surface px-1.5 py-1 text-xs">
           {Object.entries(TYPE_META).map(([k, v]) => (
             <option key={k} value={k}>{v.icon} {v.label}</option>
           ))}
@@ -238,7 +238,7 @@ function AddList() {
       </button>
     );
   return (
-    <div className="w-72 shrink-0 space-y-2 rounded-xl bg-[#f1f2f4] p-2">
+    <div className="w-72 shrink-0 space-y-2 rounded-xl bg-column p-2">
       <input autoFocus className="w-full rounded border-2 border-blue-500 px-2 py-1.5 text-sm" placeholder="Nama list…" value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") void add(); if (e.key === "Escape") setOpen(false); }} />
       <div className="flex gap-1.5">
         <button onClick={add} className="rounded bg-blue-600 px-3 py-1.5 text-sm font-medium text-white">Tambah list</button>

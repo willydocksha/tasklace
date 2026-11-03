@@ -1,6 +1,6 @@
 // github and google sign-in (oauth 2 authorization code flow)
 
-export type Profile = { id: string; email: string; name: string };
+export type Profile = { id: string; email: string; name: string; avatar?: string };
 
 type Provider = {
   label: string;
@@ -35,7 +35,7 @@ export const PROVIDERS: Record<string, Provider> = {
       const list = Array.isArray(emails) ? (emails as { email: string; primary: boolean; verified: boolean }[]) : [];
       const email = (list.find((e) => e.primary && e.verified) ?? list.find((e) => e.verified))?.email;
       if (!email) throw new Error("github: no verified email");
-      return { id: String(u.id), email, name: u.name || u.login };
+      return { id: String(u.id), email, name: u.name || u.login, avatar: u.avatar_url };
     },
   },
   google: {
@@ -49,7 +49,7 @@ export const PROVIDERS: Record<string, Provider> = {
       if (!tok.access_token) throw new Error("google: no access token");
       const u = await fetch("https://openidconnect.googleapis.com/v1/userinfo", { headers: { authorization: `Bearer ${tok.access_token}` } }).then((r) => r.json());
       if (!u.email || !u.email_verified) throw new Error("google: no verified email");
-      return { id: String(u.sub), email: u.email, name: u.name || u.email.split("@")[0] };
+      return { id: String(u.sub), email: u.email, name: u.name || u.email.split("@")[0], avatar: u.picture };
     },
   },
 };

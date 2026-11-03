@@ -10,7 +10,7 @@ export function Modal({ onClose, children, width = 640 }: { onClose: () => void;
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 sm:p-10" onMouseDown={onClose}>
-      <div className="w-full rounded-xl bg-white shadow-2xl" style={{ maxWidth: width }} onMouseDown={(e) => e.stopPropagation()}>
+      <div className="w-full rounded-xl bg-surface shadow-2xl" style={{ maxWidth: width }} onMouseDown={(e) => e.stopPropagation()}>
         {children}
       </div>
     </div>

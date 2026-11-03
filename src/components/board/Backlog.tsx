@@ -26,7 +26,7 @@ export function Backlog({ visible }: { visible: Visible }) {
       <div className="mx-auto max-w-5xl space-y-4">
         <div className="flex items-center gap-2">
           <h2 className="text-lg font-bold text-white drop-shadow">Backlog &amp; Sprint</h2>
-          <button onClick={() => mutate(() => api(`/api/boards/${data.board.id}/sprints`, "POST", {}))} className="ml-auto rounded-md bg-white px-3 py-1.5 text-sm font-medium text-slate-800 shadow hover:bg-slate-100">
+          <button onClick={() => mutate(() => api(`/api/boards/${data.board.id}/sprints`, "POST", {}))} className="ml-auto rounded-md bg-surface px-3 py-1.5 text-sm font-medium text-slate-800 shadow hover:bg-slate-100">
             + Buat sprint
           </button>
         </div>
@@ -46,7 +46,7 @@ export function Backlog({ visible }: { visible: Visible }) {
         <Section cards={issues.filter((c) => !c.sprint_id)} />
 
         {done.length > 0 && (
-          <div className="rounded-xl bg-white/90 shadow">
+          <div className="rounded-xl bg-surface/95 shadow">
             <button onClick={() => setHistory(!history)} className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-semibold text-slate-700">
               <span>{history ? "▾" : "▸"}</span> Riwayat sprint ({done.length})
             </button>
@@ -84,7 +84,7 @@ function Section({
   const doneCount = cards.filter(isDone).length;
 
   return (
-    <div className={`rounded-xl bg-white shadow ${sprint?.status === "active" ? "ring-2 ring-blue-500" : ""}`}>
+    <div className={`rounded-xl bg-surface shadow ${sprint?.status === "active" ? "ring-2 ring-blue-500" : ""}`}>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b px-4 py-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
@@ -178,7 +178,7 @@ function Row({ card }: { card: Card }) {
       </span>
       <span className="hidden w-12 justify-end -space-x-1.5 sm:flex">
         {people.slice(0, 3).map((p) => (
-          <Avatar key={p.id} name={p.name} color={p.color} size={22} ring />
+          <Avatar key={p.id} name={p.name} color={p.color} src={p.avatar} size={22} ring />
         ))}
       </span>
       <select
@@ -187,7 +187,7 @@ function Row({ card }: { card: Card }) {
         disabled={done}
         onClick={(e) => e.stopPropagation()}
         onChange={(e) => mutate(() => api(`/api/cards/${card.id}`, "PATCH", { sprint_id: e.target.value || null }))}
-        className="w-24 shrink-0 rounded border border-slate-200 bg-white px-1 py-0.5 text-xs text-slate-600 disabled:opacity-50"
+        className="w-24 shrink-0 rounded border border-slate-200 bg-surface px-1 py-0.5 text-xs text-slate-600 disabled:opacity-50"
         title={done ? "Kartu selesai dikunci" : "Pindahkan ke sprint"}
       >
         <option value="">Backlog</option>
@@ -218,7 +218,7 @@ function AddIssue({ sprintId }: { sprintId: string | null }) {
       }}
       className="flex items-center gap-2 border-t px-4 py-2"
     >
-      <select value={type} onChange={(e) => setType(e.target.value)} className="rounded border border-slate-200 bg-white px-1 py-1 text-sm">
+      <select value={type} onChange={(e) => setType(e.target.value)} className="rounded border border-slate-200 bg-surface px-1 py-1 text-sm">
         {(["story", "task", "bug"] as const).map((k) => (
           <option key={k} value={k}>
             {TYPE_META[k].icon} {TYPE_META[k].label}

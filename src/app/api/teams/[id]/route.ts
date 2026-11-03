@@ -9,7 +9,7 @@ export const GET = route<P>(async ({ user, params }) => {
   const role = await requireTeam(params.id, user.id);
   const [[team], members, boards] = await Promise.all([
     sql`select id, name, invite_code, owner_id from teams where id = ${params.id}`,
-    sql`select u.id, u.name, u.email, u.color, m.role from team_members m join users u on u.id = m.user_id
+    sql`select u.id, u.name, u.email, u.color, u.avatar_url as avatar, m.role from team_members m join users u on u.id = m.user_id
       where m.team_id = ${params.id} order by m.role = 'owner' desc, u.name`,
     sql`select b.id, b.name, b.color from team_boards tb join boards b on b.id = tb.board_id where tb.team_id = ${params.id} order by b.name`,
   ]);

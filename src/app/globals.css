@@ -5,9 +5,77 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* semantic surfaces: panels / cards and kanban columns */
+@theme {
+  --color-surface: #ffffff;
+  --color-column: #f1f2f4;
+}
+
+/* `dark:` classes follow the .dark class on <html> (set by the theme switch) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --page-bg: #eef3fb;
+  --page-fg: #172b4d;
+  --board-dim: transparent;
+}
+
+/* dark theme: remap the palette so existing classes adapt.
+   slate is inverted, accent tints become dark tints, deep accent text gets lighter */
+.dark {
+  color-scheme: dark;
+  --page-bg: #0f131b;
+  --page-fg: #dbe0e8;
+  /* boards keep their color, a bit deeper */
+  --board-dim: rgba(6, 9, 15, 0.42);
+  --color-surface: #1d2330;
+  --color-column: #151a23;
+
+  --color-slate-50: #181d28;
+  --color-slate-100: #262d3b;
+  --color-slate-200: #313a4b;
+  --color-slate-300: #434d61;
+  --color-slate-400: #6e7a90;
+  --color-slate-500: #8d98ab;
+  --color-slate-600: #a9b3c3;
+  --color-slate-700: #c4cbd7;
+  --color-slate-800: #dbe0e8;
+  --color-slate-900: #eceff4;
+  --color-slate-950: #f7f9fb;
+
+  --color-blue-50: color-mix(in oklab, #3b82f6 12%, #1d2330);
+  --color-blue-100: color-mix(in oklab, #3b82f6 22%, #1d2330);
+  --color-blue-200: color-mix(in oklab, #3b82f6 36%, #1d2330);
+  --color-blue-700: #7cb4ff;
+  --color-blue-800: #a8ccff;
+  --color-blue-900: #cfe2ff;
+
+  --color-green-50: color-mix(in oklab, #22c55e 10%, #1d2330);
+  --color-green-100: color-mix(in oklab, #22c55e 20%, #1d2330);
+  --color-green-200: color-mix(in oklab, #22c55e 34%, #1d2330);
+  --color-green-700: #4ade80;
+  --color-green-800: #86efac;
+
+  --color-red-50: color-mix(in oklab, #ef4444 12%, #1d2330);
+  --color-red-100: color-mix(in oklab, #ef4444 22%, #1d2330);
+  --color-red-200: color-mix(in oklab, #ef4444 36%, #1d2330);
+  --color-red-600: #f87171;
+  --color-red-700: #fca5a5;
+
+  --color-amber-50: color-mix(in oklab, #f59e0b 10%, #1d2330);
+  --color-amber-100: color-mix(in oklab, #f59e0b 20%, #1d2330);
+  --color-amber-700: #fbbf24;
+  --color-amber-800: #fcd34d;
+
+  --color-violet-50: color-mix(in oklab, #8b5cf6 12%, #1d2330);
+  --color-violet-100: color-mix(in oklab, #8b5cf6 22%, #1d2330);
+  --color-violet-700: #a78bfa;
+}
+
 body {
-  background: #eef3fb;
-  color: #172b4d;
+  background: var(--page-bg);
+  color: var(--page-fg);
+  transition: background-color 0.2s;
   font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
 
@@ -49,6 +117,14 @@ body {
 .rich code { font-family: var(--font-geist-mono), ui-monospace, monospace; font-size: 0.85em; background: #eef2f7; color: #be185d; padding: 0.1em 0.35em; border-radius: 4px; }
 .rich pre { font-family: var(--font-geist-mono), ui-monospace, monospace; font-size: 0.8rem; line-height: 1.55; background: #0f172a; color: #e2e8f0; padding: 0.8em 1em; border-radius: 8px; overflow-x: auto; }
 .rich pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+.dark .rich { color: #dbe0e8; }
+.dark .rich code { background: #262d3b; color: #f9a8d4; }
+.dark .rich pre { background: #0b0f16; box-shadow: inset 0 0 0 1px #262d3b; }
+.dark .rich a { color: #7cb4ff; }
+.dark .rich blockquote { border-left-color: #434d61; color: #a9b3c3; }
+.dark .rich hr { border-top-color: #313a4b; }
+.dark .rich h6 { color: #8d98ab; }
+.dark .rich ul[data-type="taskList"] li[data-checked="true"] > div { color: #6e7a90; }
 .rich p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: #94a3b8; float: left; height: 0; pointer-events: none; }
 
 /* code highlighting (highlight.js classes from lowlight) */

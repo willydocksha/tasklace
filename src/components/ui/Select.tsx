@@ -21,7 +21,7 @@ type Variant = "field" | "dark" | "toolbar";
 // trigger looks per placement
 const TRIGGER: Record<Variant, string> = {
   field:
-    "h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-sm shadow-[0_1px_2px_rgba(15,23,42,0.05)] hover:border-slate-300 hover:bg-slate-50/60 data-[open=true]:border-blue-400 data-[open=true]:ring-3 data-[open=true]:ring-blue-100",
+    "h-9 w-full rounded-lg border border-slate-200 bg-surface px-2.5 text-sm shadow-[0_1px_2px_rgba(15,23,42,0.05)] hover:border-slate-300 hover:bg-slate-50/60 data-[open=true]:border-blue-400 data-[open=true]:ring-3 data-[open=true]:ring-blue-100",
   dark: "h-8 rounded-lg bg-white/15 px-2.5 text-sm text-white ring-1 ring-white/15 hover:bg-white/25 data-[open=true]:bg-white/30",
   toolbar: "h-7 rounded-md px-1.5 text-sm text-slate-600 hover:bg-slate-100 data-[open=true]:bg-blue-50 data-[open=true]:text-blue-700",
 };
@@ -162,7 +162,7 @@ export function Select<V extends string>({
                 value={q}
                 onChange={(e) => (setQ(e.target.value), setActive(0))}
                 placeholder="Cari…"
-                className="h-8 w-full rounded-md bg-slate-100 px-2.5 text-sm outline-none placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-blue-200"
+                className="h-8 w-full rounded-md bg-slate-100 px-2.5 text-sm outline-none placeholder:text-slate-400 focus:bg-surface focus:ring-2 focus:ring-blue-200"
               />
             </div>
           )}

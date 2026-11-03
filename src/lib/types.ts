@@ -2,7 +2,7 @@ export type CardType = "epic" | "story" | "task" | "bug";
 export type Priority = "low" | "medium" | "high" | "urgent";
 
 // direct is false when the user only has access through a team
-export type Member = { id: string; name: string; email: string; color: string; role: string; direct: boolean };
+export type Member = { id: string; name: string; email: string; color: string; avatar: string | null; role: string; direct: boolean };
 export type Label = { id: string; name: string; color: string };
 export type List = { id: string; name: string; position: number; is_done: number };
 export type Card = {
@@ -45,7 +45,7 @@ export type Sprint = {
   created_at: number;
 };
 export type BoardData = { board: Board; lists: List[]; cards: Card[]; labels: Label[]; members: Member[]; sprints: Sprint[]; role: string };
-export type Comment = { id: string; body: string; created_at: number; user_id: string; name: string; color: string };
+export type Comment = { id: string; body: string; created_at: number; user_id: string; name: string; color: string; avatar: string | null };
 
 // one entry of a card's history (see lib/activity.ts for kinds)
 export type Activity = {
@@ -56,4 +56,5 @@ export type Activity = {
   user_id: string | null;
   name: string | null;
   color: string | null;
+  avatar: string | null;
 };

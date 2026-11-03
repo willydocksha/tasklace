@@ -63,10 +63,10 @@ export function StatusJourney({ card, lists, activity }: { card: Card; lists: Li
               ) : isCur ? (
                 <span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 shadow-sm ring-4 ring-blue-100">
                   <span className="absolute inset-0 animate-ping rounded-full bg-blue-400 opacity-30" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-white" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-surface" />
                 </span>
               ) : (
-                <span className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-dashed border-slate-300 bg-white text-xs text-slate-400">—</span>
+                <span className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-dashed border-slate-300 bg-surface text-xs text-slate-400">—</span>
               )}
             </span>
 

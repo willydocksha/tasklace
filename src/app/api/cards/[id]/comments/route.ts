@@ -6,7 +6,7 @@ type P = { id: string };
 export const GET = route<P>(async ({ user, params }) => {
   await boardOf("cards", params.id, user.id);
   return sql`
-    select c.id, c.body, c.created_at, c.user_id, u.name, u.color from comments c
+    select c.id, c.body, c.created_at, c.user_id, u.name, u.color, u.avatar_url as avatar from comments c
     join users u on u.id = c.user_id where c.card_id = ${params.id} order by c.created_at`;
 });
 

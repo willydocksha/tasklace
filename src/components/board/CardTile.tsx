@@ -20,7 +20,7 @@ export function CardView({ card, overlay }: { card: Card; overlay?: boolean }) {
   return (
     <div
       onClick={() => openCard(card.id)}
-      className={`group cursor-pointer rounded-lg bg-white select-none p-2.5 text-sm shadow-[0_1px_1px_rgba(9,30,66,.25)] hover:ring-2 hover:ring-blue-400 ${overlay ? "rotate-2 shadow-xl ring-2 ring-blue-400" : ""}`}
+      className={`group cursor-pointer rounded-lg bg-surface select-none p-2.5 text-sm shadow-[0_1px_1px_rgba(9,30,66,.25)] hover:ring-2 hover:ring-blue-400 ${overlay ? "rotate-2 shadow-xl ring-2 ring-blue-400" : ""}`}
       style={card.type === "epic" && card.color ? { borderLeft: `4px solid ${card.color}` } : undefined}
     >
       {labels.length > 0 && (
@@ -72,7 +72,7 @@ export function CardView({ card, overlay }: { card: Card; overlay?: boolean }) {
         )}
         <span className="ml-auto flex -space-x-1.5">
           {people.map((p) => (
-            <Avatar key={p.id} name={p.name} color={p.color} size={22} ring />
+            <Avatar key={p.id} name={p.name} color={p.color} src={p.avatar} size={22} ring />
           ))}
         </span>
       </div>

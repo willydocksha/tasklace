@@ -52,7 +52,7 @@ function Field({ label, iconEl, trailing, ...props }: { label: string; iconEl: R
         <span className="pointer-events-none absolute left-3 text-slate-400 group-focus-within:text-blue-600">{iconEl}</span>
         <input
           {...props}
-          className="h-11 w-full rounded-xl border border-slate-200 bg-white pr-11 pl-10 text-[15px] text-slate-900 shadow-sm transition outline-none placeholder:text-slate-400 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15"
+          className="h-11 w-full rounded-xl border border-slate-200 bg-surface pr-11 pl-10 text-[15px] text-slate-900 shadow-sm transition outline-none placeholder:text-slate-400 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15"
         />
         {trailing && <span className="absolute right-2">{trailing}</span>}
       </span>
@@ -82,9 +82,9 @@ function BrandPanel() {
           <h2 className="text-4xl leading-tight font-semibold tracking-tight xl:text-[2.75rem]">
             Rangkai kerja tim,
             <br />
-            <span className="bg-gradient-to-r from-sky-300 to-blue-200 bg-clip-text text-transparent">tanpa batas.</span>
+            <span className="bg-gradient-to-r from-[#7dd3fc] to-[#bfdbfe] bg-clip-text text-transparent">tanpa batas.</span>
           </h2>
-          <p className="mt-4 text-[15px] leading-relaxed text-blue-100/80">Board, sprint, dan backlog untuk tim mana pun. Undang member sebanyak apa pun, gratis.</p>
+          <p className="mt-4 text-[15px] leading-relaxed text-[#dbeafe]/80">Board, sprint, dan backlog untuk tim mana pun. Undang member sebanyak apa pun, gratis.</p>
         </div>
 
         {/* mini board preview */}
@@ -93,15 +93,15 @@ function BrandPanel() {
             <span className="h-2.5 w-2.5 rounded-full bg-white/25" />
             <span className="h-2.5 w-2.5 rounded-full bg-white/25" />
             <span className="h-2.5 w-2.5 rounded-full bg-white/25" />
-            <span className="ml-3 text-xs text-blue-100/70">Sprint 4 · 6 hari lagi · 21/34 poin</span>
+            <span className="ml-3 text-xs text-[#dbeafe]/70">Sprint 4 · 6 hari lagi · 21/34 poin</span>
           </div>
           <div className="grid grid-cols-3 gap-3">
             {cols.map((col) => (
               <div key={col.name} className="rounded-xl bg-white/[0.07] p-2.5">
-                <div className="mb-2 text-[11px] font-medium tracking-wide text-blue-100/70 uppercase">{col.name}</div>
+                <div className="mb-2 text-[11px] font-medium tracking-wide text-[#dbeafe]/70 uppercase">{col.name}</div>
                 <div className="space-y-2">
                   {col.cards.map((k) => (
-                    <div key={k.t} className="rounded-lg bg-white p-2 text-slate-800 shadow-sm">
+                    <div key={k.t} className="rounded-lg bg-surface p-2 text-slate-800 shadow-sm">
                       <span className="mb-1.5 block h-1.5 w-8 rounded-full" style={{ background: k.c }} />
                       <div className="truncate text-[11px] font-medium">{k.t}</div>
                       <div className={`mt-1.5 h-1 rounded-full bg-slate-200 ${k.w}`} />
@@ -113,7 +113,7 @@ function BrandPanel() {
           </div>
         </div>
 
-        <ul className="mt-8 flex flex-wrap gap-2 text-[13px] text-blue-50/90">
+        <ul className="mt-8 flex flex-wrap gap-2 text-[13px] text-[#eff6ff]/90">
           {["Member tanpa batas", "Sprint & backlog", "Tim & multi-board", "Import dari Trello"].map((f) => (
             <li key={f} className="rounded-full border border-white/15 bg-white/[0.06] px-3 py-1">
               ✓ {f}
@@ -174,9 +174,9 @@ export function AuthForm({ mode, providers }: { mode: "login" | "register"; prov
 
   // page frame: brand panel + right column
   const frame = (children: React.ReactNode) => (
-    <div className="grid min-h-screen bg-white lg:grid-cols-[1.05fr_1fr]">
+    <div className="grid min-h-screen bg-surface lg:grid-cols-[1.05fr_1fr]">
       <BrandPanel />
-      <main className="relative flex flex-col bg-[radial-gradient(80%_60%_at_50%_0%,#eff6ff_0%,#fff_60%)] px-5 py-8 sm:px-10">
+      <main className="relative flex flex-col bg-[radial-gradient(80%_60%_at_50%_0%,var(--color-blue-50)_0%,var(--color-surface)_60%)] px-5 py-8 sm:px-10">
         <Logo size={34} className="text-lg lg:hidden" />
         <div className="mx-auto flex w-full max-w-[400px] flex-1 flex-col justify-center py-10">{children}</div>
         <p className="text-center text-xs text-slate-400">© {new Date().getFullYear()} Tasklace · Gratis untuk semua tim</p>
@@ -198,7 +198,7 @@ export function AuthForm({ mode, providers }: { mode: "login" | "register"; prov
           Link verifikasi sudah dikirim ke <span className="font-medium text-slate-900">{sentTo}</span>. Klik link itu dan kamu langsung masuk.
         </p>
         <p className="mt-2 text-sm text-slate-400">Belum ada? Cek folder spam, atau kirim ulang.</p>
-        <button onClick={() => resend(sentTo)} className="mt-6 h-11 w-full rounded-xl border border-slate-200 bg-white text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50">
+        <button onClick={() => resend(sentTo)} className="mt-6 h-11 w-full rounded-xl border border-slate-200 bg-surface text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50">
           Kirim ulang email
         </button>
         {note && <p className="mt-3 text-sm text-slate-600">{note}</p>}
@@ -222,7 +222,7 @@ export function AuthForm({ mode, providers }: { mode: "login" | "register"; prov
               <a
                 key={p.id}
                 href={`/api/auth/oauth/${p.id}?next=${encodeURIComponent(next)}`}
-                className="flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
+                className="flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-surface text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
               >
                 {ICONS[p.id]} {p.label}
               </a>

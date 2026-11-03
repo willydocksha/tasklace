@@ -97,7 +97,7 @@ export function DatePicker({ value, onChange, placeholder = "Pilih tanggal", dea
         data-open={pop.open}
         disabled={disabled}
         onClick={() => pop.setOpen(!pop.open)}
-        className={`group flex h-9 disabled:pointer-events-none disabled:opacity-60 disabled:shadow-none w-full min-w-0 items-center gap-2 rounded-lg border bg-white px-2.5 text-left text-sm shadow-[0_1px_2px_rgba(15,23,42,0.05)] transition outline-none hover:border-slate-300 focus-visible:ring-3 focus-visible:ring-blue-200 data-[open=true]:border-blue-400 data-[open=true]:ring-3 data-[open=true]:ring-blue-100 ${overdue ? "border-red-200" : "border-slate-200"}`}
+        className={`group flex h-9 disabled:pointer-events-none disabled:opacity-60 disabled:shadow-none w-full min-w-0 items-center gap-2 rounded-lg border bg-surface px-2.5 text-left text-sm shadow-[0_1px_2px_rgba(15,23,42,0.05)] transition outline-none hover:border-slate-300 focus-visible:ring-3 focus-visible:ring-blue-200 data-[open=true]:border-blue-400 data-[open=true]:ring-3 data-[open=true]:ring-blue-100 ${overdue ? "border-red-200" : "border-slate-200"}`}
       >
         <svg viewBox="0 0 20 20" className={`h-4 w-4 shrink-0 ${overdue ? "text-red-500" : "text-slate-400"}`} fill="none" stroke="currentColor" strokeWidth="1.7">
           <rect x="3" y="4.5" width="14" height="12.5" rx="2.5" />
@@ -140,7 +140,7 @@ export function DatePicker({ value, onChange, placeholder = "Pilih tanggal", dea
                   className={`relative h-9 rounded-lg text-sm transition ${sel ? "bg-blue-600 font-semibold text-white shadow-sm" : isFocus ? "bg-slate-100" : ""} ${out && !sel ? "text-slate-300" : ""} ${disabled ? "cursor-not-allowed opacity-30" : ""} ${isToday && !sel ? "font-semibold text-blue-600" : ""}`}
                 >
                   {d.getDate()}
-                  {isToday && <span className={`absolute bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full ${sel ? "bg-white" : "bg-blue-600"}`} />}
+                  {isToday && <span className={`absolute bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full ${sel ? "bg-surface" : "bg-blue-600"}`} />}
                 </button>
               );
             })}

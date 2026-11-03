@@ -2,7 +2,7 @@ import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
 import { newId, sql } from "./db";
 
-export type User = { id: string; name: string; email: string; color: string };
+export type User = { id: string; name: string; email: string; color: string; username: string | null; avatar: string | null };
 
 const COOKIE = "tl_session";
 const SESSION_DAYS = 30;
@@ -23,6 +23,8 @@ export async function createUser(name: string, email: string, password: string |
     name,
     email: email.toLowerCase(),
     color: AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)],
+    username: null,
+    avatar: null,
   };
   const now = Date.now();
   await sql`insert into users (id, name, email, password_hash, color, created_at, email_verified_at)
@@ -56,8 +58,8 @@ export async function currentUser(): Promise<User | null> {
   const token = (await cookies()).get(COOKIE)?.value;
   if (!token) return null;
   const [row] = await sql<(User & { expires_at: number })[]>`
-    select u.id, u.name, u.email, u.color, s.expires_at from sessions s
+    select u.id, u.name, u.email, u.color, u.username, u.avatar_url as avatar, s.expires_at from sessions s
     join users u on u.id = s.user_id where s.token = ${token}`;
   if (!row || row.expires_at < Date.now()) return null;
-  return { id: row.id, name: row.name, email: row.email, color: row.color };
+  return { id: row.id, name: row.name, email: row.email, color: row.color, username: row.username, avatar: row.avatar };
 }

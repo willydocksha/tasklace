@@ -174,6 +174,22 @@ create table if not exists email_tokens (
   created_at bigint not null
 );
 
+-- profile: unique handle, photo url (own upload or provider picture)
+alter table users add column if not exists username text;
+alter table users add column if not exists avatar_url text;
+create unique index if not exists idx_users_username on users(lower(username));
+
+-- uploaded profile photos (small, resized in the browser)
+create table if not exists user_avatars (
+  user_id text primary key references users(id) on delete cascade,
+  mime text not null,
+  data bytea not null,
+  updated_at bigint not null
+);
+
+-- extra payload for a token (e.g. the new address of an email change)
+alter table email_tokens add column if not exists data text;
+
 -- github / google identities linked to a user
 create table if not exists oauth_accounts (
   provider text not null,
@@ -217,6 +233,7 @@ alter table team_members enable row level security;
 alter table team_boards enable row level security;
 alter table email_tokens enable row level security;
 alter table oauth_accounts enable row level security;
+alter table user_avatars enable row level security;
 
 -- the view is never needed through supabase's rest api
 do $$ begin

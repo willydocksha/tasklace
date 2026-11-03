@@ -88,7 +88,7 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
               <div>
                 <span className={lbl}>Ditugaskan ke</span>
                 <div className="flex gap-1">
-                  {data.members.filter((m) => card.assignees.includes(m.id)).map((m) => <Avatar key={m.id} name={m.name} color={m.color} size={30} />)}
+                  {data.members.filter((m) => card.assignees.includes(m.id)).map((m) => <Avatar key={m.id} name={m.name} color={m.color} src={m.avatar} size={30} />)}
                 </div>
               </div>
             )}
@@ -124,7 +124,7 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
 
           <div>
             <span className={lbl}>Perjalanan status</span>
-            <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <div className="rounded-xl border border-slate-200 bg-surface p-4">
               <StatusJourney card={card} lists={data.lists} activity={activity} />
             </div>
           </div>
@@ -222,7 +222,7 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
                     key={l.id}
                     disabled={locked}
                     onClick={() => patch({ labels: toggle(card.labels, l.id) })}
-                    className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition disabled:pointer-events-none ${on ? "shadow-sm ring-2 ring-white ring-offset-1 ring-offset-slate-400" : "opacity-45 saturate-50 hover:opacity-90 hover:saturate-100"}`}
+                    className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition disabled:pointer-events-none ${on ? "shadow-sm ring-2 ring-surface ring-offset-1 ring-offset-slate-400" : "opacity-45 saturate-50 hover:opacity-90 hover:saturate-100"}`}
                     style={{ background: l.color, color: labelText(l.color) }}
                   >
                     {on && <span>✓</span>}
@@ -233,12 +233,12 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
             </div>
           </Field>
           <Field label="Member">
-            <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+            <div className="overflow-hidden rounded-lg border border-slate-200 bg-surface">
               {data.members.map((m) => {
                 const on = card.assignees.includes(m.id);
                 return (
                   <button key={m.id} disabled={locked} onClick={() => patch({ assignees: toggle(card.assignees, m.id) })} className={`flex w-full items-center gap-2 border-b border-slate-100 px-2 py-1.5 text-left text-sm transition last:border-0 disabled:pointer-events-none ${on ? "bg-blue-50/70" : "hover:bg-slate-50"}`}>
-                    <Avatar name={m.name} color={m.color} size={22} />
+                    <Avatar name={m.name} color={m.color} src={m.avatar} size={22} />
                     <span className="flex-1 truncate">{m.name}</span>
                     <span className={`flex h-4 w-4 items-center justify-center rounded border text-[10px] ${on ? "border-blue-600 bg-blue-600 text-white" : "border-slate-300"}`}>{on && "✓"}</span>
                   </button>
@@ -246,7 +246,7 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
               })}
             </div>
           </Field>
-          {!locked && <button onClick={() => { if (confirm("Hapus kartu ini?")) { onClose(); void mutate(() => api(`/api/cards/${card.id}`, "DELETE")); } }} className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-red-100 bg-white py-2 text-sm font-medium text-red-600 transition hover:border-red-200 hover:bg-red-50">
+          {!locked && <button onClick={() => { if (confirm("Hapus kartu ini?")) { onClose(); void mutate(() => api(`/api/cards/${card.id}`, "DELETE")); } }} className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-red-100 bg-surface py-2 text-sm font-medium text-red-600 transition hover:border-red-200 hover:bg-red-50">
             <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M4 6h12M8 6V4.5h4V6m-6 0 .7 10h6.6L14 6" strokeLinecap="round" strokeLinejoin="round" /></svg>
             Hapus kartu
           </button>}
@@ -304,7 +304,7 @@ function Stepper({ value, onChange, disabled = false }: { value: number | null; 
   const bump = (d: number) => onChange(Math.max(0, Math.min(999, (value ?? 0) + d)));
   const btn = "flex w-7 shrink-0 items-center justify-center text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 disabled:opacity-30";
   return (
-    <div className={`flex h-9 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05)] focus-within:border-blue-400 focus-within:ring-3 focus-within:ring-blue-100 ${disabled ? "pointer-events-none opacity-60 shadow-none" : ""}`}>
+    <div className={`flex h-9 overflow-hidden rounded-lg border border-slate-200 bg-surface shadow-[0_1px_2px_rgba(15,23,42,0.05)] focus-within:border-blue-400 focus-within:ring-3 focus-within:ring-blue-100 ${disabled ? "pointer-events-none opacity-60 shadow-none" : ""}`}>
       <button type="button" className={btn} onClick={() => bump(-1)} disabled={disabled || !value} aria-label="Kurangi poin">−</button>
       <input
         disabled={disabled}

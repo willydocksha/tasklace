@@ -30,13 +30,13 @@ export function Storyline({ visible }: { visible: (c: Card) => boolean }) {
       <div className="mx-auto max-w-5xl space-y-5">
         <Timeline epics={epics} />
 
-        <div className="flex gap-2 rounded-xl bg-white/90 p-3 shadow-sm">
+        <div className="flex gap-2 rounded-xl bg-surface/95 p-3 shadow-sm">
           <input className="flex-1 rounded-md border px-3 py-2 text-sm" placeholder="⚡ Nama epic baru, mis. 'Checkout & Pembayaran'" value={newEpic} onChange={(e) => setNewEpic(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addEpic()} />
-          <button onClick={addEpic} className="rounded-md bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700">+ Epic</button>
+          <button onClick={addEpic} className="rounded-md bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700 dark:hover:bg-violet-500">+ Epic</button>
         </div>
 
         {epics.length === 0 && (
-          <div className="rounded-xl bg-white/90 p-6 text-center text-sm text-slate-600 shadow-sm">
+          <div className="rounded-xl bg-surface/95 p-6 text-center text-sm text-slate-600 shadow-sm">
             <div className="mb-2 text-3xl">📚</div>
             <b>Storyline</b> membantu kamu menyusun cerita produk: buat <b>Epic</b> (tujuan besar), lalu pecah jadi <b>Story</b> dan <b>Task</b>.
             <br />Progress epic dihitung otomatis dari story yang sudah masuk list &quot;selesai&quot;.
@@ -46,7 +46,7 @@ export function Storyline({ visible }: { visible: (c: Card) => boolean }) {
         {epics.map((e, i) => <EpicBlock key={e.id} epic={e} index={i + 1} visible={visible} />)}
 
         {orphans.length > 0 && (
-          <section className="rounded-xl bg-white/90 p-4 shadow-sm">
+          <section className="rounded-xl bg-surface/95 p-4 shadow-sm">
             <h3 className="mb-2 font-semibold text-slate-700">Belum masuk epic <span className="font-normal text-slate-400">({orphans.length})</span></h3>
             <div className="divide-y">{orphans.map((c) => <StoryRow key={c.id} card={c} />)}</div>
           </section>
@@ -73,7 +73,7 @@ function EpicBlock({ epic, index, visible }: { epic: Card; index: number; visibl
   }
 
   return (
-    <section className="overflow-hidden rounded-xl bg-white shadow-sm">
+    <section className="overflow-hidden rounded-xl bg-surface shadow-sm">
       <div className="flex items-center gap-3 p-4" style={{ borderLeft: `6px solid ${color}` }}>
         <button onClick={() => setOpen(!open)} className="text-slate-400">{open ? "▾" : "▸"}</button>
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg font-bold text-white" style={{ background: color }}>{index}</div>
@@ -112,7 +112,7 @@ function StoryRow({ card }: { card: Card }) {
       <span style={{ color: t.color }} title={t.label}>{t.icon}</span>
       <span className={`min-w-0 flex-1 truncate ${done ? "text-slate-400 line-through" : ""}`}>{card.title}</span>
       {card.due_date && <span className={`text-xs ${!done && card.due_date < today() ? "text-red-600" : "text-slate-500"}`}>{formatDate(card.due_date)}</span>}
-      <span className="flex -space-x-1.5">{people.map((m) => <Avatar key={m.id} name={m.name} color={m.color} size={20} ring />)}</span>
+      <span className="flex -space-x-1.5">{people.map((m) => <Avatar key={m.id} name={m.name} color={m.color} src={m.avatar} size={20} ring />)}</span>
       <span className={`rounded px-1.5 py-0.5 text-xs ${done ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-600"}`}>{list?.name}</span>
     </button>
   );
@@ -139,7 +139,7 @@ function Timeline({ epics }: { epics: Card[] }) {
     months.push({ label: d.toLocaleDateString("id-ID", { month: "short", year: "2-digit" }), left: pct(d.getTime()) });
 
   return (
-    <section className="rounded-xl bg-white p-4 shadow-sm">
+    <section className="rounded-xl bg-surface p-4 shadow-sm">
       <h3 className="mb-3 font-semibold text-slate-700">🗓️ Timeline epic</h3>
       <div className="relative">
         <div className="relative mb-1 h-5 text-[11px] text-slate-500">

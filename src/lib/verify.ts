@@ -49,3 +49,39 @@ export async function lastSentAgo(userId: string) {
 }
 
 const escape = (s: string) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+
+// email a confirm link to the new address; the change applies only after it is clicked
+export async function sendEmailChange(user: { id: string; name: string }, newEmail: string, origin: string) {
+  const token = crypto.randomUUID() + crypto.randomUUID();
+  await sql`delete from email_tokens where user_id = ${user.id} and purpose = 'email'`;
+  await sql`insert into email_tokens (token_hash, user_id, purpose, data, expires_at, created_at)
+    values (${sha(token)}, ${user.id}, 'email', ${newEmail}, ${Date.now() + HOURS * 3600_000}, ${Date.now()})`;
+  const link = `${origin}/api/auth/email-change?token=${token}`;
+  await sendMail(
+    newEmail,
+    "Konfirmasi email baru Tasklace",
+    `Halo ${user.name},\n\nKlik link ini untuk memakai ${newEmail} sebagai email akun Tasklace kamu:\n${link}\n\nLink berlaku ${HOURS} jam. Abaikan email ini kalau kamu tidak memintanya.`,
+    `<div style="font-family:sans-serif;max-width:480px;margin:auto;padding:24px">
+      <h2 style="color:#0c66e4;margin:0 0 12px">Tasklace</h2>
+      <p>Halo ${escape(user.name)},</p>
+      <p>Klik tombol di bawah untuk memakai <b>${escape(newEmail)}</b> sebagai email akun Tasklace kamu.</p>
+      <p><a href="${link}" style="display:inline-block;background:#0c66e4;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600">Konfirmasi email</a></p>
+      <p style="color:#64748b;font-size:13px">Link berlaku ${HOURS} jam. Abaikan email ini kalau kamu tidak memintanya.</p>
+    </div>`,
+  );
+}
+
+// apply a pending email change; null when the link is bad or the address got taken
+export async function consumeEmailChange(token: string) {
+  const [row] = await sql<{ user_id: string; data: string }[]>`
+    delete from email_tokens where token_hash = ${sha(token)} and purpose = 'email' and expires_at > ${Date.now()}
+    returning user_id, data`;
+  if (!row?.data) return null;
+  const [taken] = await sql`select 1 from users where email = ${row.data} and id <> ${row.user_id}`;
+  if (taken) return null;
+  const [old] = await sql<{ email: string; name: string }[]>`select email, name from users where id = ${row.user_id}`;
+  await sql`update users set email = ${row.data}, email_verified_at = coalesce(email_verified_at, ${Date.now()}) where id = ${row.user_id}`;
+  // let the old address know, in case this was not the owner
+  await sendMail(old.email, "Email akun Tasklace diganti", `Halo ${old.name},\n\nEmail akun Tasklace kamu sekarang ${row.data}. Kalau ini bukan kamu, segera hubungi admin.`, `<p>Halo ${escape(old.name)},</p><p>Email akun Tasklace kamu sekarang <b>${escape(row.data)}</b>. Kalau ini bukan kamu, segera hubungi admin.</p>`).catch(console.error);
+  return row.user_id;
+}

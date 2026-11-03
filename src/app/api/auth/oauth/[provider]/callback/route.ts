@@ -43,6 +43,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ provider
   // could belong to someone who squatted the address, so it is dropped.
   await sql`update users set password_hash = case when email_verified_at is null then null else password_hash end,
     email_verified_at = coalesce(email_verified_at, ${Date.now()}) where id = ${userId}`;
+  // use the provider picture until the user picks a photo
+  if (profile.avatar?.startsWith("https://")) await sql`update users set avatar_url = ${profile.avatar} where id = ${userId} and avatar_url is null`;
   await startSession(userId);
   return NextResponse.redirect(`${origin}${saved.next}`);
 }

@@ -8,7 +8,7 @@ import { boardBg } from "@/lib/theme";
 
 type Detail = {
   team: { id: string; name: string; invite_code: string | null; owner_id: string };
-  members: { id: string; name: string; email: string; color: string; role: string }[];
+  members: { id: string; name: string; email: string; color: string; avatar: string | null; role: string }[];
   boards: { id: string; name: string; color: string }[];
   role: string;
 };
@@ -78,14 +78,14 @@ export function TeamModal({ teamId, user, myBoards, onClose, onChanged }: { team
                 </div>
                 <form onSubmit={(e) => { e.preventDefault(); void run(() => api(`/api/teams/${teamId}/members`, "POST", { email })).then(() => setEmail("")); }} className="flex gap-2">
                   <input type="email" required className="flex-1 rounded-md border px-2 py-1.5 text-sm" placeholder="Tambah lewat email user terdaftar" value={email} onChange={(e) => setEmail(e.target.value)} />
-                  <button className="rounded-md bg-slate-800 px-3 text-sm text-white">Tambah</button>
+                  <button className="rounded-md bg-slate-800 px-3 text-sm text-white dark:bg-blue-600">Tambah</button>
                 </form>
               </>
             )}
             <div className="divide-y rounded-md border">
               {d.members.map((m) => (
                 <div key={m.id} className="flex items-center gap-2.5 p-2">
-                  <Avatar name={m.name} color={m.color} />
+                  <Avatar name={m.name} color={m.color} src={m.avatar} />
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-medium">{m.name}{m.id === user.id && " (kamu)"}</div>
                     <div className="truncate text-xs text-slate-500">{m.email}</div>

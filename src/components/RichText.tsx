@@ -146,7 +146,7 @@ export function RichText({ value, onSave, placeholder = "Tulis sesuatu…", empt
     <div>
       <div
         onClick={(e) => !editing && !readOnly && !(e.target as HTMLElement).closest("a, label, input") && start()}
-        className={readOnly && !editing ? "min-h-16 rounded-lg bg-slate-50 p-2.5" : editing ? "rounded-lg border border-blue-400 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05)] ring-3 ring-blue-100" : "min-h-16 cursor-text rounded-lg border border-transparent bg-slate-50 p-2.5 transition hover:border-slate-200 hover:bg-slate-100/70"}
+        className={readOnly && !editing ? "min-h-16 rounded-lg bg-slate-50 p-2.5" : editing ? "rounded-lg border border-blue-400 bg-surface shadow-[0_1px_2px_rgba(15,23,42,0.05)] ring-3 ring-blue-100" : "min-h-16 cursor-text rounded-lg border border-transparent bg-slate-50 p-2.5 transition hover:border-slate-200 hover:bg-slate-100/70"}
       >
         {editing && editor && <Toolbar editor={editor} />}
         {!editing && isEmpty && <span className="text-sm text-slate-400">{readOnly ? "Tidak ada deskripsi" : empty}</span>}
@@ -156,7 +156,7 @@ export function RichText({ value, onSave, placeholder = "Tulis sesuatu…", empt
       </div>
       {editing && (
         <div className="mt-2 flex items-center gap-2">
-          <button className="rounded-lg bg-blue-600 px-3.5 py-1.5 text-sm font-medium text-white shadow-sm hover:bg-blue-700" onClick={() => stop(true)}>Simpan</button>
+          <button className="rounded-lg bg-blue-600 px-3.5 py-1.5 text-sm font-medium text-white shadow-sm hover:bg-blue-700 dark:hover:bg-blue-500" onClick={() => stop(true)}>Simpan</button>
           <button className="rounded-lg px-3.5 py-1.5 text-sm text-slate-600 hover:bg-slate-100" onClick={() => stop(false)}>Batal</button>
           <span className="ml-auto hidden text-xs text-slate-400 sm:block">Tips: ketik <code>#</code> <code>-</code> <code>1.</code> <code>[]</code> + spasi, atau <code>```</code></span>
         </div>
@@ -216,7 +216,7 @@ function Toolbar({ editor }: { editor: Editor }) {
   const sep = <span className="mx-0.5 h-5 w-px bg-slate-200" />;
 
   return (
-    <div className="sticky top-0 z-10 flex flex-wrap items-center gap-0.5 rounded-t-lg border-b border-slate-200 bg-white px-1.5 py-1">
+    <div className="sticky top-0 z-10 flex flex-wrap items-center gap-0.5 rounded-t-lg border-b border-slate-200 bg-surface px-1.5 py-1">
       <Select
         variant="toolbar"
         value={block}
