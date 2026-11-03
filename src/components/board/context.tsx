@@ -26,7 +26,15 @@ export function cardHelpers(data: BoardData) {
     const done = kids.filter(isDone).length;
     return { total: kids.length, done, pct: kids.length ? Math.round((done / kids.length) * 100) : 0 };
   };
-  return { doneLists, byId, isDone, childrenOf, progress };
+  // jira-style issue key, e.g. RJT-12
+  const keyOf = (c: Card) => `${data.board.key}-${c.number}`;
+  // story point totals of a set of cards
+  const points = (cards: Card[]) => {
+    const total = cards.reduce((s, c) => s + (c.points ?? 0), 0);
+    const done = cards.filter(isDone).reduce((s, c) => s + (c.points ?? 0), 0);
+    return { total, done };
+  };
+  return { doneLists, byId, isDone, childrenOf, progress, keyOf, points };
 }
 
 export function formatDate(d: string | null) {
@@ -35,3 +43,6 @@ export function formatDate(d: string | null) {
 }
 
 export const today = () => new Date().toISOString().slice(0, 10);
+
+// whole calendar days from today until a date (negative when past)
+export const daysLeft = (end: string | null) => (end ? Math.round((Date.parse(end) - Date.parse(today())) / 86400_000) : null);

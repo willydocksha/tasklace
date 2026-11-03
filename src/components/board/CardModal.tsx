@@ -9,12 +9,13 @@ import { cardHelpers, useBoard } from "./context";
 
 export function CardModal({ card, onClose }: { card: Card; onClose: () => void }) {
   const { data, mutate, openCard, user } = useBoard();
-  const { childrenOf, progress, isDone } = cardHelpers(data);
+  const { childrenOf, progress, isDone, keyOf, points } = cardHelpers(data);
   const [title, setTitle] = useState(card.title);
   const [desc, setDesc] = useState(card.description);
   const [editingDesc, setEditingDesc] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
   const [text, setText] = useState("");
+  const [pts, setPts] = useState(card.points?.toString() ?? "");
 
   const patch = (p: Record<string, unknown>) => mutate(() => api(`/api/cards/${card.id}`, "PATCH", p));
   const loadComments = useCallback(() => api<Comment[]>(`/api/cards/${card.id}/comments`).then(setComments), [card.id]);
@@ -23,6 +24,7 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
     setTitle(card.title);
     setDesc(card.description);
     setEditingDesc(false);
+    setPts(card.points?.toString() ?? "");
     void loadComments();
   }, [card.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -51,6 +53,7 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
         <div className="flex-1">
           <input className="w-full rounded px-1 py-0.5 text-xl font-bold outline-none focus:ring-2 focus:ring-blue-400" value={title} onChange={(e) => setTitle(e.target.value)} onBlur={() => title.trim() && title !== card.title && patch({ title })} onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()} />
           <div className="px-1 text-xs text-slate-500">
+            <span className="mr-1.5 rounded bg-slate-100 px-1.5 py-0.5 font-semibold text-slate-600">{keyOf(card)}</span>
             di list <b>{data.lists.find((l) => l.id === card.list_id)?.name}</b>
             {isDone(card) && <span className="ml-2 rounded bg-green-100 px-1.5 text-green-700">✓ selesai</span>}
           </div>
@@ -100,7 +103,10 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
 
           {card.type === "epic" && (
             <div>
-              <span className={lbl}>Storyline epic ini · {prog.done}/{prog.total} selesai</span>
+              <span className={lbl}>
+                Storyline epic ini · {prog.done}/{prog.total} selesai
+                {points(kids).total > 0 && ` · ${points(kids).done}/${points(kids).total} poin`}
+              </span>
               <div className="mb-2 h-2 overflow-hidden rounded bg-slate-200">
                 <div className="h-full" style={{ width: `${prog.pct}%`, background: card.color ?? "#8b5cf6" }} />
               </div>
@@ -109,6 +115,7 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
                 {kids.map((k) => (
                   <button key={k.id} onClick={() => openCard(k.id)} className="flex w-full items-center gap-2 p-2 text-left text-sm hover:bg-slate-50">
                     <span style={{ color: TYPE_META[k.type].color }}>{TYPE_META[k.type].icon}</span>
+                    <span className="text-xs font-medium text-slate-500">{keyOf(k)}</span>
                     <span className={`flex-1 truncate ${isDone(k) ? "text-slate-400 line-through" : ""}`}>{k.title}</span>
                     <span className="rounded bg-slate-100 px-1.5 text-xs text-slate-600">{data.lists.find((l) => l.id === k.list_id)?.name}</span>
                   </button>
@@ -168,6 +175,38 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
                 {EPIC_COLORS.map((c) => (
                   <button key={c} onClick={() => patch({ color: c })} className={`h-6 w-6 rounded-full ${card.color === c ? "ring-2 ring-slate-800 ring-offset-2" : ""}`} style={{ background: c }} />
                 ))}
+              </div>
+            </div>
+          )}
+          {card.type !== "epic" && (
+            <div className="grid grid-cols-[1fr_80px] gap-2">
+              <div>
+                <span className={lbl}>Sprint</span>
+                <select className={sel} value={card.sprint_id ?? ""} onChange={(e) => patch({ sprint_id: e.target.value || null })}>
+                  <option value="">Backlog</option>
+                  {data.sprints
+                    .filter((s) => s.status !== "completed" || s.id === card.sprint_id)
+                    .map((s) => (
+                      <option key={s.id} value={s.id} disabled={s.status === "completed"}>
+                        {s.name}
+                        {s.status === "active" ? " (aktif)" : s.status === "completed" ? " (selesai)" : ""}
+                      </option>
+                    ))}
+                </select>
+              </div>
+              <div>
+                <span className={lbl}>Poin</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={999}
+                  className={sel}
+                  value={pts}
+                  placeholder="–"
+                  onChange={(e) => setPts(e.target.value)}
+                  onBlur={() => pts !== (card.points?.toString() ?? "") && patch({ points: pts === "" ? null : Number(pts) })}
+                  onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
+                />
               </div>
             </div>
           )}

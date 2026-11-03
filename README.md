@@ -6,10 +6,12 @@ Project board ala Trello/Jira/ClickUp yang **gratis**: tidak ada batas member, b
 
 - **Board** dengan 12 pilihan warna/gradient, deskripsi, dan template list (Backlog → To Do → In Progress → Review → Done)
 - **Kanban drag & drop**: geser kartu antar list dan urutkan list (di HP: tekan lama untuk drag)
-- **Kartu**: tipe Epic / Story / Task / Bug, prioritas, tanggal mulai & deadline, label berwarna, assignee, deskripsi, komentar
+- **Kartu / issue**: tipe Epic / Story / Task / Bug, kode issue ala Jira (`RJT-12`, kode bisa diganti di pengaturan board), story points, prioritas, tanggal mulai & deadline, label berwarna, assignee, deskripsi, komentar
+- **Sprint & Backlog**: buat sprint, isi dari backlog, mulai sprint (tanggal + sprint goal), selesaikan sprint dan pindahkan issue yang belum beres ke sprint berikutnya atau backlog, riwayat sprint dengan poin yang selesai. Board menampilkan banner sprint aktif (sisa hari, progress poin)
+- **List**: semua issue dalam tabel yang bisa diurutkan per kolom
 - **Storyline**: susun Epic → Story/Task, progress otomatis dari list yang ditandai "selesai", plus timeline (gantt) epic
 - **Member tanpa batas**: undang lewat link atau email, role owner / admin / member. Login memakai akun Rajutin sendiri (bukan Supabase Auth), jadi tidak kena batas MAU Supabase.
-- **Filter**: cari judul, filter tipe, "tugas saya"
+- **Filter**: cari judul atau kode issue, filter tipe, sprint, "tugas saya"
 - **Sinkron real-time** antar member lewat Supabase Realtime (fallback polling kalau belum diatur)
 
 ## Setup Supabase (sekali)

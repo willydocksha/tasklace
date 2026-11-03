@@ -98,6 +98,7 @@ function Look({ onClose }: { onClose: () => void }) {
   const { data, mutate, isAdmin } = useBoard();
   const [name, setName] = useState(data.board.name);
   const [desc, setDesc] = useState(data.board.description);
+  const [key, setKey] = useState(data.board.key);
   const patch = (p: Record<string, string>) => mutate(() => api(`/api/boards/${data.board.id}`, "PATCH", p));
   if (!isAdmin) return <p className="text-sm text-slate-500">Hanya admin board yang bisa mengubah tampilan.</p>;
   return (
@@ -111,6 +112,17 @@ function Look({ onClose }: { onClose: () => void }) {
         </div>
       </div>
       <input className="w-full rounded-md border px-3 py-2 text-sm" value={name} onChange={(e) => setName(e.target.value)} onBlur={() => name.trim() && name !== data.board.name && patch({ name })} placeholder="Nama board" />
+      <label className="flex items-center gap-2 text-sm text-slate-600">
+        Kode issue
+        <input
+          className="w-28 rounded-md border px-2 py-1.5 font-mono text-sm uppercase"
+          value={key}
+          maxLength={10}
+          onChange={(e) => setKey(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
+          onBlur={() => key !== data.board.key && patch({ key })}
+        />
+        <span className="text-xs text-slate-400">contoh: {key || "RJT"}-12</span>
+      </label>
       <textarea rows={2} className="w-full rounded-md border px-3 py-2 text-sm" value={desc} onChange={(e) => setDesc(e.target.value)} onBlur={() => desc !== data.board.description && patch({ description: desc })} placeholder="Deskripsi board" />
       {data.role === "owner" && (
         <button

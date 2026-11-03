@@ -16,6 +16,9 @@ export type Card = {
   start_date: string | null;
   due_date: string | null;
   position: number;
+  number: number;
+  points: number | null;
+  sprint_id: string | null;
   created_at: number;
   labels: string[];
   assignees: string[];
@@ -26,8 +29,19 @@ export type Board = {
   name: string;
   description: string;
   color: string;
+  key: string;
   invite_code: string;
   owner_id: string;
 };
-export type BoardData = { board: Board; lists: List[]; cards: Card[]; labels: Label[]; members: Member[]; role: string };
+export type SprintStatus = "planned" | "active" | "completed";
+export type Sprint = {
+  id: string;
+  name: string;
+  goal: string;
+  start_date: string | null;
+  end_date: string | null;
+  status: SprintStatus;
+  created_at: number;
+};
+export type BoardData = { board: Board; lists: List[]; cards: Card[]; labels: Label[]; members: Member[]; sprints: Sprint[]; role: string };
 export type Comment = { id: string; body: string; created_at: number; user_id: string; name: string; color: string };

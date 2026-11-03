@@ -7,13 +7,21 @@ import { api } from "@/lib/client";
 import { realtimeEnabled, useBoardChannel } from "@/lib/realtime";
 import { boardBg, TYPE_META } from "@/lib/theme";
 import type { BoardData, Card } from "@/lib/types";
+import { Backlog } from "./Backlog";
 import { CardModal } from "./CardModal";
-import { Ctx } from "./context";
+import { cardHelpers, Ctx, daysLeft } from "./context";
 import { Kanban } from "./Kanban";
+import { ListView } from "./ListView";
 import { Settings } from "./Settings";
 import { Storyline } from "./Storyline";
 
-type View = "board" | "storyline";
+type View = "board" | "backlog" | "list" | "storyline";
+const VIEWS: { id: View; label: string }[] = [
+  { id: "board", label: "▦ Board" },
+  { id: "backlog", label: "🏃 Backlog" },
+  { id: "list", label: "☰ List" },
+  { id: "storyline", label: "📚 Storyline" },
+];
 // realtime pushes changes; polling is only a fallback
 const POLL_MS = realtimeEnabled ? 60_000 : 4000;
 
@@ -25,6 +33,8 @@ export function BoardClient({ user, initial }: { user: User; initial: BoardData 
   const [q, setQ] = useState("");
   const [fType, setFType] = useState("");
   const [fMember, setFMember] = useState("");
+  // "" all, "active" current sprint, "none" backlog only, or a sprint id
+  const [fSprint, setFSprint] = useState("");
   const dragging = useRef(false);
 
   const refresh = useCallback(async () => {
@@ -66,7 +76,7 @@ export function BoardClient({ user, initial }: { user: User; initial: BoardData 
   useEffect(() => {
     try {
       const v = localStorage.getItem(`tb-view-${initial.board.id}`);
-      if (v === "board" || v === "storyline") setView(v);
+      if (VIEWS.some((x) => x.id === v)) setView(v as View);
     } catch {}
   }, [initial.board.id]);
   const switchView = (v: View) => {
@@ -76,11 +86,19 @@ export function BoardClient({ user, initial }: { user: User; initial: BoardData 
     } catch {}
   };
 
-  const visible = (c: Card) =>
-    (!q || c.title.toLowerCase().includes(q.toLowerCase())) && (!fType || c.type === fType) && (!fMember || c.assignees.includes(fMember));
+  const activeSprint = data.sprints.find((s) => s.status === "active");
+  const { keyOf, points } = cardHelpers(data);
+  // search matches title or issue key (e.g. "rjt-12")
+  const matchQ = (c: Card) => !q || c.title.toLowerCase().includes(q.toLowerCase()) || keyOf(c).toLowerCase() === q.trim().toLowerCase();
+  const matchSprint = (c: Card) =>
+    !fSprint || (fSprint === "none" ? !c.sprint_id : fSprint === "active" ? !!activeSprint && c.sprint_id === activeSprint.id : c.sprint_id === fSprint);
+  const visible = (c: Card) => matchQ(c) && (!fType || c.type === fType) && (!fMember || c.assignees.includes(fMember)) && matchSprint(c);
   const openCard = data.cards.find((c) => c.id === openId);
   const isAdmin = data.role !== "member";
-  const filtering = !!(q || fType || fMember);
+  const filtering = !!(q || fType || fMember || fSprint);
+  const sprintCards = activeSprint ? data.cards.filter((c) => c.sprint_id === activeSprint.id) : [];
+  const sprintPts = points(sprintCards);
+  const sprintLeft = daysLeft(activeSprint?.end_date ?? null);
 
   return (
     <Ctx.Provider value={{ data, user, refresh, mutate, openCard: setOpenId, isAdmin }}>
@@ -89,9 +107,9 @@ export function BoardClient({ user, initial }: { user: User; initial: BoardData 
         <div className="flex flex-wrap items-center gap-2 bg-black/15 px-3 py-2 text-white sm:px-4">
           <h1 className="mr-2 text-lg font-bold drop-shadow">{data.board.name}</h1>
           <div className="flex rounded-lg bg-black/20 p-0.5 text-sm">
-            {(["board", "storyline"] as View[]).map((v) => (
-              <button key={v} onClick={() => switchView(v)} className={`rounded-md px-3 py-1 ${view === v ? "bg-white font-medium text-slate-800" : "hover:bg-white/15"}`}>
-                {v === "board" ? "▦ Board" : "📚 Storyline"}
+            {VIEWS.map((v) => (
+              <button key={v.id} onClick={() => switchView(v.id)} className={`rounded-md px-2.5 py-1 whitespace-nowrap ${view === v.id ? "bg-white font-medium text-slate-800" : "hover:bg-white/15"}`}>
+                {v.label}
               </button>
             ))}
           </div>
@@ -106,7 +124,15 @@ export function BoardClient({ user, initial }: { user: User; initial: BoardData 
               <option value={user.id}>Tugas saya</option>
               {data.members.filter((m) => m.id !== user.id).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
             </select>
-            {filtering && <button onClick={() => (setQ(""), setFType(""), setFMember(""))} className="rounded-md px-2 py-1 hover:bg-white/20">Reset</button>}
+            {data.sprints.some((s) => s.status !== "completed") && (
+              <select value={fSprint} onChange={(e) => setFSprint(e.target.value)} className="rounded-md bg-white/20 px-1.5 py-1 [&>option]:text-slate-800">
+                <option value="">Semua sprint</option>
+                {activeSprint && <option value="active">Sprint aktif</option>}
+                {data.sprints.filter((s) => s.status === "planned").map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                <option value="none">Belum masuk sprint</option>
+              </select>
+            )}
+            {filtering && <button onClick={() => (setQ(""), setFType(""), setFMember(""), setFSprint(""))} className="rounded-md px-2 py-1 hover:bg-white/20">Reset</button>}
           </div>
           <div className="ml-auto flex items-center gap-2">
             <button onClick={() => setSettings(true)} className="flex -space-x-2" title="Member">
@@ -118,8 +144,27 @@ export function BoardClient({ user, initial }: { user: User; initial: BoardData 
             </button>
           </div>
         </div>
+        {activeSprint && view === "board" && (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 bg-black/25 px-4 py-1.5 text-xs text-white">
+            <b>🏃 {activeSprint.name}</b>
+            {sprintLeft !== null && <span>{sprintLeft < 0 ? `lewat ${-sprintLeft} hari` : `${sprintLeft} hari lagi`}</span>}
+            <span>{sprintPts.done}/{sprintPts.total} poin</span>
+            <span className="h-1.5 w-24 overflow-hidden rounded bg-white/25">
+              <span className="block h-full bg-white" style={{ width: `${sprintPts.total ? (sprintPts.done / sprintPts.total) * 100 : 0}%` }} />
+            </span>
+            {activeSprint.goal && <span className="truncate opacity-80">🎯 {activeSprint.goal}</span>}
+            <button onClick={() => setFSprint(fSprint === "active" ? "" : "active")} className="ml-auto rounded bg-white/20 px-2 py-0.5 hover:bg-white/30">
+              {fSprint === "active" ? "Tampilkan semua" : "Hanya sprint ini"}
+            </button>
+          </div>
+        )}
         {filtering && view === "board" && <div className="bg-amber-100 px-4 py-1 text-xs text-amber-800">Filter aktif, drag &amp; drop dimatikan sementara.</div>}
-        <div className="min-h-0 flex-1">{view === "board" ? <Kanban visible={visible} draggingRef={dragging} /> : <Storyline visible={visible} />}</div>
+        <div className="min-h-0 flex-1">
+          {view === "board" && <Kanban visible={visible} draggingRef={dragging} />}
+          {view === "backlog" && <Backlog visible={visible} />}
+          {view === "list" && <ListView visible={visible} />}
+          {view === "storyline" && <Storyline visible={visible} />}
+        </div>
       </div>
       {openCard && <CardModal card={openCard} onClose={() => setOpenId(null)} />}
       {settings && <Settings onClose={() => setSettings(false)} />}

@@ -86,6 +86,34 @@ create table if not exists comments (
   created_at bigint not null
 );
 
+-- sprints (jira-style): planned -> active -> completed
+create table if not exists sprints (
+  id text primary key,
+  board_id text not null references boards(id) on delete cascade,
+  name text not null,
+  goal text not null default '',
+  start_date text,
+  end_date text,
+  status text not null default 'planned',
+  created_at bigint not null
+);
+
+-- issue keys (RJT-12), story points, sprint membership
+alter table boards add column if not exists key text;
+alter table boards add column if not exists next_number integer not null default 1;
+alter table cards add column if not exists number integer;
+alter table cards add column if not exists points integer;
+alter table cards add column if not exists sprint_id text references sprints(id) on delete set null;
+
+-- backfill keys and numbers for rows created before these columns existed
+update boards set key = coalesce(nullif(upper(substr(regexp_replace(name, '[^A-Za-z]', '', 'g'), 1, 3)), ''), 'RJ') where key is null;
+update cards c set number = r.n
+  from (select id, row_number() over (partition by board_id order by created_at, id) as n from cards) r
+  where r.id = c.id and c.number is null;
+update boards b set next_number = m.n + 1
+  from (select board_id, max(number) as n from cards group by board_id) m
+  where m.board_id = b.id and b.next_number <= m.n;
+
 create index if not exists idx_sessions_user on sessions(user_id);
 create index if not exists idx_members_user on board_members(user_id);
 create index if not exists idx_cards_board on cards(board_id);
@@ -93,6 +121,8 @@ create index if not exists idx_cards_list on cards(list_id);
 create index if not exists idx_lists_board on lists(board_id);
 create index if not exists idx_labels_board on labels(board_id);
 create index if not exists idx_comments_card on comments(card_id);
+create index if not exists idx_sprints_board on sprints(board_id);
+create unique index if not exists idx_cards_number on cards(board_id, number);
 
 -- lock tables away from supabase's public rest api (anon key).
 -- the app connects as the postgres role, which bypasses rls.
@@ -106,3 +136,4 @@ alter table labels enable row level security;
 alter table card_labels enable row level security;
 alter table card_assignees enable row level security;
 alter table comments enable row level security;
+alter table sprints enable row level security;

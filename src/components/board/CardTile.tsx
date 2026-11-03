@@ -8,7 +8,7 @@ import { cardHelpers, formatDate, today, useBoard } from "./context";
 
 export function CardView({ card, overlay }: { card: Card; overlay?: boolean }) {
   const { data, openCard } = useBoard();
-  const { byId, isDone, progress } = cardHelpers(data);
+  const { byId, isDone, progress, keyOf } = cardHelpers(data);
   const t = TYPE_META[card.type];
   const epic = card.parent_id ? byId.get(card.parent_id) : undefined;
   const labels = data.labels.filter((l) => card.labels.includes(l.id));
@@ -54,6 +54,7 @@ export function CardView({ card, overlay }: { card: Card; overlay?: boolean }) {
         </div>
       )}
       <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
+        <span className={`font-medium ${done ? "line-through" : ""}`}>{keyOf(card)}</span>
         {card.priority !== "medium" && (
           <span className="rounded px-1 font-medium text-white" style={{ background: PRIORITY_META[card.priority].color }}>
             {PRIORITY_META[card.priority].label}
@@ -64,6 +65,11 @@ export function CardView({ card, overlay }: { card: Card; overlay?: boolean }) {
         )}
         {card.description && <span title="Ada deskripsi">≡</span>}
         {card.comment_count > 0 && <span>💬 {card.comment_count}</span>}
+        {card.points != null && (
+          <span title="Story points" className="rounded-full bg-slate-200 px-1.5 font-semibold text-slate-700">
+            {card.points}
+          </span>
+        )}
         <span className="ml-auto flex -space-x-1.5">
           {people.map((p) => (
             <Avatar key={p.id} name={p.name} color={p.color} size={22} ring />

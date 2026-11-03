@@ -6,7 +6,8 @@ type P = { id: string };
 const TEXT_FIELDS = ["title", "description", "color", "start_date", "due_date"] as const;
 const ENUMS = { type: ["epic", "story", "task", "bug"], priority: ["low", "medium", "high", "urgent"] } as const;
 
-type Patch = Partial<Record<(typeof TEXT_FIELDS)[number] | "type" | "priority" | "parent_id" | "list_id", string | null>> & {
+type Patch = Partial<Record<(typeof TEXT_FIELDS)[number] | "type" | "priority" | "parent_id" | "list_id" | "sprint_id", string | null>> & {
+  points?: number | null;
   labels?: string[];
   assignees?: string[];
 };
@@ -42,6 +43,22 @@ export const PATCH = route<P>(async ({ req, user, params }) => {
         await tx`update cards set list_id = ${b.list_id}, position = ${n} where id = ${params.id}`;
       }
     }
+    // story points: whole number 0-999, or empty
+    if (b.points !== undefined) {
+      const p = b.points === null ? null : Math.round(Number(b.points));
+      if (p !== null && !(p >= 0 && p <= 999)) throw new HttpError(400, "Story point harus 0-999");
+      await tx`update cards set points = ${p} where id = ${params.id}`;
+    }
+    // sprint must be open and on this board; epics stay out of sprints
+    if (b.sprint_id !== undefined) {
+      if (b.sprint_id) {
+        const [s] = await tx`select 1 from sprints where id = ${b.sprint_id} and board_id = ${boardId} and status <> 'completed'`;
+        if (!s) throw new HttpError(400, "Sprint tidak valid");
+      }
+      await tx`update cards set sprint_id = ${b.sprint_id || null} where id = ${params.id} and type <> 'epic'`;
+    }
+    // epics cannot belong to a sprint
+    if (b.type === "epic") await tx`update cards set sprint_id = null where id = ${params.id}`;
     // replace labels, keeping only labels of this board
     if (b.labels) {
       await tx`delete from card_labels where card_id = ${params.id}`;
