@@ -3,6 +3,7 @@ import Link from "next/link";
 import { api } from "@/lib/client";
 import type { User } from "@/lib/auth";
 import { Avatar } from "./Avatar";
+import { Logo } from "./Logo";
 
 export function TopBar({ user, dark }: { user: User; dark?: boolean }) {
   async function logout() {
@@ -11,8 +12,8 @@ export function TopBar({ user, dark }: { user: User; dark?: boolean }) {
   }
   return (
     <header className={`flex h-12 items-center gap-3 px-4 ${dark ? "bg-black/25 text-white backdrop-blur" : "bg-blue-700 text-white shadow-sm"}`}>
-      <Link href="/boards" className="flex items-center gap-2 font-bold">
-        <span>🧶</span> Tasklace
+      <Link href="/boards">
+        <Logo size={24} />
       </Link>
       <Link href="/boards" className="rounded px-2 py-1 text-sm hover:bg-white/20">
         Board saya
