@@ -29,7 +29,7 @@ function relative(iso: string, deadline: boolean) {
 }
 
 // date field with a calendar popover and quick picks
-export function DatePicker({ value, onChange, placeholder = "Pilih tanggal", deadline = false, min }: {
+export function DatePicker({ value, onChange, placeholder = "Pilih tanggal", deadline = false, min, disabled = false }: {
   value: string | null;
   onChange: (v: string | null) => void;
   placeholder?: string;
@@ -37,6 +37,7 @@ export function DatePicker({ value, onChange, placeholder = "Pilih tanggal", dea
   deadline?: boolean;
   // earliest selectable date (yyyy-mm-dd)
   min?: string | null;
+  disabled?: boolean;
 }) {
   const pop = usePopover({ placement: "bottom-start" });
   const [view, setView] = useState(() => (value ? fromISO(value) : todayDate()));
@@ -94,8 +95,9 @@ export function DatePicker({ value, onChange, placeholder = "Pilih tanggal", dea
         type="button"
         ref={pop.refs.setReference}
         data-open={pop.open}
+        disabled={disabled}
         onClick={() => pop.setOpen(!pop.open)}
-        className={`group flex h-9 w-full min-w-0 items-center gap-2 rounded-lg border bg-white px-2.5 text-left text-sm shadow-[0_1px_2px_rgba(15,23,42,0.05)] transition outline-none hover:border-slate-300 focus-visible:ring-3 focus-visible:ring-blue-200 data-[open=true]:border-blue-400 data-[open=true]:ring-3 data-[open=true]:ring-blue-100 ${overdue ? "border-red-200" : "border-slate-200"}`}
+        className={`group flex h-9 disabled:pointer-events-none disabled:opacity-60 disabled:shadow-none w-full min-w-0 items-center gap-2 rounded-lg border bg-white px-2.5 text-left text-sm shadow-[0_1px_2px_rgba(15,23,42,0.05)] transition outline-none hover:border-slate-300 focus-visible:ring-3 focus-visible:ring-blue-200 data-[open=true]:border-blue-400 data-[open=true]:ring-3 data-[open=true]:ring-blue-100 ${overdue ? "border-red-200" : "border-slate-200"}`}
       >
         <svg viewBox="0 0 20 20" className={`h-4 w-4 shrink-0 ${overdue ? "text-red-500" : "text-slate-400"}`} fill="none" stroke="currentColor" strokeWidth="1.7">
           <rect x="3" y="4.5" width="14" height="12.5" rx="2.5" />

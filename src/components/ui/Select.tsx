@@ -38,6 +38,7 @@ export function Select<V extends string>({
   menuWidth,
   placement,
   title,
+  disabled = false,
   className = "",
 }: {
   value: V;
@@ -51,6 +52,7 @@ export function Select<V extends string>({
   menuWidth?: number;
   placement?: "bottom-start" | "bottom-end";
   title?: string;
+  disabled?: boolean;
   className?: string;
 }) {
   const pop = usePopover({ placement, matchWidth: variant === "field" });
@@ -124,6 +126,7 @@ export function Select<V extends string>({
           pop.refs.setReference(el);
         }}
         title={title}
+        disabled={disabled}
         data-open={pop.open}
         onMouseDown={(e) => variant === "toolbar" && e.preventDefault()}
         onClick={() => pop.setOpen(!pop.open)}
@@ -133,7 +136,7 @@ export function Select<V extends string>({
             pop.setOpen(true);
           }
         }}
-        className={`group inline-flex min-w-0 items-center gap-1.5 text-left transition outline-none focus-visible:ring-3 focus-visible:ring-blue-200 ${TRIGGER[variant]} ${className}`}
+        className={`group inline-flex min-w-0 items-center gap-1.5 text-left transition outline-none focus-visible:ring-3 focus-visible:ring-blue-200 disabled:pointer-events-none disabled:opacity-60 disabled:shadow-none ${TRIGGER[variant]} ${className}`}
       >
         <span className="flex min-w-0 flex-1 items-center gap-1.5 truncate">
           {renderValue ? renderValue(current) : current ? (
@@ -145,7 +148,7 @@ export function Select<V extends string>({
             <span className={variant === "dark" ? "text-white/70" : "text-slate-400"}>{placeholder}</span>
           )}
         </span>
-        <svg viewBox="0 0 16 16" className={`h-3.5 w-3.5 shrink-0 opacity-60 transition group-data-[open=true]:rotate-180`} fill="none" stroke="currentColor" strokeWidth="2">
+        <svg viewBox="0 0 16 16" className={`h-3.5 w-3.5 shrink-0 opacity-60 transition group-disabled:hidden group-data-[open=true]:rotate-180`} fill="none" stroke="currentColor" strokeWidth="2">
           <path d="m4 6 4 4 4-4" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </button>

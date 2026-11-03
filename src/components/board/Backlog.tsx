@@ -183,10 +183,12 @@ function Row({ card }: { card: Card }) {
       </span>
       <select
         value={card.sprint_id ?? ""}
+        // done cards are locked
+        disabled={done}
         onClick={(e) => e.stopPropagation()}
         onChange={(e) => mutate(() => api(`/api/cards/${card.id}`, "PATCH", { sprint_id: e.target.value || null }))}
-        className="w-24 shrink-0 rounded border border-slate-200 bg-white px-1 py-0.5 text-xs text-slate-600"
-        title="Pindahkan ke sprint"
+        className="w-24 shrink-0 rounded border border-slate-200 bg-white px-1 py-0.5 text-xs text-slate-600 disabled:opacity-50"
+        title={done ? "Kartu selesai dikunci" : "Pindahkan ke sprint"}
       >
         <option value="">Backlog</option>
         {data.sprints

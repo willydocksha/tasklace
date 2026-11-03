@@ -86,6 +86,16 @@ create table if not exists comments (
   created_at bigint not null
 );
 
+-- card history: status moves and field edits, newest read first
+create table if not exists card_activity (
+  id text primary key,
+  card_id text not null references cards(id) on delete cascade,
+  user_id text references users(id) on delete set null,
+  kind text not null,
+  data jsonb not null default '{}',
+  created_at bigint not null
+);
+
 -- sprints (jira-style): planned -> active -> completed
 create table if not exists sprints (
   id text primary key,
@@ -180,6 +190,7 @@ create index if not exists idx_cards_list on cards(list_id);
 create index if not exists idx_lists_board on lists(board_id);
 create index if not exists idx_labels_board on labels(board_id);
 create index if not exists idx_comments_card on comments(card_id);
+create index if not exists idx_activity_card on card_activity(card_id, created_at);
 create index if not exists idx_sprints_board on sprints(board_id);
 create unique index if not exists idx_cards_number on cards(board_id, number);
 create index if not exists idx_team_members_user on team_members(user_id);
@@ -199,6 +210,7 @@ alter table labels enable row level security;
 alter table card_labels enable row level security;
 alter table card_assignees enable row level security;
 alter table comments enable row level security;
+alter table card_activity enable row level security;
 alter table sprints enable row level security;
 alter table teams enable row level security;
 alter table team_members enable row level security;

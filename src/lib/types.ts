@@ -46,3 +46,14 @@ export type Sprint = {
 };
 export type BoardData = { board: Board; lists: List[]; cards: Card[]; labels: Label[]; members: Member[]; sprints: Sprint[]; role: string };
 export type Comment = { id: string; body: string; created_at: number; user_id: string; name: string; color: string };
+
+// one entry of a card's history (see lib/activity.ts for kinds)
+export type Activity = {
+  id: string;
+  kind: string;
+  data: Record<string, unknown>;
+  created_at: number;
+  user_id: string | null;
+  name: string | null;
+  color: string | null;
+};

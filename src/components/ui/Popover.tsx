@@ -10,6 +10,8 @@ export function usePopover({ placement = "bottom-start", matchWidth = false }: {
     open,
     placement,
     strategy: "fixed",
+    // position with top/left: the entrance animation owns `transform`
+    transform: false,
     whileElementsMounted: autoUpdate,
     middleware: [
       offset(6),
@@ -52,12 +54,13 @@ export function PopoverPanel({ pop, children, className = "", onKeyDown }: {
   return createPortal(
     <div
       ref={pop.refs.setFloating}
-      // hidden until floating-ui has measured, so it never flashes at 0,0
+      // invisible until floating-ui has measured, so it never flashes at 0,0;
+      // the entrance animation starts only once the panel is in place
       style={{ ...pop.floatingStyles, opacity: pop.isPositioned ? undefined : 0 }}
       onKeyDown={onKeyDown}
       // keep clicks inside from reaching modal backdrops
       onMouseDown={(e) => e.stopPropagation()}
-      className={`z-[100] flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-800 shadow-[0_12px_40px_-8px_rgba(15,23,42,0.28)] ring-1 ring-black/[0.03] animate-[pop_120ms_ease-out] ${className}`}
+      className={`z-[100] flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-800 shadow-[0_12px_40px_-8px_rgba(15,23,42,0.28)] ring-1 ring-black/[0.03] ${pop.isPositioned ? "animate-[pop_120ms_ease-out]" : ""} ${className}`}
     >
       {children}
     </div>,

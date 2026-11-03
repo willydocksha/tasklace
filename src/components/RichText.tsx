@@ -75,21 +75,25 @@ const extensions = (placeholder: string, onTick: (node: PMNode, checked: boolean
 ];
 
 // markdown description: formatted view, click to edit with a toolbar
-export function RichText({ value, onSave, placeholder = "Tulis sesuatu…", empty = "Klik untuk menambah deskripsi…" }: {
+export function RichText({ value, onSave, placeholder = "Tulis sesuatu…", empty = "Klik untuk menambah deskripsi…", readOnly = false }: {
   value: string;
   onSave: (markdown: string) => void;
   placeholder?: string;
   empty?: string;
+  // view only: no editing, checklists cannot be ticked
+  readOnly?: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const save = useRef(onSave);
   save.current = onSave;
   const ed = useRef<Editor | null>(null);
+  const lockRef = useRef(readOnly);
+  lockRef.current = readOnly;
 
   // read-only tick: tiptap only reports it, so update the node and save here
   function tick(node: PMNode, checked: boolean) {
     const e = ed.current;
-    if (!e) return false;
+    if (!e || lockRef.current) return false;
     let pos = -1;
     e.state.doc.descendants((n, p) => {
       if (n === node) pos = p;
@@ -141,11 +145,11 @@ export function RichText({ value, onSave, placeholder = "Tulis sesuatu…", empt
   return (
     <div>
       <div
-        onClick={(e) => !editing && !(e.target as HTMLElement).closest("a, label, input") && start()}
-        className={editing ? "rounded-lg border border-blue-400 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05)] ring-3 ring-blue-100" : "min-h-16 cursor-text rounded-lg border border-transparent bg-slate-50 p-2.5 transition hover:border-slate-200 hover:bg-slate-100/70"}
+        onClick={(e) => !editing && !readOnly && !(e.target as HTMLElement).closest("a, label, input") && start()}
+        className={readOnly && !editing ? "min-h-16 rounded-lg bg-slate-50 p-2.5" : editing ? "rounded-lg border border-blue-400 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05)] ring-3 ring-blue-100" : "min-h-16 cursor-text rounded-lg border border-transparent bg-slate-50 p-2.5 transition hover:border-slate-200 hover:bg-slate-100/70"}
       >
         {editing && editor && <Toolbar editor={editor} />}
-        {!editing && isEmpty && <span className="text-sm text-slate-400">{empty}</span>}
+        {!editing && isEmpty && <span className="text-sm text-slate-400">{readOnly ? "Tidak ada deskripsi" : empty}</span>}
         <div onClick={(e) => editing && e.target === e.currentTarget && editor?.commands.focus("end")} className={editing ? "max-h-[60vh] min-h-40 cursor-text overflow-y-auto p-3" : isEmpty ? "hidden" : ""}>
           <EditorContent editor={editor} />
         </div>

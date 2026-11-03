@@ -1,3 +1,4 @@
+import { logActivity } from "@/lib/activity";
 import { body, HttpError, requireMember, route } from "@/lib/api";
 import { sql } from "@/lib/db";
 
@@ -52,8 +53,12 @@ export const PATCH = route<P>(async ({ req, user, params }) => {
         if (!t) throw new HttpError(400, "Sprint tujuan tidak valid");
         target = b.moveTo;
       }
-      await tx`update cards set sprint_id = ${target}
-        where sprint_id = ${params.id} and list_id not in (select id from lists where board_id = ${s.board_id} and is_done = 1)`;
+      const moved = await tx<{ id: string }[]>`update cards set sprint_id = ${target}
+        where sprint_id = ${params.id} and list_id not in (select id from lists where board_id = ${s.board_id} and is_done = 1)
+        returning id`;
+      // record the carry-over on each card
+      const [t] = target ? await tx<{ name: string }[]>`select name from sprints where id = ${target}` : [];
+      await logActivity(tx, user.id, moved.map((c) => ({ cardId: c.id, kind: "sprint" as const, data: { to: t?.name ?? null, auto: true } })));
       await tx`update sprints set status = 'completed' where id = ${params.id}`;
     }
   });

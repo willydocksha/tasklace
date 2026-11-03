@@ -7,7 +7,9 @@ import { DatePicker } from "@/components/ui/DatePicker";
 import { Select } from "@/components/ui/Select";
 import { api } from "@/lib/client";
 import { EPIC_COLORS, PRIORITY_META, TYPE_META, labelText } from "@/lib/theme";
-import type { Card, CardType, Comment, Priority } from "@/lib/types";
+import type { Activity, Card, CardType, Comment, Priority } from "@/lib/types";
+import { ActivityFeed } from "./ActivityFeed";
+import { StatusJourney } from "./StatusJourney";
 import { cardHelpers, useBoard } from "./context";
 
 export function CardModal({ card, onClose }: { card: Card; onClose: () => void }) {
@@ -15,26 +17,32 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
   const { childrenOf, progress, isDone, keyOf, points } = cardHelpers(data);
   const [title, setTitle] = useState(card.title);
   const [comments, setComments] = useState<Comment[]>([]);
-  const [text, setText] = useState("");
+  const [activity, setActivity] = useState<Activity[]>([]);
 
   const patch = (p: Record<string, unknown>) => mutate(() => api(`/api/cards/${card.id}`, "PATCH", p));
   const loadComments = useCallback(() => api<Comment[]>(`/api/cards/${card.id}/comments`).then(setComments), [card.id]);
+  const loadActivity = useCallback(() => api<Activity[]>(`/api/cards/${card.id}/activity`).then(setActivity), [card.id]);
 
   useEffect(() => {
     setTitle(card.title);
-    void loadComments();
   }, [card.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  // the card object changes after every save or realtime refresh: reload its history
+  useEffect(() => {
+    void loadComments();
+    void loadActivity();
+  }, [card, loadComments, loadActivity]);
 
   const toggle = (arr: string[], v: string) => (arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
   const epics = data.cards.filter((c) => c.type === "epic" && c.id !== card.id);
   const kids = card.type === "epic" ? childrenOf(card.id) : [];
   const prog = progress(card.id);
   const t = TYPE_META[card.type];
+  // done cards are read-only except for their status
+  const locked = isDone(card);
+  const doneLists = new Set(data.lists.filter((l) => l.is_done).map((l) => l.id));
 
-  async function sendComment() {
-    if (!text.trim()) return;
+  async function sendComment(text: string) {
     await api(`/api/cards/${card.id}/comments`, "POST", { text });
-    setText("");
     await loadComments();
     void mutate(async () => {});
   }
@@ -47,7 +55,7 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
       <div className="flex items-start gap-3 p-5 pb-2">
         <span className="mt-1.5 text-lg" style={{ color: t.color }}>{t.icon}</span>
         <div className="flex-1">
-          <input className="w-full rounded px-1 py-0.5 text-xl font-bold outline-none focus:ring-2 focus:ring-blue-400" value={title} onChange={(e) => setTitle(e.target.value)} onBlur={() => title.trim() && title !== card.title && patch({ title })} onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()} />
+          <input readOnly={locked} className="w-full rounded px-1 py-0.5 text-xl font-bold outline-none read-only:cursor-default focus:ring-2 focus:ring-blue-400 read-only:focus:ring-0" value={title} onChange={(e) => setTitle(e.target.value)} onBlur={() => title.trim() && title !== card.title && patch({ title })} onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()} />
           <div className="px-1 text-xs text-slate-500">
             <span className="mr-1.5 rounded bg-slate-100 px-1.5 py-0.5 font-semibold text-slate-600">{keyOf(card)}</span>
             di list <b>{data.lists.find((l) => l.id === card.list_id)?.name}</b>
@@ -57,6 +65,12 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
         <button onClick={onClose} className="rounded-full px-2.5 py-1 text-slate-500 hover:bg-slate-100">✕</button>
       </div>
 
+      {locked && (
+        <div className="mx-5 mb-1 flex items-center gap-2 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-800 ring-1 ring-green-200">
+          <svg viewBox="0 0 20 20" className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="4" y="9" width="12" height="8" rx="2" /><path d="M7 9V6.5a3 3 0 0 1 6 0V9" /></svg>
+          <span>Kartu ini sudah <b>selesai</b> dan dikunci. Ubah <b>Status</b> untuk membukanya lagi. Komentar tetap bisa ditambahkan.</span>
+        </div>
+      )}
       <div className="grid gap-6 p-5 pt-2 md:grid-cols-[1fr_250px]">
         <div className="min-w-0 space-y-5">
           <div className="flex flex-wrap gap-4">
@@ -82,7 +96,7 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
 
           <div>
             <span className={lbl}>Deskripsi</span>
-            <RichText key={card.id} value={card.description} onSave={(md) => void patch({ description: md })} placeholder="Tulis detail, acceptance criteria, catatan…" />
+            <RichText key={card.id} readOnly={locked} value={card.description} onSave={(md) => void patch({ description: md })} placeholder="Tulis detail, acceptance criteria, catatan…" />
           </div>
 
           {card.type === "epic" && (
@@ -109,31 +123,19 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
           )}
 
           <div>
-            <span className={lbl}>Aktivitas & komentar</span>
-            <div className="flex gap-2">
-              <Avatar name={user.name} color={user.color} size={30} />
-              <div className="flex-1 space-y-2">
-                <textarea rows={2} className="w-full resize-y rounded-lg border border-slate-200 bg-white p-2.5 text-sm shadow-[0_1px_2px_rgba(15,23,42,0.05)] transition outline-none placeholder:text-slate-400 hover:border-slate-300 focus:border-blue-400 focus:ring-3 focus:ring-blue-100" placeholder="Tulis komentar… (⌘Enter untuk kirim)" value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) void sendComment(); }} />
-                {text && <button onClick={sendComment} className="rounded-lg bg-blue-600 px-3.5 py-1.5 text-sm font-medium text-white shadow-sm hover:bg-blue-700">Kirim</button>}
-              </div>
-            </div>
-            <div className="mt-3 space-y-3">
-              {[...comments].reverse().map((c) => (
-                <div key={c.id} className="flex gap-2">
-                  <Avatar name={c.name} color={c.color} size={30} />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-xs"><b>{c.name}</b> <span className="text-slate-400">{new Date(c.created_at).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })}</span></div>
-                    <div className="mt-0.5 rounded-md bg-white p-2 text-sm whitespace-pre-wrap shadow-sm ring-1 ring-slate-200">{c.body}</div>
-                  </div>
-                </div>
-              ))}
+            <span className={lbl}>Perjalanan status</span>
+            <div className="rounded-xl border border-slate-200 bg-white p-4">
+              <StatusJourney card={card} lists={data.lists} activity={activity} />
             </div>
           </div>
+
+          <ActivityFeed activity={activity} comments={comments} user={user} doneLists={doneLists} onComment={sendComment} />
         </div>
 
         <aside className="space-y-3.5 self-start rounded-xl bg-slate-50/80 p-3.5 ring-1 ring-slate-200/70">
           <Field label="Tipe">
             <Select
+              disabled={locked}
               value={card.type}
               options={Object.entries(TYPE_META).map(([k, v]) => ({ value: k as CardType, label: v.label, icon: <TypeIcon color={v.color} icon={v.icon} /> }))}
               onChange={(v) => patch({ type: v, ...(v === "epic" ? { parent_id: null, color: card.color ?? EPIC_COLORS[0] } : {}) })}
@@ -149,6 +151,7 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
           {card.type !== "epic" ? (
             <Field label="Bagian dari epic">
               <Select
+                disabled={locked}
                 value={card.parent_id ?? ""}
                 searchable={epics.length > 6}
                 placeholder="Tidak ada"
@@ -163,7 +166,7 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
             <Field label="Warna epic">
               <div className="flex flex-wrap gap-1.5">
                 {EPIC_COLORS.map((c) => (
-                  <button key={c} onClick={() => patch({ color: c })} className={`h-6 w-6 rounded-full transition hover:scale-110 ${card.color === c ? "ring-2 ring-slate-800 ring-offset-2" : ""}`} style={{ background: c }} />
+                  <button key={c} disabled={locked} onClick={() => patch({ color: c })} className={`h-6 w-6 rounded-full transition hover:scale-110 ${card.color === c ? "ring-2 ring-slate-800 ring-offset-2" : ""}`} style={{ background: c }} />
                 ))}
               </div>
             </Field>
@@ -172,6 +175,7 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
             <div className="grid grid-cols-[1fr_96px] gap-2">
               <Field label="Sprint">
                 <Select
+                  disabled={locked}
                   value={card.sprint_id ?? ""}
                   options={[
                     { value: "", label: "Backlog", icon: <span className="text-slate-400">☰</span> },
@@ -189,12 +193,13 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
                 />
               </Field>
               <Field label="Poin">
-                <Stepper value={card.points} onChange={(v) => patch({ points: v })} />
+                <Stepper disabled={locked} value={card.points} onChange={(v) => patch({ points: v })} />
               </Field>
             </div>
           )}
           <Field label="Prioritas">
             <Select
+              disabled={locked}
               value={card.priority}
               options={Object.entries(PRIORITY_META).map(([k, v]) => ({ value: k as Priority, label: v.label, icon: <PriorityIcon level={k as Priority} color={v.color} /> }))}
               onChange={(v) => patch({ priority: v })}
@@ -202,10 +207,10 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
           </Field>
           <div className="grid grid-cols-2 gap-2 md:grid-cols-1">
             <Field label="Mulai">
-              <DatePicker value={card.start_date} onChange={(v) => patch({ start_date: v })} placeholder="Belum diatur" />
+              <DatePicker disabled={locked} value={card.start_date} onChange={(v) => patch({ start_date: v })} placeholder="Belum diatur" />
             </Field>
             <Field label="Deadline">
-              <DatePicker value={card.due_date} onChange={(v) => patch({ due_date: v })} placeholder="Belum diatur" deadline min={card.start_date} />
+              <DatePicker disabled={locked} value={card.due_date} onChange={(v) => patch({ due_date: v })} placeholder="Belum diatur" deadline min={card.start_date} />
             </Field>
           </div>
           <Field label="Label">
@@ -215,8 +220,9 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
                 return (
                   <button
                     key={l.id}
+                    disabled={locked}
                     onClick={() => patch({ labels: toggle(card.labels, l.id) })}
-                    className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition ${on ? "shadow-sm ring-2 ring-white ring-offset-1 ring-offset-slate-400" : "opacity-45 saturate-50 hover:opacity-90 hover:saturate-100"}`}
+                    className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition disabled:pointer-events-none ${on ? "shadow-sm ring-2 ring-white ring-offset-1 ring-offset-slate-400" : "opacity-45 saturate-50 hover:opacity-90 hover:saturate-100"}`}
                     style={{ background: l.color, color: labelText(l.color) }}
                   >
                     {on && <span>✓</span>}
@@ -231,7 +237,7 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
               {data.members.map((m) => {
                 const on = card.assignees.includes(m.id);
                 return (
-                  <button key={m.id} onClick={() => patch({ assignees: toggle(card.assignees, m.id) })} className={`flex w-full items-center gap-2 border-b border-slate-100 px-2 py-1.5 text-left text-sm transition last:border-0 ${on ? "bg-blue-50/70" : "hover:bg-slate-50"}`}>
+                  <button key={m.id} disabled={locked} onClick={() => patch({ assignees: toggle(card.assignees, m.id) })} className={`flex w-full items-center gap-2 border-b border-slate-100 px-2 py-1.5 text-left text-sm transition last:border-0 disabled:pointer-events-none ${on ? "bg-blue-50/70" : "hover:bg-slate-50"}`}>
                     <Avatar name={m.name} color={m.color} size={22} />
                     <span className="flex-1 truncate">{m.name}</span>
                     <span className={`flex h-4 w-4 items-center justify-center rounded border text-[10px] ${on ? "border-blue-600 bg-blue-600 text-white" : "border-slate-300"}`}>{on && "✓"}</span>
@@ -240,10 +246,10 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
               })}
             </div>
           </Field>
-          <button onClick={() => { if (confirm("Hapus kartu ini?")) { onClose(); void mutate(() => api(`/api/cards/${card.id}`, "DELETE")); } }} className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-red-100 bg-white py-2 text-sm font-medium text-red-600 transition hover:border-red-200 hover:bg-red-50">
+          {!locked && <button onClick={() => { if (confirm("Hapus kartu ini?")) { onClose(); void mutate(() => api(`/api/cards/${card.id}`, "DELETE")); } }} className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-red-100 bg-white py-2 text-sm font-medium text-red-600 transition hover:border-red-200 hover:bg-red-50">
             <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M4 6h12M8 6V4.5h4V6m-6 0 .7 10h6.6L14 6" strokeLinecap="round" strokeLinejoin="round" /></svg>
             Hapus kartu
-          </button>
+          </button>}
         </aside>
       </div>
     </Modal>
@@ -286,7 +292,7 @@ function PriorityIcon({ level, color }: { level: Priority; color: string }) {
 }
 
 // story points: -/+ buttons around a small number input
-function Stepper({ value, onChange }: { value: number | null; onChange: (v: number | null) => void }) {
+function Stepper({ value, onChange, disabled = false }: { value: number | null; onChange: (v: number | null) => void; disabled?: boolean }) {
   const [txt, setTxt] = useState(value?.toString() ?? "");
   useEffect(() => setTxt(value?.toString() ?? ""), [value]);
   // commit typed text: empty clears, otherwise clamp 0..999
@@ -298,9 +304,10 @@ function Stepper({ value, onChange }: { value: number | null; onChange: (v: numb
   const bump = (d: number) => onChange(Math.max(0, Math.min(999, (value ?? 0) + d)));
   const btn = "flex w-7 shrink-0 items-center justify-center text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 disabled:opacity-30";
   return (
-    <div className="flex h-9 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05)] focus-within:border-blue-400 focus-within:ring-3 focus-within:ring-blue-100">
-      <button type="button" className={btn} onClick={() => bump(-1)} disabled={!value} aria-label="Kurangi poin">−</button>
+    <div className={`flex h-9 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05)] focus-within:border-blue-400 focus-within:ring-3 focus-within:ring-blue-100 ${disabled ? "pointer-events-none opacity-60 shadow-none" : ""}`}>
+      <button type="button" className={btn} onClick={() => bump(-1)} disabled={disabled || !value} aria-label="Kurangi poin">−</button>
       <input
+        disabled={disabled}
         inputMode="numeric"
         className="w-0 flex-1 text-center text-sm font-medium outline-none placeholder:text-slate-300"
         value={txt}
@@ -309,7 +316,7 @@ function Stepper({ value, onChange }: { value: number | null; onChange: (v: numb
         onBlur={() => commit(txt)}
         onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
       />
-      <button type="button" className={btn} onClick={() => bump(1)} aria-label="Tambah poin">+</button>
+      <button type="button" className={btn} onClick={() => bump(1)} disabled={disabled} aria-label="Tambah poin">+</button>
     </div>
   );
 }
