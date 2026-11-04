@@ -30,7 +30,7 @@ const ICONS: Record<ThemeMode, React.ReactNode> = {
   ),
 };
 
-// board: when set (inside a board), shows a switcher after "Board saya"
+// board: when set (inside a board), shows a switcher after the logo
 export function TopBar({ user, dark, board }: { user: User; dark?: boolean; board?: { id: string; name: string; color: string } }) {
   const theme = useTheme();
   const menu = usePopover({ placement: "bottom-end" });
@@ -42,12 +42,11 @@ export function TopBar({ user, dark, board }: { user: User; dark?: boolean; boar
 
   return (
     <header className={`flex h-14 items-center gap-3 px-4 text-white ${dark ? "bg-black/25 backdrop-blur" : "bg-blue-700 shadow-sm dark:bg-[#141a26] dark:shadow-[0_1px_0_#262d3b]"}`}>
-      <Link href="/boards">
+      {/* logo doubles as the home link to the boards list */}
+      <Link href="/boards" title="Board saya" aria-label="Board saya" className="-ml-1.5 rounded-lg px-1.5 py-1 transition hover:bg-white/15">
         <Logo size={22} tone="dark" />
       </Link>
-      <Link href="/boards" className="rounded px-2 py-1 text-sm hover:bg-white/20">
-        Board saya
-      </Link>
+      {/* inside a board: "logo / board ▾" breadcrumb */}
       {board && <BoardSwitcher current={board} />}
 
       <div className="ml-auto flex items-center gap-1.5">
