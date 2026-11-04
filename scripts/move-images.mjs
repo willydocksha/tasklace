@@ -46,6 +46,15 @@ const TABLES = [
 // database size, for the before/after report
 const dbSize = async () => (await sql`select pg_size_pretty(pg_database_size(current_database())) as s`)[0].s;
 
+// the path columns come from db/schema.sql; stop early if it was not applied yet
+const [{ ready }] = await sql`select count(*) = 4 as ready from information_schema.columns
+  where column_name = 'path' and table_name in ('user_avatars', 'team_avatars', 'board_backgrounds', 'card_attachments')`;
+if (!ready) {
+  console.error("kolom path belum ada: jalankan dulu `npm run db:migrate` (atau deploy), lalu ulangi script ini");
+  await sql.end();
+  process.exit(1);
+}
+
 console.log(`ukuran database awal: ${await dbSize()}`);
 await ensureBucket();
 
