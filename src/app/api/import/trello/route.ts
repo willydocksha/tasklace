@@ -2,6 +2,7 @@ import { body, HttpError, route } from "@/lib/api";
 import { makeKey } from "@/lib/board";
 import { newId, sql } from "@/lib/db";
 import { decodeEmoji } from "@/lib/emoji";
+import { canCreateTeamBoard, policyOf } from "@/lib/permissions";
 import { slimTrello, TRELLO_BOARD_COLORS, TRELLO_LABEL_COLORS } from "@/lib/trello";
 
 const DONE_NAMES = /^(done|selesai|complete|completed|closed|finished)$/i;
@@ -10,8 +11,18 @@ const DONE_NAMES = /^(done|selesai|complete|completed|closed|finished)$/i;
 const idTime = (id: string) => (/^[0-9a-f]{8}/.test(id) ? parseInt(id.slice(0, 8), 16) * 1000 : Date.now());
 const day = (iso: string | null) => (iso && !Number.isNaN(Date.parse(iso)) ? new Date(iso).toISOString().slice(0, 10) : null);
 
-// creates a new board from a trello json export; the importer becomes the owner
+// creates a new board from a trello json export; the importer becomes the owner.
+// ?team=<id> places the board in that team (needs the team's "create board" right)
 export const POST = route(async ({ req, user }) => {
+  // check the team before parsing the (possibly large) export
+  const teamId = new URL(req.url).searchParams.get("team");
+  if (teamId) {
+    const [tm] = await sql<{ role: string; permissions: unknown }[]>`
+      select m.role, t.permissions from team_members m join teams t on t.id = m.team_id where m.team_id = ${teamId} and m.user_id = ${user.id}`;
+    if (!tm) throw new HttpError(404, "Tim tidak ditemukan");
+    if (!canCreateTeamBoard(tm.role, policyOf(tm.permissions))) throw new HttpError(403, "Kamu tidak punya izin membuat board di tim ini");
+  }
+
   let t;
   try {
     t = slimTrello(await body(req));
@@ -63,6 +74,7 @@ export const POST = route(async ({ req, user }) => {
     await tx`insert into boards (id, name, description, color, key, next_number, invite_code, owner_id, created_at)
       values (${boardId}, ${name}, ${decodeEmoji(t.desc).slice(0, 2000)}, ${color}, ${makeKey(name)}, ${next}, ${invite}, ${user.id}, ${Date.now()})`;
     await tx`insert into board_members (board_id, user_id, role) values (${boardId}, ${user.id}, 'owner')`;
+    if (teamId) await tx`insert into team_boards (team_id, board_id) values (${teamId}, ${boardId}) on conflict do nothing`;
 
     if (lists.length)
       await tx`insert into lists ${tx(lists.map((l, i) => ({ id: listIds.get(l.id)!, board_id: boardId, name: decodeEmoji(l.name).slice(0, 200) || "List", position: i, is_done: DONE_NAMES.test(l.name.trim()) ? 1 : 0 })))}`;

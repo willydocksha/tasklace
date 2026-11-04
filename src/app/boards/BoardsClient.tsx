@@ -51,7 +51,8 @@ export function BoardsClient({ user, openTeam }: { user: User; openTeam?: string
   const [photo, setPhoto] = useState<{ file: File; url: string } | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState("");
-  const [importing, setImporting] = useState(false);
+  // section being imported into ("" = personal, or a team id)
+  const [importing, setImporting] = useState<string | null>(null);
   const [managing, setManaging] = useState<string | null>(openTeam ?? null);
   const [newTeam, setNewTeam] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
@@ -97,16 +98,17 @@ export function BoardsClient({ user, openTeam }: { user: User; openTeam?: string
   }
 
   // read a trello json export in the browser, send only what tasklace needs
-  async function importTrello(file: File) {
-    setImporting(true);
+  async function importTrello(file: File, teamId: string) {
+    setImporting(teamId);
     try {
       const slim = slimTrello(JSON.parse(await file.text()));
-      const r = await api<{ id: string; cards: number; comments: number }>("/api/import/trello", "POST", slim);
+      const url = teamId ? `/api/import/trello?team=${encodeURIComponent(teamId)}` : "/api/import/trello";
+      const r = await api<{ id: string; cards: number; comments: number }>(url, "POST", slim);
       toast(`Import selesai: ${r.cards} kartu, ${r.comments} komentar.`, "success");
       router.push(`/b/${r.id}`);
     } catch (err) {
       toastError(err instanceof SyntaxError ? new Error("File bukan JSON yang valid") : err);
-      setImporting(false);
+      setImporting(null);
     }
   }
 
@@ -138,6 +140,16 @@ export function BoardsClient({ user, openTeam }: { user: User; openTeam?: string
   // new-board preview: the picked local photo, else the chosen scene or color
   const draftBg = form.background === "u" && photo ? `url("${photo.url}") center / cover no-repeat, ${boardBg(form.color)}` : boardBackground({ id: "", color: form.color, background: form.background });
   const tile = "flex h-28 items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-surface/60 text-sm text-slate-500 hover:border-blue-400 hover:text-blue-600";
+
+  // trello import tile for a section ("" = personal, or a team id)
+  const importTile = (teamId: string, tour?: boolean) => (
+    <label data-tour={tour ? "import" : undefined} className={`${tile} cursor-pointer flex-col gap-1 ${importing !== null ? "pointer-events-none opacity-60" : ""}`}>
+      {/* import label with upload icon */}
+      <span className="inline-flex items-center gap-1.5">{importing === teamId ? "Mengimpor…" : <><Icon name="upload" />Import dari Trello</>}</span>
+      <span className="px-4 text-center text-xs text-slate-400">Trello: menu board → Print, export, and share → Export as JSON</span>
+      <input type="file" accept=".json,application/json" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) void importTrello(f, teamId); }} />
+    </label>
+  );
 
   // a section's tiles, sortable by drag
   const grid = (sec: string, extra: React.ReactNode) => {
@@ -183,9 +195,12 @@ export function BoardsClient({ user, openTeam }: { user: User; openTeam?: string
             {grid(
               t.id,
               t.can_create_board && (
-                <button onClick={() => setCreating(t.id)} className={tile}>
-                  + Board baru di tim ini
-                </button>
+                <>
+                  <button onClick={() => setCreating(t.id)} className={tile}>
+                    + Board baru di tim ini
+                  </button>
+                  {importTile(t.id)}
+                </>
               ),
             )}
           </section>
@@ -199,12 +214,7 @@ export function BoardsClient({ user, openTeam }: { user: User; openTeam?: string
             <button data-tour="new-board" onClick={() => setCreating("")} className={tile}>
               + Buat board baru
             </button>
-            <label data-tour="import" className={`${tile} cursor-pointer flex-col gap-1 ${importing ? "pointer-events-none opacity-60" : ""}`}>
-              {/* import label with upload icon */}
-              <span className="inline-flex items-center gap-1.5">{importing ? "Mengimpor…" : <><Icon name="upload" />Import dari Trello</>}</span>
-              <span className="px-4 text-center text-xs text-slate-400">Trello: menu board → Print, export, and share → Export as JSON</span>
-              <input type="file" accept=".json,application/json" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) void importTrello(f); }} />
-            </label>
+            {importTile("", true)}
             </>,
           )}
         </section>
