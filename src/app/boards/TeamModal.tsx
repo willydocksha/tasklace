@@ -6,6 +6,7 @@ import { PhotoCropper } from "@/components/PhotoCropper";
 import { TeamAvatar } from "@/components/TeamAvatar";
 import { confirmDialog, promptDialog, toastError } from "@/components/ui/Dialog";
 import { Icon } from "@/components/ui/Icon";
+import { Select } from "@/components/ui/Select";
 import type { User } from "@/lib/auth";
 import { api } from "@/lib/client";
 import { isAdminRole, ROLE_LABEL, type Role, type TeamPolicy } from "@/lib/permissions";
@@ -115,11 +116,19 @@ export function TeamModal({ teamId, user, myBoards, onClose, onChanged }: { team
                   {m.role === "owner" || !admin ? (
                     <span className="text-xs text-slate-500">{ROLE_LABEL[m.role as Role] ?? m.role}</span>
                   ) : (
-                    <select value={m.role} title="Lihat tab Hak akses untuk arti tiap peran" onChange={(e) => run(() => api(`/api/teams/${teamId}/members/${m.id}`, "PATCH", { role: e.target.value }))} className="rounded border px-1 py-0.5 text-xs">
-                      <option value="admin">Admin</option>
-                      <option value="member">Member</option>
-                      <option value="viewer">Viewer</option>
-                    </select>
+                    <Select
+                      value={m.role}
+                      title="Lihat tab Hak akses untuk arti tiap peran"
+                      placement="bottom-end"
+                      menuWidth={240}
+                      className="!h-8 !w-28 shrink-0 text-xs"
+                      onChange={(role) => run(() => api(`/api/teams/${teamId}/members/${m.id}`, "PATCH", { role }))}
+                      options={[
+                        { value: "admin", label: "Admin", description: "Kelola member, aturan & board" },
+                        { value: "member", label: "Member", description: "Mengerjakan kartu" },
+                        { value: "viewer", label: "Viewer", description: "Hanya melihat" },
+                      ]}
+                    />
                   )}
                   {m.role !== "owner" && (admin || m.id === user.id) && (
                     <button
@@ -155,10 +164,13 @@ export function TeamModal({ teamId, user, myBoards, onClose, onChanged }: { team
               ))}
             </div>
             {admin && addable.length > 0 && (
-              <select value="" onChange={(e) => e.target.value && run(() => api(`/api/teams/${teamId}/boards`, "POST", { boardId: e.target.value }))} className="w-full rounded-md border px-2 py-1.5 text-sm">
-                <option value="">+ Tambahkan board ke tim…</option>
-                {addable.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
-              </select>
+              <Select
+                value=""
+                placeholder="+ Tambahkan board ke tim…"
+                searchable={addable.length > 6}
+                onChange={(boardId) => boardId && run(() => api(`/api/teams/${teamId}/boards`, "POST", { boardId }))}
+                options={addable.map((b) => ({ value: b.id, label: b.name }))}
+              />
             )}
           </>
         )}
@@ -200,24 +212,32 @@ export function TeamModal({ teamId, user, myBoards, onClose, onChanged }: { team
   );
 }
 
-// one policy row: a question and the allowed answers
+// one policy row: a question and the allowed answers (value, label, optional description)
 function PolicyRow<K extends keyof TeamPolicy>({ label, hint, value, options, disabled, onChange }: {
   label: string;
   hint: string;
   value: TeamPolicy[K];
-  options: [TeamPolicy[K], string][];
+  options: [TeamPolicy[K], string, string?][];
   disabled: boolean;
   onChange: (v: TeamPolicy[K]) => void;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 p-3">
+    <div className="flex items-center gap-4 px-3.5 py-3">
+      {/* question and hint */}
       <div className="min-w-0 flex-1">
         <div className="text-sm font-medium">{label}</div>
         <div className="text-xs text-slate-500">{hint}</div>
       </div>
-      <select disabled={disabled} value={String(value)} onChange={(e) => onChange(options.find(([v]) => String(v) === e.target.value)![0])} className="rounded-md border px-2 py-1 text-sm disabled:opacity-70">
-        {options.map(([v, l]) => <option key={String(v)} value={String(v)}>{l}</option>)}
-      </select>
+      {/* fixed-width picker so every row lines up; values are stringified for the select */}
+      <Select
+        disabled={disabled}
+        value={String(value)}
+        placement="bottom-end"
+        menuWidth={280}
+        className="!w-44 shrink-0"
+        onChange={(v) => onChange(options.find(([o]) => String(o) === v)![0])}
+        options={options.map(([v, l, d]) => ({ value: String(v), label: l, description: d }))}
+      />
     </div>
   );
 }
@@ -244,11 +264,11 @@ function Access({ policy, admin, onChange }: { policy: TeamPolicy; admin: boolea
         <div className="mb-1 text-sm font-semibold">Aturan untuk Member & Viewer</div>
         <p className="mb-2 text-xs text-slate-500">{admin ? "Berlaku untuk semua board di tim ini. Owner dan admin selalu bisa semuanya." : "Hanya admin tim yang bisa mengubah aturan ini."}</p>
         <div className="divide-y rounded-md border">
-          <PolicyRow<"createBoard"> label="Siapa yang bisa membuat board" hint="Board baru otomatis masuk ke tim ini" value={policy.createBoard} disabled={!admin} onChange={(v) => onChange({ createBoard: v })} options={[["admin", "Admin saja"], ["member", "Admin & member"]]} />
-          <PolicyRow<"createCard"> label="Siapa yang bisa membuat kartu" hint="Kartu, epic, story, task, bug" value={policy.createCard} disabled={!admin} onChange={(v) => onChange({ createCard: v })} options={[["member", "Admin & member"], ["admin", "Admin saja"]]} />
-          <PolicyRow<"editCard"> label="Siapa yang bisa mengubah kartu" hint="Termasuk memindah status, subtask, lampiran, hapus" value={policy.editCard} disabled={!admin} onChange={(v) => onChange({ editCard: v })} options={[["member", "Admin & semua member"], ["own", "Member: kartu sendiri / yang ditugaskan"], ["admin", "Admin saja"]]} />
-          <PolicyRow<"manageBoard"> label="Siapa yang bisa mengatur list, label & sprint" hint="Tambah/ubah kolom, label, sprint" value={policy.manageBoard} disabled={!admin} onChange={(v) => onChange({ manageBoard: v })} options={[["member", "Admin & member"], ["admin", "Admin saja"]]} />
-          <PolicyRow<"viewerComment"> label="Viewer boleh berkomentar" hint="Kalau tidak, viewer benar-benar hanya melihat" value={policy.viewerComment} disabled={!admin} onChange={(v) => onChange({ viewerComment: v })} options={[[true, "Boleh"], [false, "Tidak"]]} />
+          <PolicyRow<"createBoard"> label="Siapa yang bisa membuat board" hint="Board baru otomatis masuk ke tim ini" value={policy.createBoard} disabled={!admin} onChange={(v) => onChange({ createBoard: v })} options={[["admin", "Admin saja", "Member tidak bisa membuat board"], ["member", "Admin & member", "Semua member bisa membuat board"]]} />
+          <PolicyRow<"createCard"> label="Siapa yang bisa membuat kartu" hint="Kartu, epic, story, task, bug" value={policy.createCard} disabled={!admin} onChange={(v) => onChange({ createCard: v })} options={[["member", "Admin & member", "Semua member bisa membuat kartu"], ["admin", "Admin saja", "Member hanya mengerjakan kartu yang ada"]]} />
+          <PolicyRow<"editCard"> label="Siapa yang bisa mengubah kartu" hint="Termasuk memindah status, subtask, lampiran, hapus" value={policy.editCard} disabled={!admin} onChange={(v) => onChange({ editCard: v })} options={[["member", "Admin & member", "Member bisa mengubah semua kartu"], ["own", "Kartu sendiri", "Member hanya kartu buatannya / yang ditugaskan"], ["admin", "Admin saja", "Member tidak bisa mengubah kartu"]]} />
+          <PolicyRow<"manageBoard"> label="Siapa yang bisa mengatur list, label & sprint" hint="Tambah/ubah kolom, label, sprint" value={policy.manageBoard} disabled={!admin} onChange={(v) => onChange({ manageBoard: v })} options={[["member", "Admin & member", "Member bisa mengatur list, label & sprint"], ["admin", "Admin saja", "Struktur board hanya diatur admin"]]} />
+          <PolicyRow<"viewerComment"> label="Viewer boleh berkomentar" hint="Kalau tidak, viewer benar-benar hanya melihat" value={policy.viewerComment} disabled={!admin} onChange={(v) => onChange({ viewerComment: v })} options={[[true, "Boleh", "Viewer bisa menulis komentar"], [false, "Tidak", "Viewer hanya melihat"]]} />
         </div>
       </div>
     </>
