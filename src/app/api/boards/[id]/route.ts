@@ -2,6 +2,7 @@ import { body, HttpError, requireAdmin, requireMember, route } from "@/lib/api";
 import { loadBoard } from "@/lib/board";
 import { sql } from "@/lib/db";
 import { BOARD_COLORS, BOARD_ICONS, BOARD_SCENES } from "@/lib/theme";
+import { requireUnlinked } from "@/lib/workflow";
 
 type P = { id: string };
 
@@ -12,7 +13,7 @@ export const GET = route<P>(async ({ user, params }) => {
 
 export const PATCH = route<P>(async ({ req, user, params }) => {
   await requireAdmin(params.id, user.id);
-  const b = await body<{ name?: string; color?: string; description?: string; key?: string; background?: string | null; icon?: string | null }>(req);
+  const b = await body<{ name?: string; color?: string; description?: string; key?: string; background?: string | null; icon?: string | null; subtask_own_flow?: boolean; workflow_id?: null }>(req);
   if (b.name?.trim()) await sql`update boards set name = ${b.name.trim()} where id = ${params.id}`;
   // picking a plain color also drops the background image
   if (b.color && BOARD_COLORS[b.color]) await sql`update boards set color = ${b.color}, background = null where id = ${params.id}`;
@@ -30,6 +31,13 @@ export const PATCH = route<P>(async ({ req, user, params }) => {
     await sql`update boards set key = ${key} where id = ${params.id}`;
   }
   if (b.description !== undefined) await sql`update boards set description = ${b.description} where id = ${params.id}`;
+  // subtasks follow the card flow or their own (not while a team workflow decides it)
+  if (b.subtask_own_flow !== undefined) {
+    await requireUnlinked(params.id);
+    await sql`update boards set subtask_own_flow = ${!!b.subtask_own_flow} where id = ${params.id}`;
+  }
+  // detach from the team workflow; lists keep their current settings
+  if (b.workflow_id === null) await sql`update boards set workflow_id = null where id = ${params.id}`;
 });
 
 export const DELETE = route<P>(async ({ user, params }) => {

@@ -325,3 +325,26 @@ create table if not exists board_backgrounds (
   updated_at bigint not null
 );
 alter table board_backgrounds enable row level security;
+
+-- subtask flow: which lists subtasks may use, and an optional flow of their own
+alter table lists add column if not exists subtask boolean not null default true;
+alter table lists add column if not exists subtask_next_ids text[];
+-- false = subtasks follow the card flow (limited to subtask lists), true = lists.subtask_next_ids
+alter table boards add column if not exists subtask_own_flow boolean not null default false;
+
+-- team workflows: one set of statuses + card/subtask flow, synced to every linked board.
+-- statuses is [{key, name, color, is_done, subtask, next: key[] | null, subtask_next: key[] | null}]
+create table if not exists workflows (
+  id text primary key,
+  team_id text not null references teams(id) on delete cascade,
+  name text not null,
+  statuses jsonb not null default '[]',
+  subtask_own_flow boolean not null default false,
+  created_at bigint not null,
+  updated_at bigint not null
+);
+create index if not exists idx_workflows_team on workflows(team_id);
+alter table workflows enable row level security;
+-- a board follows at most one workflow; each of its lists remembers which status it is
+alter table boards add column if not exists workflow_id text references workflows(id) on delete set null;
+alter table lists add column if not exists workflow_key text;

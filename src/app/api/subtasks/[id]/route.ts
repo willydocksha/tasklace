@@ -1,16 +1,17 @@
 import { DONE_LOCKED, logActivity } from "@/lib/activity";
 import { body, HttpError, requireCardEdit, route } from "@/lib/api";
 import { sql } from "@/lib/db";
-import { canMove, flowError } from "@/lib/flow";
+import { canMove, firstSubtaskList, flowError, subtaskFlow } from "@/lib/flow";
 
 type P = { id: string };
-type Row = { card_id: string; board_id: string; title: string; list_id: string | null; done: boolean };
+type Row = { card_id: string; board_id: string; title: string; list_id: string | null; done: boolean; own_flow: boolean };
 
 // the subtask with its card's board and done flag, after a membership check
 async function load(id: string, userId: string) {
   const [row] = await sql<Row[]>`
-    select s.card_id, c.board_id, s.title, s.list_id, l.is_done = 1 as done
-    from card_subtasks s join cards c on c.id = s.card_id join lists l on l.id = c.list_id where s.id = ${id}`;
+    select s.card_id, c.board_id, s.title, s.list_id, l.is_done = 1 as done, b.subtask_own_flow as own_flow
+    from card_subtasks s join cards c on c.id = s.card_id join lists l on l.id = c.list_id join boards b on b.id = c.board_id
+    where s.id = ${id}`;
   if (!row) throw new HttpError(404, "Subtask tidak ditemukan");
   await requireCardEdit(row.card_id, userId);
   // subtasks of a done card are locked like the card itself
@@ -46,10 +47,10 @@ export const PATCH = route<P>(async ({ req, user, params }) => {
     await sql`update card_subtasks set title = ${b.title.trim()} where id = ${params.id}`;
   }
   if (b.list_id) {
-    // a missing status counts as the first list
-    const lists = await sql<{ id: string; name: string; next_ids: string[] | null }[]>`
-      select id, name, next_ids from lists where board_id = ${s.board_id} order by position`;
-    const from = lists.find((l) => l.id === s.list_id) ?? lists[0];
+    // subtask view of the lists; a missing status counts as the first subtask list
+    const lists = subtaskFlow(await sql<{ id: string; name: string; position: number; next_ids: string[] | null; subtask: boolean; subtask_next_ids: string[] | null }[]>`
+      select id, name, position, next_ids, subtask, subtask_next_ids from lists where board_id = ${s.board_id} order by position`, s.own_flow);
+    const from = lists.find((l) => l.id === s.list_id) ?? firstSubtaskList(lists);
     const to = lists.find((l) => l.id === b.list_id);
     if (!to) throw new HttpError(400, "Status tidak valid");
     if (to.id === from?.id) return;

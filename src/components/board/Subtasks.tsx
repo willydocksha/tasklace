@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { confirmDialog } from "@/components/ui/Dialog";
 import { api } from "@/lib/client";
+import { firstSubtaskList, subtaskFlow } from "@/lib/flow";
 import type { Card, Subtask } from "@/lib/types";
 import { AssigneePicker } from "./AssigneePicker";
 import { NextStatus } from "./NextStatus";
@@ -71,7 +72,9 @@ function Row({ sub, locked }: { sub: Subtask; locked: boolean }) {
   const { data, mutate } = useBoard();
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(sub.title);
-  const listId = sub.list_id ?? [...data.lists].sort((a, b) => a.position - b.position)[0]?.id ?? null;
+  // subtasks see the lists through the board's subtask flow
+  const lists = subtaskFlow(data.lists, data.board.subtask_own_flow);
+  const listId = sub.list_id ?? firstSubtaskList(data.lists)?.id ?? null;
   const done = !!data.lists.find((l) => l.id === listId)?.is_done;
   const patch = (p: Record<string, unknown>) => mutate(() => api(`/api/subtasks/${sub.id}`, "PATCH", p));
 
@@ -93,7 +96,7 @@ function Row({ sub, locked }: { sub: Subtask; locked: boolean }) {
         <button title="Hapus subtask" onClick={async () => (await confirmDialog({ title: `Hapus subtask "${sub.title}"?`, danger: true })) && mutate(() => api(`/api/subtasks/${sub.id}`, "DELETE"))} aria-label="Hapus subtask" className="px-1 text-slate-300 opacity-0 transition group-hover:opacity-100 hover:text-red-600"><Icon name="x" className="h-3.5 w-3.5" /></button>
       )}
       <AssigneePicker variant="compact" value={sub.assignees} disabled={locked} onChange={(ids) => patch({ assignees: ids })} />
-      <NextStatus variant="pill" lists={data.lists} current={listId} disabled={locked} onMove={(id) => patch({ list_id: id })} />
+      <NextStatus variant="pill" lists={lists} current={listId} disabled={locked} onMove={(id) => patch({ list_id: id })} />
     </div>
   );
 }

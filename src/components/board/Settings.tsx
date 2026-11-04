@@ -10,6 +10,7 @@ import { uploadBoardBackground } from "@/lib/image";
 import { BackgroundPicker, IconPicker } from "@/components/BoardLook";
 import { useBoard } from "./context";
 import { Icon, type IconName } from "@/components/ui/Icon";
+import { FlowEditor, SubtaskStatusPicker, type FlowMap } from "@/components/FlowEditor";
 
 type Tab = "members" | "look" | "labels" | "flow";
 
@@ -266,78 +267,77 @@ function Labels() {
 }
 
 // status flow editor: per list, which lists a card may move to next
+// card flow and subtask flow of this board (read-only while a team workflow owns them)
 function Flow() {
   const { data, mutate, isAdmin } = useBoard();
+  const [mode, setMode] = useState<"card" | "subtask">("card");
   const lists = [...data.lists].sort((a, b) => a.position - b.position);
-  const setNext = (listId: string, next: string[] | null) => mutate(() => api(`/api/lists/${listId}`, "PATCH", { next_ids: next }));
+  const wf = data.board.workflow;
+  const edit = isAdmin && !wf;
+  const patch = (changes: FlowMap, field: "next_ids" | "subtask_next_ids") =>
+    mutate(() => Promise.all(Object.entries(changes).map(([id, next]) => api(`/api/lists/${id}`, "PATCH", { [field]: next }))));
 
-  // toggle one target; the first pick turns a free list into a restricted one
-  function toggle(listId: string, cur: string[] | null, target: string) {
-    const base = cur ?? [];
-    void setNext(listId, base.includes(target) ? base.filter((x) => x !== target) : [...base, target]);
-  }
+  // subtasks only see the statuses they use
+  const subLists = lists.filter((l) => l.subtask);
+  const own = data.board.subtask_own_flow;
 
-  // preset: each list only goes to the next one; the last list stays free
-  async function sequential() {
-    if (!(await confirmDialog({ title: "Atur alur berurutan?", message: "Alur mengikuti urutan list. Aturan yang ada akan diganti.", confirmLabel: "Terapkan" }))) return;
-    await mutate(() => Promise.all(lists.map((l, i) => api(`/api/lists/${l.id}`, "PATCH", { next_ids: i < lists.length - 1 ? [lists[i + 1].id] : null }))));
-  }
-
-  // preset: remove every rule
-  async function reset() {
-    if (!(await confirmDialog({ title: "Hapus semua aturan alur?", message: "Kartu bisa dipindah bebas lagi.", danger: true }))) return;
-    await mutate(() => Promise.all(lists.filter((l) => l.next_ids).map((l) => api(`/api/lists/${l.id}`, "PATCH", { next_ids: null }))));
+  // stop following the team workflow; the lists stay as they are
+  async function detach() {
+    if (!wf || !(await confirmDialog({ title: `Lepas dari Alur Kerja "${wf.name}"?`, message: "Status dan alur board ini tetap seperti sekarang, tapi tidak ikut berubah lagi kalau alur kerja tim diubah.", confirmLabel: "Lepas" }))) return;
+    await mutate(() => api(`/api/boards/${data.board.id}`, "PATCH", { workflow_id: null }));
   }
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-slate-500">
-        Tentukan dari setiap list, kartu boleh pindah ke list mana saja. List yang <b>bebas</b> boleh pindah ke mana pun.
-        {!isAdmin && " Hanya admin board yang bisa mengubah alur."}
-      </p>
-      {isAdmin && (
-        <div className="flex flex-wrap gap-2">
-          <button onClick={sequential} className="flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700"><Icon name="arrow-right" />Isi alur berurutan</button>
-          <button onClick={reset} className="rounded-md border px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50">Bebaskan semua</button>
+      {wf && (
+        <div className="flex items-start gap-2 rounded-md bg-blue-50 p-3 text-sm text-blue-800">
+          <Icon name="flow" className="mt-0.5 h-4 w-4 shrink-0" />
+          <div className="flex-1">
+            Status dan alur board ini diatur oleh Alur Kerja <b>{wf.name}</b> dari tim <b>{wf.team_name}</b>. Ubah di halaman Board saya → Kelola tim → Alur kerja.
+          </div>
+          {isAdmin && <button onClick={detach} className="shrink-0 rounded-md border border-blue-200 bg-white px-2 py-1 text-xs text-blue-700 hover:bg-blue-100">Lepas</button>}
         </div>
       )}
-      <div className="scroll-thin max-h-[50vh] space-y-2 overflow-y-auto">
-        {lists.map((l) => (
-          <div key={l.id} className="rounded-lg border p-3">
-            <div className="mb-2 flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-full" style={{ background: l.color ?? "#94a3b8" }} />
-              <b className="text-sm">{l.name}</b>
-              <span className="text-xs text-slate-400">boleh ke</span>
-              {isAdmin ? (
-                <label className="ml-auto flex items-center gap-1.5 text-xs text-slate-500">
-                  <input type="checkbox" checked={!l.next_ids} onChange={(e) => setNext(l.id, e.target.checked ? null : [])} />
-                  Bebas
-                </label>
-              ) : (
-                !l.next_ids && <span className="ml-auto text-xs text-slate-500">Bebas</span>
-              )}
-            </div>
-            {l.next_ids && (
-              <div className="flex flex-wrap gap-1.5">
-                {lists.filter((t) => t.id !== l.id).map((t) => {
-                  const on = l.next_ids!.includes(t.id);
-                  return (
-                    <button
-                      key={t.id}
-                      disabled={!isAdmin}
-                      onClick={() => toggle(l.id, l.next_ids, t.id)}
-                      className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs ${on ? "border-blue-600 bg-blue-600 text-white" : "text-slate-500 hover:bg-slate-50"} disabled:cursor-default`}
-                    >
-                      {on && <Icon name="check" className="h-3 w-3" />}{t.name}
-                    </button>
-                  );
-                })}
-                {!l.next_ids.length && <span className="text-xs text-amber-600">Kartu di list ini tidak bisa dipindah.</span>}
-              </div>
-            )}
-          </div>
+      {/* switch between the card flow and the subtask flow */}
+      <div className="inline-flex rounded-md border p-0.5 text-sm">
+        {([["card", "Alur kartu"], ["subtask", "Alur subtask"]] as const).map(([k, v]) => (
+          <button key={k} onClick={() => setMode(k)} className={`rounded px-3 py-1 ${mode === k ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-50"}`}>{v}</button>
         ))}
       </div>
+
+      {mode === "card" ? (
+        <>
+          <p className="text-sm text-slate-500">
+            Tentukan dari setiap list, kartu boleh pindah ke list mana saja. List yang <b>bebas</b> boleh pindah ke mana pun.
+            {!isAdmin && " Hanya admin board yang bisa mengubah alur."}
+          </p>
+          <div className="scroll-thin max-h-[50vh] overflow-y-auto">
+            <FlowEditor items={lists} next={Object.fromEntries(lists.map((l) => [l.id, l.next_ids]))} readOnly={!edit} onChange={(c) => patch(c, "next_ids")} />
+          </div>
+        </>
+      ) : (
+        <div className="scroll-thin max-h-[55vh] space-y-4 overflow-y-auto">
+          <div>
+            <div className="mb-1 text-sm font-semibold">Status yang dipakai subtask</div>
+            <p className="mb-2 text-xs text-slate-500">Status yang dicoret tidak muncul di pilihan status subtask. Subtask baru mulai di status pertama yang dipakai.</p>
+            <SubtaskStatusPicker items={lists} used={new Set(subLists.map((l) => l.id))} readOnly={!edit} onToggle={(id, on) => mutate(() => api(`/api/lists/${id}`, "PATCH", { subtask: on }))} />
+          </div>
+          <div>
+            <div className="mb-1.5 text-sm font-semibold">Perpindahan subtask</div>
+            <div className="space-y-1.5 text-sm">
+              <label className="flex items-start gap-2">
+                <input type="radio" className="mt-1" disabled={!edit} checked={!own} onChange={() => mutate(() => api(`/api/boards/${data.board.id}`, "PATCH", { subtask_own_flow: false }))} />
+                <span><b>Ikuti alur kartu</b><span className="block text-xs text-slate-500">Subtask pindah sesuai alur kartu, tapi hanya ke status yang dipakai subtask.</span></span>
+              </label>
+              <label className="flex items-start gap-2">
+                <input type="radio" className="mt-1" disabled={!edit} checked={own} onChange={() => mutate(() => api(`/api/boards/${data.board.id}`, "PATCH", { subtask_own_flow: true }))} />
+                <span><b>Alur sendiri</b><span className="block text-xs text-slate-500">Atur sendiri dari tiap status, subtask boleh pindah ke mana.</span></span>
+              </label>
+            </div>
+          </div>
+          {own && <FlowEditor noun="Subtask" items={subLists} next={Object.fromEntries(subLists.map((l) => [l.id, l.subtask_next_ids]))} readOnly={!edit} onChange={(c) => patch(c, "subtask_next_ids")} />}
+        </div>
+      )}
     </div>
   );
 }

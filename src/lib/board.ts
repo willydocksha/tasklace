@@ -21,10 +21,13 @@ export async function loadBoard(boardId: string, userId: string): Promise<BoardD
   const [[board], role, perms, lists, labels, members, rows, cardLabels, cardAssignees, sprints, subtasks] = await Promise.all([
     sql<BoardData["board"][]>`select id, name, description, color, background, icon,
       (select updated_at from board_backgrounds where board_id = boards.id) as photo,
-      key, invite_code, owner_id from boards where id = ${boardId}`,
+      key, invite_code, owner_id, subtask_own_flow,
+      (select json_build_object('id', w.id, 'name', w.name, 'team_id', t.id, 'team_name', t.name)
+        from workflows w join teams t on t.id = w.team_id where w.id = boards.workflow_id) as workflow
+      from boards where id = ${boardId}`,
     boardRole(boardId, userId),
     boardPerms(boardId, userId),
-    sql<BoardData["lists"]>`select id, name, position, is_done, color, next_ids from lists where board_id = ${boardId} order by position`,
+    sql<BoardData["lists"]>`select id, name, position, is_done, color, next_ids, subtask, subtask_next_ids, workflow_key from lists where board_id = ${boardId} order by position`,
     sql<BoardData["labels"]>`select id, name, color from labels where board_id = ${boardId} order by seq`,
     // direct members and team members, each with their best role
     sql<BoardData["members"]>`
@@ -85,22 +88,22 @@ export async function duplicateBoard(srcId: string, ownerId: string, name: strin
   const now = Date.now();
   await sql.begin(async (tx) => {
     // board row and owner membership
-    const [src] = await tx<{ description: string; color: string; background: string | null; icon: string | null; key: string; next_number: number }[]>`
-      select description, color, background, icon, key, next_number from boards where id = ${srcId}`;
-    await tx`insert into boards (id, name, description, color, background, icon, key, next_number, invite_code, owner_id, created_at)
-      values (${id}, ${name}, ${src.description}, ${src.color}, ${src.background}, ${src.icon}, ${src.key}, ${withCards ? src.next_number : 1}, ${invite}, ${ownerId}, ${now})`;
+    const [src] = await tx<{ description: string; color: string; background: string | null; icon: string | null; key: string; next_number: number; subtask_own_flow: boolean }[]>`
+      select description, color, background, icon, key, next_number, subtask_own_flow from boards where id = ${srcId}`;
+    await tx`insert into boards (id, name, description, color, background, icon, key, next_number, subtask_own_flow, invite_code, owner_id, created_at)
+      values (${id}, ${name}, ${src.description}, ${src.color}, ${src.background}, ${src.icon}, ${src.key}, ${withCards ? src.next_number : 1}, ${src.subtask_own_flow}, ${invite}, ${ownerId}, ${now})`;
     // the uploaded background photo comes along too
     await tx`insert into board_backgrounds (board_id, mime, data, thumb, updated_at)
       select ${id}, mime, data, thumb, updated_at from board_backgrounds where board_id = ${srcId}`;
     await tx`insert into board_members (board_id, user_id, role) values (${id}, ${ownerId}, 'owner')`;
 
     // lists with new ids, then the status flow remapped to them
-    const lists = await tx<{ id: string; name: string; position: number; is_done: number; color: string | null; next_ids: string[] | null }[]>`
-      select id, name, position, is_done, color, next_ids from lists where board_id = ${srcId}`;
+    const lists = await tx<{ id: string; name: string; position: number; is_done: number; color: string | null; next_ids: string[] | null; subtask: boolean; subtask_next_ids: string[] | null }[]>`
+      select id, name, position, is_done, color, next_ids, subtask, subtask_next_ids from lists where board_id = ${srcId}`;
     const listMap = new Map(lists.map((l) => [l.id, newId()]));
     const remap = (ids: string[] | null) => (ids ? ids.map((x) => listMap.get(x)).filter((x): x is string => !!x) : null);
     if (lists.length)
-      await tx`insert into lists ${tx(lists.map((l) => ({ id: listMap.get(l.id)!, board_id: id, name: l.name, position: l.position, is_done: l.is_done, color: l.color, next_ids: remap(l.next_ids) })))}`;
+      await tx`insert into lists ${tx(lists.map((l) => ({ id: listMap.get(l.id)!, board_id: id, name: l.name, position: l.position, is_done: l.is_done, color: l.color, next_ids: remap(l.next_ids), subtask: l.subtask, subtask_next_ids: remap(l.subtask_next_ids) })))}`;
 
     // labels, in their original order
     const labels = await tx<{ id: string; name: string; color: string }[]>`select id, name, color from labels where board_id = ${srcId} order by seq`;

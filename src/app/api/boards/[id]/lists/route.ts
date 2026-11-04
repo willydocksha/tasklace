@@ -1,8 +1,10 @@
 import { body, HttpError, requirePerm, route } from "@/lib/api";
 import { newId, sql } from "@/lib/db";
+import { requireUnlinked } from "@/lib/workflow";
 
 export const POST = route<{ id: string }>(async ({ req, user, params }) => {
   await requirePerm(params.id, user.id, "structure");
+  await requireUnlinked(params.id);
   const { name } = await body<{ name?: string }>(req);
   if (!name?.trim()) throw new HttpError(400, "Nama list wajib diisi");
   // append the new list at the end

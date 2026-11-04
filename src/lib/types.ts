@@ -7,7 +7,19 @@ export type Priority = "low" | "medium" | "high" | "urgent";
 export type Member = { id: string; name: string; email: string; color: string; avatar: string | null; role: string; direct: boolean };
 export type Label = { id: string; name: string; color: string };
 // next_ids: lists a card here may move to (null = any list)
-export type List = { id: string; name: string; position: number; is_done: number; color: string | null; next_ids: string[] | null };
+// subtask: subtasks may use this status; subtask_next_ids: subtask flow when the board has its own (null = any)
+// workflow_key: the team workflow status this list is synced from
+export type List = {
+  id: string;
+  name: string;
+  position: number;
+  is_done: number;
+  color: string | null;
+  next_ids: string[] | null;
+  subtask: boolean;
+  subtask_next_ids: string[] | null;
+  workflow_key: string | null;
+};
 export type Card = {
   id: string;
   list_id: string;
@@ -44,6 +56,10 @@ export type Board = {
   key: string;
   invite_code: string;
   owner_id: string;
+  // subtasks use their own flow instead of the card flow
+  subtask_own_flow: boolean;
+  // team workflow this board follows (statuses and flow are edited there)
+  workflow: { id: string; name: string; team_id: string; team_name: string } | null;
 };
 export type SprintStatus = "planned" | "active" | "completed";
 export type Sprint = {

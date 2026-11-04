@@ -3,6 +3,7 @@ import { boardPerms, body, HttpError, route } from "@/lib/api";
 import { sql } from "@/lib/db";
 import { canMove, flowError } from "@/lib/flow";
 import { canEditCard } from "@/lib/permissions";
+import { requireUnlinked } from "@/lib/workflow";
 
 // persists list order and/or the card order of specific lists after drag & drop
 export const PATCH = route<{ id: string }>(async ({ req, user, params }) => {
@@ -10,6 +11,8 @@ export const PATCH = route<{ id: string }>(async ({ req, user, params }) => {
   const b = await body<{ listIds?: string[]; lists?: { listId: string; cardIds: string[] }[] }>(req);
   // column order is board structure; card order needs some edit right
   if (b.listIds?.length && !perms.structure) throw new HttpError(403, "Kamu tidak punya izin mengatur urutan list");
+  // column order of a workflow board comes from the workflow
+  if (b.listIds?.length) await requireUnlinked(params.id);
   if (b.lists?.length && perms.editCard === "none") throw new HttpError(403, "Kamu hanya bisa melihat kartu di board ini");
   await sql.begin(async (tx) => {
     // reorder columns

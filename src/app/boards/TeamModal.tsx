@@ -10,6 +10,7 @@ import type { User } from "@/lib/auth";
 import { api } from "@/lib/client";
 import { isAdminRole, ROLE_LABEL, type Role, type TeamPolicy } from "@/lib/permissions";
 import { BoardBadge } from "@/components/BoardLook";
+import { WorkflowTab } from "./WorkflowTab";
 
 type Detail = {
   team: { id: string; name: string; avatar: string | null; invite_code: string | null; owner_id: string };
@@ -23,7 +24,7 @@ type MyBoard = { id: string; name: string; role: string };
 // manage a team: members, shared boards, name; changes call onChanged so the page reloads
 export function TeamModal({ teamId, user, myBoards, onClose, onChanged }: { teamId: string; user: User; myBoards: MyBoard[]; onClose: () => void; onChanged: () => void }) {
   const [d, setD] = useState<Detail | null>(null);
-  const [tab, setTab] = useState<"members" | "boards" | "access" | "settings">("members");
+  const [tab, setTab] = useState<"members" | "boards" | "workflows" | "access" | "settings">("members");
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [copied, setCopied] = useState(false);
@@ -71,9 +72,9 @@ export function TeamModal({ teamId, user, myBoards, onClose, onChanged }: { team
         <button onClick={onClose} className="rounded-full px-2.5 py-1 text-slate-500 hover:bg-slate-100" aria-label="Tutup"><Icon name="x" /></button>
       </div>
       <div className="flex gap-1 border-b px-4 text-sm">
-        {(["members", "boards", "access", "settings"] as const).map((t) => (
+        {(["members", "boards", "workflows", "access", "settings"] as const).map((t) => (
           <button key={t} onClick={() => setTab(t)} className={`-mb-px border-b-2 px-3 py-2 ${tab === t ? "border-blue-600 font-semibold text-blue-700" : "border-transparent text-slate-500"}`}>
-            {t === "members" ? `Member (${d.members.length})` : t === "boards" ? `Board (${d.boards.length})` : t === "access" ? "Hak akses" : "Pengaturan"}
+            {t === "members" ? `Member (${d.members.length})` : t === "boards" ? `Board (${d.boards.length})` : t === "workflows" ? "Alur kerja" : t === "access" ? "Hak akses" : "Pengaturan"}
           </button>
         ))}
       </div>
@@ -161,6 +162,8 @@ export function TeamModal({ teamId, user, myBoards, onClose, onChanged }: { team
             )}
           </>
         )}
+
+        {tab === "workflows" && <WorkflowTab teamId={teamId} admin={admin} boards={d.boards} onChanged={onChanged} />}
 
         {tab === "access" && <Access policy={d.policy} admin={admin} onChange={(p) => run(() => api(`/api/teams/${teamId}`, "PATCH", { policy: p }))} />}
 

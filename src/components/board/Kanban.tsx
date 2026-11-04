@@ -37,6 +37,8 @@ function buildColumns(lists: List[], cards: Card[]): Columns {
 
 export function Kanban({ visible, draggingRef }: { visible: (c: Card) => boolean; draggingRef: React.RefObject<boolean> }) {
   const { data, mutate, perms } = useBoard();
+  // a team workflow owns the columns of a linked board
+  const structure = perms.structure && !data.board.workflow;
   const [listOrder, setListOrder] = useState(() => data.lists.map((l) => l.id));
   const [cols, setCols] = useState(() => buildColumns(data.lists, data.cards));
   const [active, setActive] = useState<string | null>(null);
@@ -135,7 +137,7 @@ export function Kanban({ visible, draggingRef }: { visible: (c: Card) => boolean
             return <Column key={id} list={list} cards={cards} dragDisabled={filtering} blocked={blocked(id)} first={id === listOrder[0]} />;
           })}
         </SortableContext>
-        {perms.structure && <AddList />}
+        {structure && <AddList />}
       </div>
       <DragOverlay>
         {activeCard && <CardView card={activeCard} overlay />}
@@ -151,8 +153,9 @@ const listTint = (color: string | null) =>
 
 function Column({ list, cards, dragDisabled, blocked, first }: { list: List; cards: Card[]; dragDisabled: boolean; blocked: boolean; first: boolean }) {
   const { data, mutate, perms, canEdit } = useBoard();
-  // columns are board structure; cards move only when the user may edit them
-  const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({ id: "l:" + list.id, data: { type: "list" }, disabled: dragDisabled || !perms.structure });
+  // columns are board structure (owned by the team workflow when linked); cards move only when the user may edit them
+  const structure = perms.structure && !data.board.workflow;
+  const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({ id: "l:" + list.id, data: { type: "list" }, disabled: dragDisabled || !structure });
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(list.name);
   const menu = usePopover({ placement: "bottom-end" });
@@ -174,13 +177,13 @@ function Column({ list, cards, dragDisabled, blocked, first }: { list: List; car
         {editing ? (
           <input autoFocus className="w-full rounded border-2 border-blue-500 px-1.5 py-0.5 text-sm font-semibold" value={name} onChange={(e) => setName(e.target.value)} onBlur={rename} onKeyDown={(e) => e.key === "Enter" && rename()} onPointerDown={(e) => e.stopPropagation()} />
         ) : (
-          <h3 className={`flex-1 text-sm font-semibold ${perms.structure ? "cursor-grab" : ""}`} onClick={() => perms.structure && setEditing(true)}>
+          <h3 className={`flex-1 text-sm font-semibold ${structure ? "cursor-grab" : ""}`} onClick={() => structure && setEditing(true)}>
             {list.name}
             {list.is_done ? <span className="ml-1.5 rounded bg-green-100 px-1 text-[10px] font-medium text-green-700">DONE</span> : null}
           </h3>
         )}
         <span className="text-xs text-slate-500">{cards.length}</span>
-        {perms.structure && <button ref={menu.refs.setReference} onPointerDown={(e) => e.stopPropagation()} onClick={() => menu.setOpen(!menu.open)} className="rounded px-1.5 text-slate-500 hover:bg-slate-300">
+        {structure && <button ref={menu.refs.setReference} onPointerDown={(e) => e.stopPropagation()} onClick={() => menu.setOpen(!menu.open)} className="rounded px-1.5 text-slate-500 hover:bg-slate-300">
           ⋯
         </button>}
         <PopoverPanel pop={menu} className="w-60 py-1 text-sm">
@@ -205,7 +208,7 @@ function Column({ list, cards, dragDisabled, blocked, first }: { list: List; car
       </div>
       {/* status flow hint: where cards in this list can go next */}
       {list.next_ids && (
-        <div className="flex items-center gap-1 px-3 pb-1.5 text-[11px] text-slate-500" title="Alur status diatur admin board">
+        <div className="flex items-center gap-1 px-3 pb-1.5 text-[11px] text-slate-500" title={data.board.workflow ? `Alur status diatur Alur Kerja "${data.board.workflow.name}"` : "Alur status diatur admin board"}>
           <Icon name="arrow-right" className="h-3 w-3" />
           <span className="truncate">{list.next_ids.length ? data.lists.filter((l) => list.next_ids!.includes(l.id)).map((l) => l.name).join(", ") : "tidak bisa dipindah"}</span>
         </div>
