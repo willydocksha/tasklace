@@ -32,8 +32,8 @@ export function Storyline({ visible }: { visible: (c: Card) => boolean }) {
         <Timeline epics={epics} />
 
         {perms.createCard && <div className="flex gap-2 rounded-xl bg-surface/95 p-3 shadow-sm">
-          <label className="relative flex flex-1 items-center text-violet-500">
-            <Icon name="epic" className="pointer-events-none absolute left-3 h-4 w-4" />
+          <label className="relative flex flex-1 items-center">
+            <Icon name="epic" className="pointer-events-none absolute left-3 h-4 w-4 text-violet-600 dark:text-violet-300" />
             <input className="w-full rounded-md border py-2 pr-3 pl-9 text-sm" placeholder="Nama epic baru, mis. 'Checkout & Pembayaran'" value={newEpic} onChange={(e) => setNewEpic(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addEpic()} />
           </label>
           <button onClick={addEpic} className="rounded-md bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700 dark:hover:bg-violet-500">+ Epic</button>
