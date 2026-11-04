@@ -43,7 +43,7 @@ export function TopBar({ user, dark, board }: { user: User; dark?: boolean; boar
   return (
     <header className={`flex h-14 items-center gap-3 px-4 text-white ${dark ? "bg-black/25 backdrop-blur" : "bg-blue-700 shadow-sm dark:bg-[#141a26] dark:shadow-[0_1px_0_#262d3b]"}`}>
       {/* logo doubles as the home link to the boards list */}
-      <Link href="/boards" title="Board saya" aria-label="Board saya" className="-ml-1.5 rounded-lg px-1.5 py-1 transition hover:bg-white/15">
+      <Link href="/boards" title="Board saya" aria-label="Board saya" className="-ml-1.5 flex items-center rounded-lg px-1.5 py-1 transition hover:bg-white/15">
         <Logo size={22} tone="dark" />
       </Link>
       {/* inside a board: "logo / board ▾" breadcrumb */}
