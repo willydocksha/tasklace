@@ -19,6 +19,7 @@ import { Attachments } from "./Attachments";
 import { StatusJourney } from "./StatusJourney";
 import { Subtasks } from "./Subtasks";
 import { cardHelpers, useBoard } from "./context";
+import { Icon, type IconName } from "@/components/ui/Icon";
 
 // first-time walkthrough of the card detail
 const TOUR: TourStep[] = [
@@ -87,24 +88,24 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
       <div data-drag-handle className="sticky top-0 z-10 cursor-move rounded-t-xl bg-surface">
       <div className="h-2 rounded-t-xl" style={{ background: card.type === "epic" ? (card.color ?? t.color) : t.color }} />
       <div className="flex items-start gap-3 p-5 pb-2">
-        <span className="mt-1.5 text-lg" style={{ color: t.color }}>{t.icon}</span>
+        <span className="mt-2" style={{ color: t.color }}><Icon name={t.icon} className="h-5 w-5" /></span>
         <div className="min-w-0 flex-1" data-tour="card-title">
           {/* sized to its text so the rest of the header stays draggable */}
           <input readOnly={locked} className="field-sizing-content -ml-0.5 block max-w-full min-w-24 cursor-text rounded-md px-1.5 py-0.5 text-xl font-bold transition outline-none hover:bg-slate-100 focus:bg-surface focus:ring-2 focus:ring-blue-400 read-only:cursor-default read-only:hover:bg-transparent read-only:focus:ring-0" value={title} onChange={(e) => setTitle(e.target.value)} onBlur={() => title.trim() && title !== card.title && patch({ title })} onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()} />
           <div className="mt-1.5 px-1 text-xs text-slate-500">
             <span className="mr-1.5 rounded bg-slate-100 px-1.5 py-0.5 font-semibold text-slate-600">{keyOf(card)}</span>
             di list <b>{data.lists.find((l) => l.id === card.list_id)?.name}</b>
-            {isDone(card) && <span className="ml-2 rounded bg-green-100 px-1.5 text-green-700">✓ selesai</span>}
+            {isDone(card) && <span className="ml-2 inline-flex items-center gap-1 rounded bg-green-100 px-1.5 text-green-700"><Icon name="check" className="h-3 w-3" />selesai</span>}
           </div>
         </div>
         <ShareButton url={`${typeof window !== "undefined" ? window.location.origin : ""}/b/${data.board.id}?card=${keyOf(card)}`} />
-        <button onClick={onClose} className="rounded-full px-2.5 py-1 text-slate-500 hover:bg-slate-100">✕</button>
+        <button onClick={onClose} aria-label="Tutup" className="rounded-full p-1.5 text-slate-500 hover:bg-slate-100"><Icon name="x" /></button>
       </div>
       </div>
 
       {!editable && (
         <div className="mx-5 mb-1 flex items-center gap-2 rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-700 ring-1 ring-slate-200">
-          <span aria-hidden>👁️</span>
+          <Icon name="eye" className="h-4 w-4 text-slate-500" />
           <span>
             Kamu hanya bisa <b>melihat</b> kartu ini
             {perms.editCard === "own" ? ": di board ini kamu cuma bisa mengubah kartu yang kamu buat atau ditugaskan ke kamu." : "."}
@@ -167,7 +168,7 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
                 {kids.length === 0 && <div className="p-2.5 text-sm text-slate-400">Belum ada story. Hubungkan story ke epic ini dari kartunya, atau dari tab Storyline.</div>}
                 {kids.map((k) => (
                   <button key={k.id} onClick={() => openCard(k.id)} className="flex w-full items-center gap-2 p-2 text-left text-sm hover:bg-slate-50">
-                    <span style={{ color: TYPE_META[k.type].color }}>{TYPE_META[k.type].icon}</span>
+                    <span style={{ color: TYPE_META[k.type].color }}><Icon name={TYPE_META[k.type].icon} /></span>
                     <span className="text-xs font-medium text-slate-500">{keyOf(k)}</span>
                     <span className={`flex-1 truncate ${isDone(k) ? "text-slate-400 line-through" : ""}`}>{k.title}</span>
                     <span className="rounded bg-slate-100 px-1.5 text-xs text-slate-600">{data.lists.find((l) => l.id === k.list_id)?.name}</span>
@@ -238,7 +239,7 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
                   disabled={locked}
                   value={card.sprint_id ?? ""}
                   options={[
-                    { value: "", label: "Backlog", icon: <span className="text-slate-400">☰</span> },
+                    { value: "", label: "Backlog", icon: <Icon name="list" className="h-4 w-4 text-slate-400" /> },
                     ...data.sprints
                       .filter((s) => s.status !== "completed" || s.id === card.sprint_id)
                       .map((s) => ({
@@ -285,7 +286,7 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
                     className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition disabled:pointer-events-none ${on ? "shadow-sm ring-2 ring-surface ring-offset-1 ring-offset-slate-400" : "opacity-45 saturate-50 hover:opacity-90 hover:saturate-100"}`}
                     style={{ background: l.color, color: labelText(l.color) }}
                   >
-                    {on && <span>✓</span>}
+                    {on && <Icon name="check" className="h-3 w-3" />}
                     {l.name}
                   </button>
                 );
@@ -319,7 +320,7 @@ function ShareButton({ url }: { url: string }) {
   return (
     <button onClick={copy} title={url} className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium transition ${copied ? "bg-green-50 text-green-700" : "text-slate-600 hover:bg-slate-100"}`}>
       <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 11.5a3 3 0 0 0 4.2 0l2.6-2.6a3 3 0 0 0-4.2-4.2l-.9.9M11.5 8.5a3 3 0 0 0-4.2 0l-2.6 2.6a3 3 0 0 0 4.2 4.2l.9-.9" /></svg>
-      {copied ? "Link tersalin ✓" : "Bagikan"}
+      {copied ? "Link tersalin" : "Bagikan"}
     </button>
   );
 }
@@ -335,8 +336,8 @@ function Field({ label, children, tour }: { label: string; children: React.React
 }
 
 // issue type badge: emoji on a tinted square
-function TypeIcon({ color, icon }: { color: string; icon: string }) {
-  return <span className="flex h-5 w-5 items-center justify-center rounded text-[11px]" style={{ background: `${color}22`, color }}>{icon}</span>;
+function TypeIcon({ color, icon }: { color: string; icon: IconName }) {
+  return <span className="flex h-5 w-5 items-center justify-center rounded" style={{ background: `${color}22`, color }}><Icon name={icon} className="h-3.5 w-3.5" /></span>;
 }
 
 // list status dot: green when the list counts as done

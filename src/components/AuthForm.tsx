@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { api, ApiError } from "@/lib/client";
+import { Icon } from "@/components/ui/Icon";
 import { Logo } from "./Logo";
 
 type Provider = { id: string; label: string };
@@ -115,8 +116,9 @@ function BrandPanel() {
 
         <ul className="mt-8 flex flex-wrap gap-2 text-[13px] text-[#eff6ff]/90">
           {["Member tanpa batas", "Sprint & backlog", "Tim & multi-board", "Import dari Trello"].map((f) => (
-            <li key={f} className="rounded-full border border-white/15 bg-white/[0.06] px-3 py-1">
-              ✓ {f}
+            <li key={f} className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.06] px-3 py-1">
+              <Icon name="check" className="h-3.5 w-3.5" />
+              {f}
             </li>
           ))}
         </ul>
@@ -202,8 +204,9 @@ export function AuthForm({ mode, providers }: { mode: "login" | "register"; prov
           Kirim ulang email
         </button>
         {note && <p className="mt-3 text-sm text-slate-600">{note}</p>}
-        <Link href={`/login${nextQs}`} className="mt-4 inline-block text-sm font-medium text-blue-600 hover:text-blue-700">
-          ← Kembali ke halaman masuk
+        <Link href={`/login${nextQs}`} className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700">
+          <Icon name="arrow-left" />
+          Kembali ke halaman masuk
         </Link>
       </div>,
     );

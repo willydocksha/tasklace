@@ -7,6 +7,7 @@ import { api } from "@/lib/client";
 import { TYPE_META } from "@/lib/theme";
 import type { Card, Sprint } from "@/lib/types";
 import { cardHelpers, daysLeft, formatDate, today, useBoard } from "./context";
+import { Icon } from "@/components/ui/Icon";
 
 type Visible = (c: Card) => boolean;
 
@@ -51,7 +52,7 @@ export function Backlog({ visible }: { visible: Visible }) {
         {done.length > 0 && (
           <div className="rounded-xl bg-surface/95 shadow">
             <button onClick={() => setHistory(!history)} className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-semibold text-slate-700">
-              <span>{history ? "▾" : "▸"}</span> Riwayat sprint ({done.length})
+              <Icon name={history ? "chevron-down" : "chevron-right"} className="h-3.5 w-3.5" /> Riwayat sprint ({done.length})
             </button>
             {history && <History sprints={done} />}
           </div>
@@ -102,7 +103,7 @@ function Section({
             <div className="truncate text-xs text-slate-500">
               {sprint.start_date && `${formatDate(sprint.start_date)} – ${formatDate(sprint.end_date)}`}
               {left !== null && <span className={left < 0 ? "text-red-600" : ""}> · {left < 0 ? `lewat ${-left} hari` : `${left} hari lagi`}</span>}
-              {sprint.goal && ` · 🎯 ${sprint.goal}`}
+              {sprint.goal && <> · <Icon name="target" className="h-3 w-3" /> {sprint.goal}</>}
             </div>
           )}
         </div>
@@ -131,7 +132,7 @@ function Section({
                 onClick={async () => (await confirmDialog({ title: `Hapus ${sprint.name}?`, message: "Issue di dalamnya kembali ke backlog.", danger: true })) && mutate(() => api(`/api/sprints/${sprint.id}`, "DELETE"))}
                 className="rounded-md px-2 py-1 text-slate-400 hover:bg-red-50 hover:text-red-600"
               >
-                ✕
+                <Icon name="x" />
               </button>
             )}
           </div>
@@ -165,7 +166,7 @@ function Row({ card }: { card: Card }) {
   return (
     <div onClick={() => openCard(card.id)} className="flex cursor-pointer items-center gap-2 px-4 py-2 text-sm hover:bg-slate-50">
       <span style={{ color: t.color }} title={t.label}>
-        {t.icon}
+        <Icon name={t.icon} />
       </span>
       <span className={`shrink-0 text-xs font-medium text-slate-500 ${done ? "line-through" : ""}`}>{keyOf(card)}</span>
       <span className={`min-w-0 flex-1 truncate ${done ? "text-slate-400 line-through" : "text-slate-800"}`}>{card.title}</span>
@@ -225,7 +226,7 @@ function AddIssue({ sprintId }: { sprintId: string | null }) {
       <select value={type} onChange={(e) => setType(e.target.value)} className="rounded border border-slate-200 bg-surface px-1 py-1 text-sm">
         {(["story", "task", "bug"] as const).map((k) => (
           <option key={k} value={k}>
-            {TYPE_META[k].icon} {TYPE_META[k].label}
+            {TYPE_META[k].label}
           </option>
         ))}
       </select>

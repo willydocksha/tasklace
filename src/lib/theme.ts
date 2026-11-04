@@ -1,3 +1,5 @@
+import type { IconName } from "@/components/ui/Icon";
+
 // board backgrounds: solid colors and gradients
 export const BOARD_COLORS: Record<string, string> = {
   blue: "linear-gradient(135deg, #0c66e4, #0747a6)",
@@ -21,10 +23,10 @@ export const LABEL_COLORS = ["#4bce97", "#f5cd47", "#fea362", "#f87168", "#9f8fe
 export const EPIC_COLORS = ["#8b5cf6", "#3b82f6", "#14b8a6", "#22c55e", "#f59e0b", "#ef4444", "#ec4899", "#64748b"];
 
 export const TYPE_META = {
-  epic: { label: "Epic", color: "#8b5cf6", icon: "⚡" },
-  story: { label: "Story", color: "#22c55e", icon: "📖" },
-  task: { label: "Task", color: "#1e72e4", icon: "✔" },
-  bug: { label: "Bug", color: "#ef4444", icon: "🐞" },
+  epic: { label: "Epic", color: "#8b5cf6", icon: "epic" },
+  story: { label: "Story", color: "#22c55e", icon: "story" },
+  task: { label: "Task", color: "#1e72e4", icon: "task" },
+  bug: { label: "Bug", color: "#ef4444", icon: "bug" },
 } as const;
 
 export const PRIORITY_META = {

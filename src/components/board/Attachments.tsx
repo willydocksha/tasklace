@@ -4,6 +4,7 @@ import { confirmDialog } from "@/components/ui/Dialog";
 import { api } from "@/lib/client";
 import { uploadCardImage } from "@/lib/image";
 import type { Attachment, Card } from "@/lib/types";
+import { Icon } from "@/components/ui/Icon";
 
 type Pending = { key: string; name: string; step: string };
 
@@ -110,7 +111,7 @@ export function Attachments({ card, locked, onChanged }: { card: Card; locked: b
       {empty ? (
         // empty dropzone
         <button onClick={() => fileRef.current?.click()} className={`flex w-full flex-col items-center gap-1 rounded-xl border-2 border-dashed px-4 py-5 text-sm transition ${drag ? "border-blue-400 bg-blue-50 text-blue-700" : "border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50"}`}>
-          <span className="text-lg">🖼</span>
+          <Icon name="image" className="h-5 w-5" />
           <span><b className="font-medium">Pilih gambar</b>, tarik ke sini, atau tempel (Ctrl/⌘+V)</span>
           <span className="text-xs text-slate-400">Otomatis dikompres sebelum diunggah</span>
         </button>
@@ -128,7 +129,7 @@ export function Attachments({ card, locked, onChanged }: { card: Card; locked: b
               </span>
               {!locked && (
                 <button onClick={() => remove(a)} aria-label={`Hapus ${a.name}`} className="absolute top-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/55 text-xs text-white opacity-0 transition group-hover:opacity-100 hover:bg-red-600 focus:opacity-100">
-                  ✕
+                  <Icon name="x" className="h-3.5 w-3.5" />
                 </button>
               )}
             </div>
@@ -189,7 +190,7 @@ function Lightbox({ items, index, onIndex, onClose, onDelete }: {
         </div>
         <a href={`/api/attachments/${a.id}`} download={a.name} className={btn}>Unduh</a>
         {onDelete && <button onClick={() => onDelete(a)} className={`${btn} hover:bg-red-600`}>Hapus</button>}
-        <button onClick={onClose} aria-label="Tutup" className={`${btn} w-9 px-0`}>✕</button>
+        <button onClick={onClose} aria-label="Tutup" className={`${btn} w-9 px-0`}><Icon name="x" /></button>
       </div>
 
       {/* image + arrows */}

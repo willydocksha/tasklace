@@ -5,6 +5,7 @@ import { Avatar } from "@/components/Avatar";
 import { PRIORITY_META, TYPE_META, labelText } from "@/lib/theme";
 import type { Card } from "@/lib/types";
 import { cardHelpers, formatDate, subtaskProgress, today, useBoard } from "./context";
+import { Icon } from "@/components/ui/Icon";
 
 export function CardView({ card, overlay }: { card: Card; overlay?: boolean }) {
   const { data, openCard } = useBoard();
@@ -34,14 +35,15 @@ export function CardView({ card, overlay }: { card: Card; overlay?: boolean }) {
         </div>
       )}
       <div className={`flex gap-1.5 ${done ? "text-slate-500 line-through" : ""}`}>
-        <span title={t.label} className="mt-px text-xs" style={{ color: t.color }}>
-          {t.icon}
+        <span title={t.label} className="mt-0.5" style={{ color: t.color }}>
+          <Icon name={t.icon} className="h-3.5 w-3.5" />
         </span>
         <span className="break-words">{card.title}</span>
       </div>
       {epic && (
         <div className="mt-1.5 inline-flex max-w-full items-center gap-1 truncate rounded px-1.5 py-0.5 text-[11px] font-medium" style={{ background: (epic.color ?? "#8b5cf6") + "22", color: epic.color ?? "#8b5cf6" }}>
-          ⚡ {epic.title}
+          <Icon name="epic" className="h-3 w-3" />
+          <span className="truncate">{epic.title}</span>
         </div>
       )}
       {prog && prog.total > 0 && (
@@ -62,13 +64,13 @@ export function CardView({ card, overlay }: { card: Card; overlay?: boolean }) {
           </span>
         )}
         {card.due_date && (
-          <span className={`rounded px-1 ${done ? "bg-green-100 text-green-700" : overdue ? "bg-red-100 text-red-700" : ""}`}>🕒 {formatDate(card.due_date)}</span>
+          <span className={`inline-flex items-center gap-1 rounded px-1 ${done ? "bg-green-100 text-green-700" : overdue ? "bg-red-100 text-red-700" : ""}`}><Icon name="clock" className="h-3 w-3" />{formatDate(card.due_date)}</span>
         )}
-        {card.description && <span title="Ada deskripsi">≡</span>}
-        {card.comment_count > 0 && <span>💬 {card.comment_count}</span>}
-        {card.attachment_count > 0 && <span title="Lampiran">📎 {card.attachment_count}</span>}
+        {card.description && <span title="Ada deskripsi" className="inline-flex"><Icon name="text" className="h-3 w-3" /></span>}
+        {card.comment_count > 0 && <span className="inline-flex items-center gap-1"><Icon name="comment" className="h-3 w-3" />{card.comment_count}</span>}
+        {card.attachment_count > 0 && <span title="Lampiran" className="inline-flex items-center gap-1"><Icon name="paperclip" className="h-3 w-3" />{card.attachment_count}</span>}
         {subs.total > 0 && (
-          <span title="Subtask selesai" className={`rounded px-1 ${subs.done === subs.total ? "bg-green-100 text-green-700" : ""}`}>☑ {subs.done}/{subs.total}</span>
+          <span title="Subtask selesai" className={`inline-flex items-center gap-1 rounded px-1 ${subs.done === subs.total ? "bg-green-100 text-green-700" : ""}`}><Icon name="checklist" className="h-3 w-3" />{subs.done}/{subs.total}</span>
         )}
         {card.points != null && (
           <span title="Story points" className="rounded-full bg-slate-200 px-1.5 font-semibold text-slate-700">

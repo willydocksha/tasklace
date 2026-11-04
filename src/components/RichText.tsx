@@ -13,6 +13,7 @@ import { common, createLowlight } from "lowlight";
 import { useEffect, useRef, useState } from "react";
 import { Kbd, Select, type Option } from "@/components/ui/Select";
 import { promptDialog, toastError } from "@/components/ui/Dialog";
+import { Icon } from "@/components/ui/Icon";
 import { FORMATTABLE, formatCode } from "@/lib/codeFormat";
 
 const lowlight = createLowlight(common);
@@ -309,15 +310,15 @@ function Toolbar({ editor }: { editor: Editor }) {
       {btn(editor.isActive("underline"), () => c().toggleUnderline().run(), "Garis bawah (⌘U)", <u>U</u>)}
       {btn(editor.isActive("strike"), () => c().toggleStrike().run(), "Coret", <s>S</s>)}
       {btn(editor.isActive("code"), () => c().toggleCode().run(), "Kode inline", <span className="font-mono text-xs">{"</>"}</span>)}
-      {btn(editor.isActive("link"), link, "Link", "🔗")}
+      {btn(editor.isActive("link"), link, "Link", <Icon name="link" />)}
       {sep}
-      {btn(editor.isActive("bulletList"), () => c().toggleBulletList().run(), "Daftar titik", "•≡")}
-      {btn(editor.isActive("orderedList"), () => c().toggleOrderedList().run(), "Daftar angka", <span className="text-xs">1.≡</span>)}
-      {btn(editor.isActive("taskList"), () => c().toggleTaskList().run(), "Checklist", "☑")}
+      {btn(editor.isActive("bulletList"), () => c().toggleBulletList().run(), "Daftar titik", <Icon name="list" />)}
+      {btn(editor.isActive("orderedList"), () => c().toggleOrderedList().run(), "Daftar angka", <Icon name="list-ordered" />)}
+      {btn(editor.isActive("taskList"), () => c().toggleTaskList().run(), "Checklist", <Icon name="checklist" />)}
       {sep}
-      {btn(editor.isActive("blockquote"), () => c().toggleBlockquote().run(), "Kutipan", "❝")}
+      {btn(editor.isActive("blockquote"), () => c().toggleBlockquote().run(), "Kutipan", <Icon name="quote" />)}
       {btn(inCode, () => c().toggleCodeBlock().run(), "Blok kode", <span className="font-mono text-xs">{"{ }"}</span>)}
-      {btn(false, () => c().setHorizontalRule().run(), "Garis pemisah", "―")}
+      {btn(false, () => c().setHorizontalRule().run(), "Garis pemisah", <Icon name="rule" />)}
       {inCode && <CodeBar editor={editor} />}
     </div>
   );
@@ -351,7 +352,7 @@ function CodeBar({ editor }: { editor: Editor }) {
         variant="toolbar"
         searchable
         value={lang}
-        options={LANGS.map(([v, l]) => ({ value: v, label: l, hint: FORMATTABLE.has(v) ? <span className="text-[11px]">✨</span> : undefined }))}
+        options={LANGS.map(([v, l]) => ({ value: v, label: l, hint: FORMATTABLE.has(v) ? <Icon name="sparkles" className="h-3.5 w-3.5" /> : undefined }))}
         onChange={(v) => editor.chain().focus().updateAttributes("codeBlock", { language: v || null }).run()}
         menuWidth={220}
         title="Bahasa kode"
@@ -365,7 +366,7 @@ function CodeBar({ editor }: { editor: Editor }) {
         title={FORMATTABLE.has(lang) ? "Rapikan kode (⇧⌥F)" : "Pilih bahasa yang didukung: JSON, JS, TS, SQL, HTML, CSS, YAML"}
         className="flex h-7 items-center gap-1 rounded border border-slate-200 px-2 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-40"
       >
-        {busy ? "Merapikan…" : "✨ Format"}
+        {busy ? "Merapikan…" : <><Icon name="sparkles" className="h-3.5 w-3.5" />Format</>}
       </button>
       <span className="text-xs text-slate-400">Tab = indent, ⇧Tab = mundur</span>
       {err && <span className="w-full truncate text-xs text-red-600" title={err}>{err}</span>}

@@ -21,20 +21,35 @@ import { Kanban } from "./Kanban";
 import { ListView } from "./ListView";
 import { Settings } from "./Settings";
 import { Storyline } from "./Storyline";
+import { Icon } from "@/components/ui/Icon";
 
 type View = "board" | "backlog" | "list" | "storyline";
-const VIEWS: { id: View; label: string }[] = [
-  { id: "board", label: "▦ Board" },
-  { id: "backlog", label: "🏃 Backlog" },
-  { id: "list", label: "☰ List" },
-  { id: "storyline", label: "📚 Storyline" },
+// shared outline style so every tab icon matches
+function TabIcon({ d }: { d: string }) {
+  return (
+    <svg viewBox="0 0 20 20" className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <path d={d} />
+    </svg>
+  );
+}
+
+// tab label plus its outline icon path
+const VIEWS: { id: View; label: string; icon: string }[] = [
+  // kanban columns
+  { id: "board", label: "Board", icon: "M4.5 3.5h11a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1v-11a1 1 0 0 1 1-1ZM8 3.5v13M12 3.5v13" },
+  // stacked layers
+  { id: "backlog", label: "Backlog", icon: "M10 3 3 6.5 10 10l7-3.5L10 3ZM3 10l7 3.5 7-3.5M3 13.5 10 17l7-3.5" },
+  // bulleted rows
+  { id: "list", label: "List", icon: "M7.5 5.5h9M7.5 10h9M7.5 14.5h9M3.75 5.5h.01M3.75 10h.01M3.75 14.5h.01" },
+  // timeline bars
+  { id: "storyline", label: "Storyline", icon: "M3.5 3.5v13M6.5 6h6M8.5 10h8M6.5 14h5" },
 ];
 const ORDER_KEY = "tl-view-order";
 
 // first-visit walkthrough of a board
 const TOUR: TourStep[] = [
   {
-    title: "Ini board kamu 📋",
+    title: "Ini board kamu",
     body: "Board menampilkan semua pekerjaan proyek. Setiap kolom adalah satu tahap kerja, dan setiap kartu adalah satu tugas (tiket). Begini cara pakainya:",
   },
   { target: "list", placement: "right", title: "List = tahap kerja", body: "Kolom seperti To Do, In Progress dan Done menunjukkan status kartu. Klik nama list untuk mengganti nama, tombol ⋯ untuk warna atau menandainya sebagai list \"selesai\". Geser judul list untuk mengubah urutan kolom." },
@@ -85,7 +100,7 @@ function ViewTabs({ view, onSelect }: { view: View; onSelect: (v: View) => void 
 // one draggable tab
 function ViewTab({ id, active, onSelect }: { id: View; active: boolean; onSelect: (v: View) => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
-  const label = VIEWS.find((v) => v.id === id)!.label;
+  const { label, icon } = VIEWS.find((v) => v.id === id)!;
   return (
     <button
       ref={setNodeRef}
@@ -93,8 +108,9 @@ function ViewTab({ id, active, onSelect }: { id: View; active: boolean; onSelect
       {...listeners}
       onClick={() => onSelect(id)}
       style={{ transform: CSS.Translate.toString(transform), transition }}
-      className={`touch-none rounded-md px-2.5 py-1 whitespace-nowrap select-none ${active ? "bg-surface font-medium text-slate-800" : "hover:bg-white/15"} ${isDragging ? "relative z-10 cursor-grabbing shadow-lg ring-2 ring-white/60" : "cursor-pointer"}`}
+      className={`flex touch-none items-center gap-1.5 rounded-md px-2.5 py-1 whitespace-nowrap select-none ${active ? "bg-surface font-medium text-slate-800" : "hover:bg-white/15"} ${isDragging ? "relative z-10 cursor-grabbing shadow-lg ring-2 ring-white/60" : "cursor-pointer"}`}
     >
+      <TabIcon d={icon} />
       {label}
     </button>
   );
@@ -205,11 +221,18 @@ export function BoardClient({ user, initial }: { user: User; initial: BoardData 
           <h1 className="mr-2 text-lg font-bold drop-shadow">{data.board.name}</h1>
           <ViewTabs view={view} onSelect={switchView} />
           <div data-tour="filters" className="flex flex-wrap items-center gap-1.5 text-sm">
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="🔍 Cari kartu" className="h-8 w-40 rounded-lg bg-white/15 px-2.5 ring-1 ring-white/15 placeholder-white/70 outline-none transition focus:w-52 focus:bg-surface focus:text-slate-800 focus:placeholder-slate-400 focus:ring-blue-200" />
+            {/* search box with an outline magnifier that follows the text color */}
+            <label className="relative flex items-center text-white/70 focus-within:text-slate-400">
+              <svg viewBox="0 0 20 20" className="pointer-events-none absolute left-2.5 h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
+                <circle cx="8.75" cy="8.75" r="5.25" />
+                <path d="m12.75 12.75 3.75 3.75" />
+              </svg>
+              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari kartu" className="h-8 w-40 rounded-lg bg-white/15 pr-2.5 pl-8 text-white ring-1 ring-white/15 placeholder-white/70 outline-none transition focus:w-52 focus:bg-surface focus:text-slate-800 focus:placeholder-slate-400 focus:ring-blue-200" />
+            </label>
             <Select
               variant="dark"
               value={fType}
-              options={[{ value: "", label: "Semua tipe" }, ...Object.entries(TYPE_META).map(([k, v]) => ({ value: k, label: v.label, icon: <span style={{ color: v.color }}>{v.icon}</span> }))]}
+              options={[{ value: "", label: "Semua tipe" }, ...Object.entries(TYPE_META).map(([k, v]) => ({ value: k, label: v.label, icon: <span style={{ color: v.color }}><Icon name={v.icon} /></span> }))]}
               onChange={setFType}
               menuWidth={190}
             />
@@ -225,15 +248,21 @@ export function BoardClient({ user, initial }: { user: User; initial: BoardData 
               onChange={setFMember}
               menuWidth={220}
             />
-            {data.sprints.some((s) => s.status !== "completed") && (
+            {data.sprints.length > 0 && (
               <Select
                 variant="dark"
                 value={fSprint}
+                searchable={data.sprints.length > 6}
                 options={[
                   { value: "", label: "Semua sprint" },
                   ...(activeSprint ? [{ value: "active", label: "Sprint aktif", description: activeSprint.name, icon: <span className="block h-2 w-2 rounded-full bg-green-500" /> }] : []),
-                  ...data.sprints.filter((s) => s.status === "planned").map((s) => ({ value: s.id, label: s.name, icon: <span className="block h-2 w-2 rounded-full bg-slate-300" /> })),
-                  { value: "none", label: "Belum masuk sprint", icon: <span className="text-slate-400">☰</span> },
+                  ...data.sprints.filter((s) => s.status === "planned").map((s) => ({ value: s.id, label: s.name, group: "Direncanakan", icon: <span className="block h-2 w-2 rounded-full bg-slate-300" /> })),
+                  // completed sprints, newest first, so older work stays findable
+                  ...data.sprints
+                    .filter((s) => s.status === "completed")
+                    .sort((a, b) => b.created_at - a.created_at)
+                    .map((s) => ({ value: s.id, label: s.name, group: "Selesai", icon: <Icon name="check" className="h-3.5 w-3.5 text-green-600" /> })),
+                  { value: "none", label: "Belum masuk sprint", icon: <Icon name="list" className="h-4 w-4 text-slate-400" /> },
                 ]}
                 onChange={setFSprint}
                 menuWidth={220}
@@ -253,13 +282,13 @@ export function BoardClient({ user, initial }: { user: User; initial: BoardData 
         </div>
         {activeSprint && view === "board" && (
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 bg-black/25 px-4 py-1.5 text-xs text-white">
-            <b>🏃 {activeSprint.name}</b>
+            <b className="flex items-center gap-1"><Icon name="sprint" className="h-3.5 w-3.5" />{activeSprint.name}</b>
             {sprintLeft !== null && <span>{sprintLeft < 0 ? `lewat ${-sprintLeft} hari` : `${sprintLeft} hari lagi`}</span>}
             <span>{sprintPts.done}/{sprintPts.total} poin</span>
             <span className="h-1.5 w-24 overflow-hidden rounded bg-white/25">
               <span className="block h-full bg-white" style={{ width: `${sprintPts.total ? (sprintPts.done / sprintPts.total) * 100 : 0}%` }} />
             </span>
-            {activeSprint.goal && <span className="truncate opacity-80">🎯 {activeSprint.goal}</span>}
+            {activeSprint.goal && <span className="flex min-w-0 items-center gap-1 opacity-80"><Icon name="target" className="h-3.5 w-3.5" /><span className="truncate">{activeSprint.goal}</span></span>}
             <button onClick={() => setFSprint(fSprint === "active" ? "" : "active")} className="ml-auto rounded bg-white/20 px-2 py-0.5 hover:bg-white/30">
               {fSprint === "active" ? "Tampilkan semua" : "Hanya sprint ini"}
             </button>

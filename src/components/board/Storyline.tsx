@@ -6,6 +6,7 @@ import { plainText } from "@/lib/text";
 import { TYPE_META } from "@/lib/theme";
 import type { Card } from "@/lib/types";
 import { cardHelpers, formatDate, today, useBoard } from "./context";
+import { Icon } from "@/components/ui/Icon";
 
 const DAY = 86400_000;
 const toMs = (d: string) => new Date(d + "T00:00:00").getTime();
@@ -31,13 +32,16 @@ export function Storyline({ visible }: { visible: (c: Card) => boolean }) {
         <Timeline epics={epics} />
 
         {perms.createCard && <div className="flex gap-2 rounded-xl bg-surface/95 p-3 shadow-sm">
-          <input className="flex-1 rounded-md border px-3 py-2 text-sm" placeholder="⚡ Nama epic baru, mis. 'Checkout & Pembayaran'" value={newEpic} onChange={(e) => setNewEpic(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addEpic()} />
+          <label className="relative flex flex-1 items-center text-violet-500">
+            <Icon name="epic" className="pointer-events-none absolute left-3 h-4 w-4" />
+            <input className="w-full rounded-md border py-2 pr-3 pl-9 text-sm" placeholder="Nama epic baru, mis. 'Checkout & Pembayaran'" value={newEpic} onChange={(e) => setNewEpic(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addEpic()} />
+          </label>
           <button onClick={addEpic} className="rounded-md bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700 dark:hover:bg-violet-500">+ Epic</button>
         </div>}
 
         {epics.length === 0 && (
           <div className="rounded-xl bg-surface/95 p-6 text-center text-sm text-slate-600 shadow-sm">
-            <div className="mb-2 text-3xl">📚</div>
+            <Icon name="story" className="mx-auto mb-2 h-8 w-8 text-violet-500" />
             <b>Storyline</b> membantu kamu menyusun cerita produk: buat <b>Epic</b> (tujuan besar), lalu pecah jadi <b>Story</b> dan <b>Task</b>.
             <br />Progress epic dihitung otomatis dari story yang sudah masuk list &quot;selesai&quot;.
           </div>
@@ -75,7 +79,7 @@ function EpicBlock({ epic, index, visible }: { epic: Card; index: number; visibl
   return (
     <section className="overflow-hidden rounded-xl bg-surface shadow-sm">
       <div className="flex items-center gap-3 p-4" style={{ borderLeft: `6px solid ${color}` }}>
-        <button onClick={() => setOpen(!open)} className="text-slate-400">{open ? "▾" : "▸"}</button>
+        <button onClick={() => setOpen(!open)} aria-label={open ? "Tutup" : "Buka"} className="text-slate-400"><Icon name={open ? "chevron-down" : "chevron-right"} /></button>
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg font-bold text-white" style={{ background: color }}>{index}</div>
         <button onClick={() => openCard(epic.id)} className="min-w-0 flex-1 text-left">
           <div className={`truncate font-semibold ${isDone(epic) ? "line-through opacity-60" : ""}`}>{epic.title}</div>
@@ -109,7 +113,7 @@ function StoryRow({ card }: { card: Card }) {
   const done = isDone(card);
   return (
     <button onClick={() => openCard(card.id)} className="flex w-full items-center gap-2 py-2 text-left text-sm hover:bg-slate-50">
-      <span style={{ color: t.color }} title={t.label}>{t.icon}</span>
+      <span style={{ color: t.color }} title={t.label}><Icon name={t.icon} /></span>
       <span className={`min-w-0 flex-1 truncate ${done ? "text-slate-400 line-through" : ""}`}>{card.title}</span>
       {card.due_date && <span className={`text-xs ${!done && card.due_date < today() ? "text-red-600" : "text-slate-500"}`}>{formatDate(card.due_date)}</span>}
       <span className="flex -space-x-1.5">{people.map((m) => <Avatar key={m.id} name={m.name} color={m.color} src={m.avatar} size={20} ring />)}</span>
@@ -140,7 +144,7 @@ function Timeline({ epics }: { epics: Card[] }) {
 
   return (
     <section className="rounded-xl bg-surface p-4 shadow-sm">
-      <h3 className="mb-3 font-semibold text-slate-700">🗓️ Timeline epic</h3>
+      <h3 className="mb-3 flex items-center gap-2 font-semibold text-slate-700"><Icon name="calendar" className="h-4 w-4 text-slate-500" />Timeline epic</h3>
       <div className="relative">
         <div className="relative mb-1 h-5 text-[11px] text-slate-500">
           {months.map((m) => <span key={m.left} className="absolute" style={{ left: `${m.left}%` }}>{m.label}</span>)}

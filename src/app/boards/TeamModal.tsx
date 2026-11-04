@@ -5,6 +5,7 @@ import { Modal } from "@/components/Modal";
 import { PhotoCropper } from "@/components/PhotoCropper";
 import { TeamAvatar } from "@/components/TeamAvatar";
 import { confirmDialog, promptDialog, toastError } from "@/components/ui/Dialog";
+import { Icon } from "@/components/ui/Icon";
 import type { User } from "@/lib/auth";
 import { api } from "@/lib/client";
 import { isAdminRole, ROLE_LABEL, type Role, type TeamPolicy } from "@/lib/permissions";
@@ -67,7 +68,7 @@ export function TeamModal({ teamId, user, myBoards, onClose, onChanged }: { team
           <TeamAvatar name={d.team.name} src={d.team.avatar} size={32} />
           <span className="truncate">{d.team.name}</span>
         </h2>
-        <button onClick={onClose} className="rounded-full px-2.5 py-1 text-slate-500 hover:bg-slate-100">✕</button>
+        <button onClick={onClose} className="rounded-full px-2.5 py-1 text-slate-500 hover:bg-slate-100" aria-label="Tutup"><Icon name="x" /></button>
       </div>
       <div className="flex gap-1 border-b px-4 text-sm">
         {(["members", "boards", "access", "settings"] as const).map((t) => (
@@ -88,7 +89,8 @@ export function TeamModal({ teamId, user, myBoards, onClose, onChanged }: { team
                   <div className="flex gap-2">
                     <input readOnly value={link} className="flex-1 rounded-md border bg-slate-50 px-2 py-1.5 text-xs" onFocus={(e) => e.target.select()} />
                     <button onClick={() => navigator.clipboard.writeText(link).then(() => (setCopied(true), setTimeout(() => setCopied(false), 1500)))} className="rounded-md bg-blue-600 px-3 text-sm text-white">
-                      {copied ? "Tersalin ✓" : "Salin"}
+                      {/* copied state shows check icon */}
+                      {copied ? <span className="inline-flex items-center gap-1"><Icon name="check" className="h-3.5 w-3.5" />Tersalin</span> : "Salin"}
                     </button>
                   </div>
                   <button onClick={async () => (await confirmDialog({ title: "Buat link undangan baru?", message: "Link lama akan berhenti berlaku.", confirmLabel: "Buat link baru" })) && run(() => api(`/api/teams/${teamId}/invite`, "POST"))} className="mt-1.5 text-xs text-slate-500 underline">
@@ -122,9 +124,10 @@ export function TeamModal({ teamId, user, myBoards, onClose, onChanged }: { team
                     <button
                       title={m.id === user.id ? "Keluar dari tim" : "Keluarkan"}
                       onClick={async () => (await confirmDialog(m.id === user.id ? { title: "Keluar dari tim ini?", danger: true, confirmLabel: "Keluar" } : { title: `Keluarkan ${m.name} dari tim?`, danger: true, confirmLabel: "Keluarkan" })) && run(() => api(`/api/teams/${teamId}/members/${m.id}`, "DELETE")).then(() => m.id === user.id && onClose())}
+                      aria-label={m.id === user.id ? "Keluar dari tim" : "Keluarkan"}
                       className="rounded px-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
                     >
-                      ✕
+                      <Icon name="x" className="h-3.5 w-3.5" />
                     </button>
                   )}
                 </div>

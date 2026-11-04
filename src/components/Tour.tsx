@@ -145,7 +145,7 @@ export function Tour({ id, steps, seen, enabled = true, delay = 500 }: { id: str
           <div className="ml-auto flex gap-1.5">
             {i > 0 && <button onClick={back} className="rounded-lg px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100">Kembali</button>}
             <button autoFocus onClick={next} className="rounded-lg bg-blue-600 px-3.5 py-1.5 text-sm font-semibold text-white hover:bg-blue-700 dark:hover:bg-blue-500">
-              {i < live.length - 1 ? "Lanjut" : "Selesai 🎉"}
+              {i < live.length - 1 ? "Lanjut" : "Selesai"}
             </button>
           </div>
         </div>

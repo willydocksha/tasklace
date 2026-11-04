@@ -10,6 +10,7 @@ import { TeamAvatar } from "@/components/TeamAvatar";
 import { TopBar } from "@/components/TopBar";
 import { Tour, type TourStep } from "@/components/Tour";
 import { toast, toastError } from "@/components/ui/Dialog";
+import { Icon, type IconName } from "@/components/ui/Icon";
 import type { User } from "@/lib/auth";
 import { api } from "@/lib/client";
 import { isAdminRole, ROLE_LABEL, type Role } from "@/lib/permissions";
@@ -24,7 +25,7 @@ type Team = { id: string; name: string; avatar: string | null; role: string; mem
 // first-visit walkthrough of the boards page
 const TOUR: TourStep[] = [
   {
-    title: "Selamat datang di Tasklace 👋",
+    title: "Selamat datang di Tasklace",
     body: (
       <>
         Tasklace membantu tim mengatur pekerjaan. Isinya sederhana: <b>board</b> (papan proyek) berisi <b>list</b> (tahap kerja, mis. To Do → Done), dan list berisi <b>kartu</b> (satu tugas / tiket). Yuk lihat sebentar fitur-fiturnya.
@@ -145,7 +146,7 @@ export function BoardsClient({ user, openTeam }: { user: User; openTeam?: string
       <main className="mx-auto max-w-6xl space-y-8 p-4 sm:p-8">
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex-1">
-            <h1 className="mb-1 text-2xl font-bold">Halo, {user.name.split(" ")[0]} 👋</h1>
+            <h1 className="mb-1 text-2xl font-bold">Halo, {user.name.split(" ")[0]}</h1>
             <p className="text-slate-500">Semua board dan tim kamu. Undang member sebanyak apa pun, gratis.</p>
           </div>
           <button data-tour="new-team" onClick={() => setNewTeam(true)} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 dark:hover:bg-blue-500">
@@ -187,7 +188,8 @@ export function BoardsClient({ user, openTeam }: { user: User; openTeam?: string
               + Buat board baru
             </button>
             <label data-tour="import" className={`${tile} cursor-pointer flex-col gap-1 ${importing ? "pointer-events-none opacity-60" : ""}`}>
-              <span>{importing ? "Mengimpor…" : "⇪ Import dari Trello"}</span>
+              {/* import label with upload icon */}
+              <span className="inline-flex items-center gap-1.5">{importing ? "Mengimpor…" : <><Icon name="upload" />Import dari Trello</>}</span>
               <span className="px-4 text-center text-xs text-slate-400">Trello: menu board → Print, export, and share → Export as JSON</span>
               <input type="file" accept=".json,application/json" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) void importTrello(f); }} />
             </label>
@@ -241,6 +243,15 @@ export function BoardsClient({ user, openTeam }: { user: User; openTeam?: string
         <TeamModal teamId={managing} user={user} myBoards={boards ?? []} onClose={() => (setManaging(null), router.replace("/boards"))} onChanged={() => void load()} />
       )}
     </div>
+  );
+}
+
+// board icon on a frosted square, for tiles and the new-board preview
+function BoardIconChip({ name }: { name: string }) {
+  return (
+    <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-white/25 backdrop-blur-sm">
+      <Icon name={name as IconName} className="h-4 w-4" />
+    </span>
   );
 }
 

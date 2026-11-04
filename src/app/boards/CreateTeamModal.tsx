@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Modal } from "@/components/Modal";
 import { PhotoCropper } from "@/components/PhotoCropper";
+import { Icon } from "@/components/ui/Icon";
 import { TeamAvatar } from "@/components/TeamAvatar";
 import { api } from "@/lib/client";
 import { isAdminRole } from "@/lib/permissions";
@@ -73,7 +74,7 @@ export function CreateTeamModal({ myBoards, onClose, onCreated }: { myBoards: My
     return (
       <Modal onClose={() => onCreated(done.id)} width={460}>
         <div className="space-y-4 p-6">
-          <h2 className="text-lg font-bold">✅ Tim “{name.trim()}” dibuat</h2>
+          <h2 className="flex items-center gap-1.5 text-lg font-bold"><Icon name="check" className="h-5 w-5 text-green-600" />Tim “{name.trim()}” dibuat</h2>
           <p className="text-sm text-slate-600">Email berikut belum punya akun, jadi belum bisa ditambahkan langsung. Kirim link undangan tim ke mereka:</p>
           <ul className="flex flex-wrap gap-1.5">
             {done.failed.map((m) => <li key={m} className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs text-amber-800 dark:bg-amber-500/20 dark:text-amber-300">{m}</li>)}
@@ -93,7 +94,7 @@ export function CreateTeamModal({ myBoards, onClose, onCreated }: { myBoards: My
         <div className="flex items-center gap-4">
           <button type="button" onClick={() => fileRef.current?.click()} className="group relative shrink-0 rounded-2xl" title="Pilih foto tim">
             <TeamAvatar name={name.trim() || "?"} src={photo?.url} size={64} />
-            <span className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/45 text-xs font-medium text-white opacity-0 transition group-hover:opacity-100">📷 Foto</span>
+            <span className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/45 text-xs font-medium text-white opacity-0 transition group-hover:opacity-100"><span className="inline-flex items-center gap-1"><Icon name="camera" className="h-3.5 w-3.5" />Foto</span></span>
           </button>
           <div className="min-w-0 flex-1">
             <h2 className="truncate text-lg font-bold">{name.trim() || "Tim baru"}</h2>
@@ -145,7 +146,7 @@ export function CreateTeamModal({ myBoards, onClose, onCreated }: { myBoards: My
             {emails.map((m) => (
               <span key={m} className="flex items-center gap-1 rounded-full bg-slate-100 py-0.5 pr-1 pl-2.5 text-xs">
                 {m}
-                <button type="button" onClick={() => setEmails((l) => l.filter((x) => x !== m))} className="rounded-full px-1 text-slate-400 hover:bg-slate-200 hover:text-slate-700" aria-label={`Hapus ${m}`}>✕</button>
+                <button type="button" onClick={() => setEmails((l) => l.filter((x) => x !== m))} className="rounded-full px-1 text-slate-400 hover:bg-slate-200 hover:text-slate-700" aria-label={`Hapus ${m}`}><Icon name="x" className="h-3 w-3" /></button>
               </span>
             ))}
             <input

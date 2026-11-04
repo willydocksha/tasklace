@@ -6,6 +6,7 @@ import type { Card, Subtask } from "@/lib/types";
 import { AssigneePicker } from "./AssigneePicker";
 import { NextStatus } from "./NextStatus";
 import { subtaskProgress, useBoard } from "./context";
+import { Icon } from "@/components/ui/Icon";
 
 // plain-text breakdown of a card (e.g. BE / FE), each with a one-click status
 export function Subtasks({ card, locked }: { card: Card; locked: boolean }) {
@@ -58,7 +59,7 @@ export function Subtasks({ card, locked }: { card: Card; locked: boolean }) {
             onKeyDown={(e) => { if (e.key === "Enter") void add(); if (e.key === "Escape") setAdding(false); }}
           />
           <button onClick={add} className="rounded-md bg-blue-600 px-3 text-sm font-medium text-white hover:bg-blue-700">Tambah</button>
-          <button onClick={() => (setAdding(false), setTitle(""))} className="rounded-md px-2 text-slate-500 hover:bg-slate-100">✕</button>
+          <button onClick={() => (setAdding(false), setTitle(""))} aria-label="Batal" className="rounded-md px-2 text-slate-500 hover:bg-slate-100"><Icon name="x" /></button>
         </div>
       )}
     </div>
@@ -82,14 +83,14 @@ function Row({ sub, locked }: { sub: Subtask; locked: boolean }) {
 
   return (
     <div className="group flex items-center gap-2 px-2.5 py-1.5">
-      <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[10px] ${done ? "border-green-500 bg-green-500 text-white" : "border-slate-300"}`}>{done && "✓"}</span>
+      <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[10px] ${done ? "border-green-500 bg-green-500 text-white" : "border-slate-300"}`}>{done && <Icon name="check" className="h-3 w-3" />}</span>
       {editing ? (
         <input autoFocus className="flex-1 rounded border-2 border-blue-500 px-1.5 py-0.5 text-sm" value={title} onChange={(e) => setTitle(e.target.value)} onBlur={save} onKeyDown={(e) => { if (e.key === "Enter") save(); if (e.key === "Escape") { setTitle(sub.title); setEditing(false); } }} />
       ) : (
         <span onClick={() => !locked && setEditing(true)} className={`min-w-0 flex-1 truncate text-sm ${done ? "text-slate-400 line-through" : ""} ${locked ? "" : "cursor-text"}`}>{sub.title}</span>
       )}
       {!locked && (
-        <button title="Hapus subtask" onClick={async () => (await confirmDialog({ title: `Hapus subtask "${sub.title}"?`, danger: true })) && mutate(() => api(`/api/subtasks/${sub.id}`, "DELETE"))} className="px-1 text-slate-300 opacity-0 transition group-hover:opacity-100 hover:text-red-600">✕</button>
+        <button title="Hapus subtask" onClick={async () => (await confirmDialog({ title: `Hapus subtask "${sub.title}"?`, danger: true })) && mutate(() => api(`/api/subtasks/${sub.id}`, "DELETE"))} aria-label="Hapus subtask" className="px-1 text-slate-300 opacity-0 transition group-hover:opacity-100 hover:text-red-600"><Icon name="x" className="h-3.5 w-3.5" /></button>
       )}
       <AssigneePicker variant="compact" value={sub.assignees} disabled={locked} onChange={(ids) => patch({ assignees: ids })} />
       <NextStatus variant="pill" lists={data.lists} current={listId} disabled={locked} onMove={(id) => patch({ list_id: id })} />

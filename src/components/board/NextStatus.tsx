@@ -2,6 +2,7 @@
 import { PopoverPanel, usePopover } from "@/components/ui/Popover";
 import { nextOptions } from "@/lib/flow";
 import type { List } from "@/lib/types";
+import { Icon } from "@/components/ui/Icon";
 
 // one click moves to the only allowed next status; several choices open a small menu
 export function NextStatus({ lists, current, onMove, variant = "button", disabled = false }: {
@@ -35,7 +36,7 @@ export function NextStatus({ lists, current, onMove, variant = "button", disable
           title={hint}
           className="flex h-9 w-full items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-3 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none dark:hover:bg-blue-500"
         >
-          {!options.length ? "Tidak ada status berikutnya" : single ? <>Lanjut ke <b className="truncate">{single.name}</b> ➜</> : <>Status berikutnya ▾</>}
+          {!options.length ? "Tidak ada status berikutnya" : single ? <>Lanjut ke <b className="truncate">{single.name}</b> <Icon name="arrow-right" /></> : <>Status berikutnya <Icon name="chevron-down" /></>}
         </button>
       ) : (
         <button
@@ -45,8 +46,8 @@ export function NextStatus({ lists, current, onMove, variant = "button", disable
           title={hint}
           className={`group flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ring-1 transition disabled:cursor-default ${cur?.is_done ? "bg-green-50 text-green-700 ring-green-200" : "bg-slate-50 text-slate-600 ring-slate-200"} enabled:hover:bg-blue-50 enabled:hover:text-blue-700 enabled:hover:ring-blue-300`}
         >
-          {cur?.is_done ? "✓ " : ""}{cur?.name ?? "?"}
-          {options.length > 0 && !disabled && <span className="text-slate-400 group-hover:text-blue-600">{single ? "➜" : "▾"}</span>}
+          {cur?.is_done && <Icon name="check" className="h-3.5 w-3.5" />}{cur?.name ?? "?"}
+          {options.length > 0 && !disabled && <span className="text-slate-400 group-hover:text-blue-600"><Icon name={single ? "arrow-right" : "chevron-down"} /></span>}
         </button>
       )}
       <PopoverPanel pop={pop} className="w-52 py-1 text-sm" onKeyDown={(e) => {

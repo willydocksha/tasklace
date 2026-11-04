@@ -23,6 +23,7 @@ import { PopoverPanel, usePopover } from "@/components/ui/Popover";
 import type { Card, CardType, List } from "@/lib/types";
 import { CardView, SortableCard } from "./CardTile";
 import { useBoard } from "./context";
+import { Icon } from "@/components/ui/Icon";
 
 type Columns = Record<string, string[]>;
 
@@ -195,7 +196,7 @@ function Column({ list, cards, dragDisabled, blocked, first }: { list: List; car
           </div>
           <div className="my-1 border-t border-slate-200" />
           <button className="block w-full px-3 py-2 text-left hover:bg-slate-100" onClick={() => (menu.setOpen(false), mutate(() => api(`/api/lists/${list.id}`, "PATCH", { is_done: !list.is_done })))}>
-            {list.is_done ? "Hapus tanda 'selesai'" : "Tandai sebagai list selesai ✅"}
+            {list.is_done ? "Hapus tanda 'selesai'" : "Tandai sebagai list selesai"}
           </button>
           <button className="block w-full px-3 py-2 text-left text-red-600 hover:bg-red-50" onClick={async () => { menu.setOpen(false); if (await confirmDialog({ title: `Hapus list "${list.name}"?`, message: "Semua kartu di dalamnya ikut terhapus.", danger: true })) void mutate(() => api(`/api/lists/${list.id}`, "DELETE")); }}>
             Hapus list
@@ -204,11 +205,12 @@ function Column({ list, cards, dragDisabled, blocked, first }: { list: List; car
       </div>
       {/* status flow hint: where cards in this list can go next */}
       {list.next_ids && (
-        <div className="truncate px-3 pb-1.5 text-[11px] text-slate-500" title="Alur status diatur admin board">
-          ➜ {list.next_ids.length ? data.lists.filter((l) => list.next_ids!.includes(l.id)).map((l) => l.name).join(", ") : "tidak bisa dipindah"}
+        <div className="flex items-center gap-1 px-3 pb-1.5 text-[11px] text-slate-500" title="Alur status diatur admin board">
+          <Icon name="arrow-right" className="h-3 w-3" />
+          <span className="truncate">{list.next_ids.length ? data.lists.filter((l) => list.next_ids!.includes(l.id)).map((l) => l.name).join(", ") : "tidak bisa dipindah"}</span>
         </div>
       )}
-      {blocked && <div className="mx-2 mb-1.5 rounded-md bg-black/5 px-2 py-1 text-center text-[11px] text-slate-500">🚫 Tidak sesuai alur status</div>}
+      {blocked && <div className="mx-2 mb-1.5 rounded-md bg-black/5 px-2 py-1 text-center flex items-center justify-center gap-1 text-[11px] text-slate-500"><Icon name="ban" className="h-3 w-3" />Tidak sesuai alur status</div>}
       <div className="scroll-thin flex min-h-2 flex-col gap-2 overflow-y-auto px-2 pt-0.5 pb-1">
         <SortableContext items={cards.map((c) => "c:" + c.id)} strategy={verticalListSortingStrategy}>
           {cards.map((c, i) => (
@@ -248,10 +250,10 @@ function AddCard({ listId, tour }: { listId: string; tour?: boolean }) {
         <button onClick={add} className="rounded bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 dark:hover:bg-blue-500">Tambah</button>
         <select value={type} onChange={(e) => setType(e.target.value as CardType)} className="rounded border bg-surface px-1.5 py-1 text-xs">
           {Object.entries(TYPE_META).map(([k, v]) => (
-            <option key={k} value={k}>{v.icon} {v.label}</option>
+            <option key={k} value={k}>{v.label}</option>
           ))}
         </select>
-        <button onClick={() => setOpen(false)} className="ml-auto rounded px-2 py-1 text-slate-500 hover:bg-slate-300">✕</button>
+        <button onClick={() => setOpen(false)} aria-label="Batal" className="ml-auto rounded px-2 py-1 text-slate-500 hover:bg-slate-300"><Icon name="x" /></button>
       </div>
     </div>
   );
@@ -296,7 +298,7 @@ function AddList() {
       <input autoFocus className="w-full rounded border-2 border-blue-500 px-2 py-1.5 text-sm" placeholder="Nama list…" value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") void add(); if (e.key === "Escape") setOpen(false); }} />
       <div className="flex gap-1.5">
         <button onClick={add} className="rounded bg-blue-600 px-3 py-1.5 text-sm font-medium text-white">Tambah list</button>
-        <button onClick={() => setOpen(false)} className="rounded px-2 text-slate-500 hover:bg-slate-300">✕</button>
+        <button onClick={() => setOpen(false)} aria-label="Batal" className="rounded px-2 text-slate-500 hover:bg-slate-300"><Icon name="x" /></button>
       </div>
     </div>
   );

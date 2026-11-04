@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { PhotoCropper } from "@/components/PhotoCropper";
 import { TopBar } from "@/components/TopBar";
+import { Icon } from "@/components/ui/Icon";
 import { api } from "@/lib/client";
 import type { User } from "@/lib/auth";
 
@@ -179,8 +180,9 @@ export function ProfileClient({ user: initial, hasPassword: hadPassword, provide
       <TopBar user={user} />
       <main className="mx-auto max-w-2xl space-y-5 px-4 py-8">
         <div>
-          <Link href="/boards" className="text-sm text-slate-500 hover:text-slate-800">
-            ← Kembali ke board
+          <Link href="/boards" className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800">
+            <Icon name="arrow-left" />
+            Kembali ke board
           </Link>
           <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">Profil</h1>
           <p className="text-sm text-slate-500">Atur nama, foto, email dan password akun kamu.</p>

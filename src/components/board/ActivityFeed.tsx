@@ -4,6 +4,7 @@ import { Avatar } from "@/components/Avatar";
 import { PRIORITY_META, TYPE_META } from "@/lib/theme";
 import type { User } from "@/lib/auth";
 import type { Activity, Comment } from "@/lib/types";
+import { Icon, type IconName } from "@/components/ui/Icon";
 
 type Tab = "all" | "activity" | "comments" | "status";
 type Item = { at: number; activity?: Activity; comment?: Comment };
@@ -26,39 +27,39 @@ const Chip = ({ children, tone = "slate" }: { children: React.ReactNode; tone?: 
 );
 
 // one activity row as a sentence; done list ids get a green chip
-function describe(a: Activity, doneLists: Set<string>): { icon: string; text: React.ReactNode } {
+function describe(a: Activity, doneLists: Set<string>): { icon: IconName; text: React.ReactNode } {
   const d = a.data as Record<string, never>;
   const label = (k: keyof typeof TYPE_META | keyof typeof PRIORITY_META, meta: Record<string, { label: string }>) => meta[k]?.label ?? k;
   const list = (names: unknown) => (names as string[]).filter(Boolean).join(", ");
   switch (a.kind) {
     case "created":
-      return { icon: "✦", text: <>membuat kartu di <Chip tone={doneLists.has(d.to) ? "green" : "slate"}>{d.toName ?? "?"}</Chip></> };
+      return { icon: "plus", text: <>membuat kartu di <Chip tone={doneLists.has(d.to) ? "green" : "slate"}>{d.toName ?? "?"}</Chip></> };
     case "status":
-      return { icon: "⇄", text: <>memindahkan <Chip>{d.fromName ?? "?"}</Chip> → <Chip tone={doneLists.has(d.to) ? "green" : "blue"}>{d.toName ?? "?"}</Chip></> };
+      return { icon: "swap", text: <>memindahkan <Chip>{d.fromName ?? "?"}</Chip> → <Chip tone={doneLists.has(d.to) ? "green" : "blue"}>{d.toName ?? "?"}</Chip></> };
     case "title":
-      return { icon: "✎", text: <>mengubah judul jadi <b>“{d.to}”</b></> };
+      return { icon: "pencil", text: <>mengubah judul jadi <b>“{d.to}”</b></> };
     case "description":
-      return { icon: "✎", text: <>memperbarui deskripsi</> };
+      return { icon: "pencil", text: <>memperbarui deskripsi</> };
     case "type":
-      return { icon: "◆", text: <>mengubah tipe <Chip>{label(d.from, TYPE_META)}</Chip> → <Chip>{label(d.to, TYPE_META)}</Chip></> };
+      return { icon: "shape", text: <>mengubah tipe <Chip>{label(d.from, TYPE_META)}</Chip> → <Chip>{label(d.to, TYPE_META)}</Chip></> };
     case "priority":
-      return { icon: "⚑", text: <>mengubah prioritas <Chip>{label(d.from, PRIORITY_META)}</Chip> → <Chip>{label(d.to, PRIORITY_META)}</Chip></> };
+      return { icon: "flag", text: <>mengubah prioritas <Chip>{label(d.from, PRIORITY_META)}</Chip> → <Chip>{label(d.to, PRIORITY_META)}</Chip></> };
     case "points":
-      return { icon: "◎", text: <>mengubah poin <Chip>{d.from ?? "–"}</Chip> → <Chip>{d.to ?? "–"}</Chip></> };
+      return { icon: "hash", text: <>mengubah poin <Chip>{d.from ?? "–"}</Chip> → <Chip>{d.to ?? "–"}</Chip></> };
     case "start_date":
     case "due_date": {
       const what = a.kind === "due_date" ? "deadline" : "tanggal mulai";
-      return { icon: "◷", text: d.to ? <>mengatur {what} <Chip>{date(d.to)}</Chip></> : <>menghapus {what}</> };
+      return { icon: "clock", text: d.to ? <>mengatur {what} <Chip>{date(d.to)}</Chip></> : <>menghapus {what}</> };
     }
     case "epic":
-      return { icon: "⚡", text: d.to ? <>menghubungkan ke epic <Chip>{d.to}</Chip></> : <>melepas dari epic</> };
+      return { icon: "epic", text: d.to ? <>menghubungkan ke epic <Chip>{d.to}</Chip></> : <>melepas dari epic</> };
     case "sprint":
-      return { icon: "🏃", text: <>{d.auto ? "sprint selesai, kartu dipindah ke " : "memindahkan ke "}<Chip>{d.to ?? "Backlog"}</Chip></> };
+      return { icon: "sprint", text: <>{d.auto ? "sprint selesai, kartu dipindah ke " : "memindahkan ke "}<Chip>{d.to ?? "Backlog"}</Chip></> };
     case "labels":
     case "assignees": {
       const [plus, minus] = a.kind === "labels" ? ["menambah label", "menghapus label"] : ["menugaskan", "melepas"];
       return {
-        icon: a.kind === "labels" ? "🏷" : "👤",
+        icon: a.kind === "labels" ? "tag" : "user",
         text: (
           <>
             {(d.added as unknown[])?.length > 0 && <>{plus} <Chip>{list(d.added)}</Chip></>}
@@ -69,11 +70,11 @@ function describe(a: Activity, doneLists: Set<string>): { icon: string; text: Re
       };
     }
     case "attachment":
-      return { icon: "📎", text: d.removed ? <>menghapus lampiran <Chip>{d.name}</Chip></> : <>melampirkan <Chip>{d.name}</Chip></> };
+      return { icon: "paperclip", text: d.removed ? <>menghapus lampiran <Chip>{d.name}</Chip></> : <>melampirkan <Chip>{d.name}</Chip></> };
     case "subtask":
       if (d.action === "assignees")
         return {
-          icon: "☑",
+          icon: "checklist",
           text: (
             <>
               subtask <b>“{d.title}”</b>:{" "}
@@ -83,10 +84,10 @@ function describe(a: Activity, doneLists: Set<string>): { icon: string; text: Re
             </>
           ),
         };
-      if (d.action === "status") return { icon: "☑", text: <>subtask <b>“{d.title}”</b> <Chip>{d.fromName ?? "?"}</Chip> → <Chip tone={doneLists.has(d.to) ? "green" : "blue"}>{d.toName ?? "?"}</Chip></> };
-      return { icon: "☑", text: <>{d.action === "removed" ? "menghapus" : "menambah"} subtask <b>“{d.title}”</b></> };
+      if (d.action === "status") return { icon: "checklist", text: <>subtask <b>“{d.title}”</b> <Chip>{d.fromName ?? "?"}</Chip> → <Chip tone={doneLists.has(d.to) ? "green" : "blue"}>{d.toName ?? "?"}</Chip></> };
+      return { icon: "checklist", text: <>{d.action === "removed" ? "menghapus" : "menambah"} subtask <b>“{d.title}”</b></> };
     default:
-      return { icon: "•", text: <>mengubah kartu</> };
+      return { icon: "note", text: <>mengubah kartu</> };
   }
 }
 
@@ -201,7 +202,7 @@ function ActivityRowView({ a, doneLists }: { a: Activity; doneLists: Set<string>
   return (
     <li className="flex gap-2 text-sm">
       <span className="flex h-[30px] w-[30px] shrink-0 items-center justify-center">
-        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-xs text-slate-500 ring-4 ring-surface">{icon}</span>
+        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-xs text-slate-500 ring-4 ring-surface"><Icon name={icon} className="h-3.5 w-3.5" /></span>
       </span>
       <div className="min-w-0 flex-1 pt-1 leading-relaxed text-slate-600">
         <b className="text-slate-800">{a.name ?? "Pengguna terhapus"}</b> {text}

@@ -12,14 +12,14 @@ type Tab = "members" | "look" | "labels" | "flow";
 
 export function Settings({ onClose, initialTab = "members" }: { onClose: () => void; initialTab?: Tab }) {
   const [tab, setTab] = useState<Tab>(initialTab);
-  const tabs: [Tab, string][] = [["members", "👥 Member"], ["look", "🎨 Tampilan"], ["labels", "🏷️ Label"], ["flow", "🔀 Alur status"]];
+  const tabs: [Tab, string, IconName][] = [["members", "Member", "users"], ["look", "Tampilan", "palette"], ["labels", "Label", "tag"], ["flow", "Alur status", "flow"]];
   return (
     <Modal onClose={onClose} width={560}>
       <div className="flex items-center border-b px-5 pt-4">
-        {tabs.map(([k, v]) => (
-          <button key={k} onClick={() => setTab(k)} className={`-mb-px border-b-2 px-3 pb-2.5 text-sm font-medium ${tab === k ? "border-blue-600 text-blue-600" : "border-transparent text-slate-500"}`}>{v}</button>
+        {tabs.map(([k, v, icon]) => (
+          <button key={k} onClick={() => setTab(k)} className={`-mb-px flex items-center gap-1.5 border-b-2 px-3 pb-2.5 text-sm font-medium ${tab === k ? "border-blue-600 text-blue-600" : "border-transparent text-slate-500"}`}><Icon name={icon} />{v}</button>
         ))}
-        <button onClick={onClose} className="ml-auto pb-2 text-slate-400">✕</button>
+        <button onClick={onClose} aria-label="Tutup" className="ml-auto pb-2 text-slate-400"><Icon name="x" /></button>
       </div>
       <div className="p-5">
         {tab === "members" && <Members />}
@@ -45,7 +45,7 @@ function MyRights({ role, perms }: { role: string; perms: Perms }) {
       <div className="mb-1.5 font-semibold">Hak akses kamu: {ROLE_LABEL[role as Role] ?? role}</div>
       <ul className="space-y-0.5">
         {rows.map(([ok, label]) => (
-          <li key={label} className={ok ? "text-slate-700" : "text-slate-400 line-through"}>{ok ? "✓" : "✕"} {label}</li>
+          <li key={label} className={`flex items-center gap-1.5 ${ok ? "text-slate-700" : "text-slate-400 line-through"}`}><Icon name={ok ? "check" : "x"} className="h-3.5 w-3.5" />{label}</li>
         ))}
       </ul>
       <p className="mt-1.5 text-xs text-slate-500">Hak akses lewat tim diatur admin tim di halaman Board saya → Kelola tim → Hak akses.</p>
@@ -75,7 +75,7 @@ function Members() {
             <p className="mb-2 text-xs text-slate-500">Siapa pun yang punya link ini bisa bergabung. Tidak ada batas jumlah member.</p>
             <div className="flex gap-2">
               <input readOnly value={link} className="flex-1 rounded-md border bg-slate-50 px-2 py-1.5 text-xs" onFocus={(e) => e.target.select()} />
-              <button onClick={copy} className="rounded-md bg-blue-600 px-3 text-sm text-white">{copied ? "Tersalin ✓" : "Salin"}</button>
+              <button onClick={copy} className="rounded-md bg-blue-600 px-3 text-sm text-white">{copied ? "Tersalin" : "Salin"}</button>
             </div>
             <button onClick={async () => (await confirmDialog({ title: "Buat link undangan baru?", message: "Link lama akan berhenti berlaku.", confirmLabel: "Buat link baru" })) && mutate(() => api(`/api/boards/${data.board.id}/invite`, "POST"))} className="mt-1.5 text-xs text-slate-500 underline">
               Buat link baru
@@ -113,8 +113,9 @@ function Members() {
                 <button
                   title={m.id === user.id ? "Keluar dari board" : "Keluarkan"}
                   onClick={async () => { if (await confirmDialog(m.id === user.id ? { title: "Keluar dari board ini?", danger: true, confirmLabel: "Keluar" } : { title: `Keluarkan ${m.name} dari board?`, danger: true, confirmLabel: "Keluarkan" })) void mutate(() => api(`/api/boards/${data.board.id}/members/${m.id}`, "DELETE")).then(() => m.id === user.id && (window.location.href = "/boards")); }}
-                  className="rounded px-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
-                >✕</button>
+                  aria-label={m.id === user.id ? "Keluar dari board" : "Keluarkan"}
+                  className="rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                ><Icon name="x" /></button>
               )}
             </div>
           ))}
@@ -188,7 +189,7 @@ function Duplicate() {
 
   return (
     <div className="space-y-2 rounded-md bg-slate-50 p-3">
-      <div className="text-sm font-semibold">📑 Duplikat board</div>
+      <div className="flex items-center gap-1.5 text-sm font-semibold"><Icon name="copy" className="h-4 w-4 text-slate-500" />Duplikat board</div>
       <p className="text-xs text-slate-500">Board baru akan punya list, urutan, warna list, alur status, label dan warna board yang sama. Member tidak ikut disalin.</p>
       <input className="w-full rounded-md border px-2 py-1.5 text-sm" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nama board baru" />
       <div className="flex flex-wrap gap-3 text-sm">
@@ -219,7 +220,7 @@ function Labels() {
                 <button key={c} onClick={() => mutate(() => api(`/api/labels/${l.id}`, "PATCH", { color: c }))} className="h-4 w-4 rounded-full" style={{ background: c }} />
               ))}
             </div>
-            <button onClick={async () => (await confirmDialog({ title: `Hapus label "${l.name}"?`, message: "Label akan dilepas dari semua kartu.", danger: true })) && mutate(() => api(`/api/labels/${l.id}`, "DELETE"))} className="px-1.5 text-slate-400 hover:text-red-600">✕</button>
+            <button onClick={async () => (await confirmDialog({ title: `Hapus label "${l.name}"?`, message: "Label akan dilepas dari semua kartu.", danger: true })) && mutate(() => api(`/api/labels/${l.id}`, "DELETE"))} aria-label="Hapus label" className="px-1.5 text-slate-400 hover:text-red-600"><Icon name="x" /></button>
           </div>
         ))}
       </div>
@@ -270,7 +271,7 @@ function Flow() {
       </p>
       {isAdmin && (
         <div className="flex flex-wrap gap-2">
-          <button onClick={sequential} className="rounded-md bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700">⇢ Isi alur berurutan</button>
+          <button onClick={sequential} className="flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700"><Icon name="arrow-right" />Isi alur berurutan</button>
           <button onClick={reset} className="rounded-md border px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50">Bebaskan semua</button>
         </div>
       )}
@@ -299,9 +300,9 @@ function Flow() {
                       key={t.id}
                       disabled={!isAdmin}
                       onClick={() => toggle(l.id, l.next_ids, t.id)}
-                      className={`rounded-full border px-2.5 py-0.5 text-xs ${on ? "border-blue-600 bg-blue-600 text-white" : "text-slate-500 hover:bg-slate-50"} disabled:cursor-default`}
+                      className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs ${on ? "border-blue-600 bg-blue-600 text-white" : "text-slate-500 hover:bg-slate-50"} disabled:cursor-default`}
                     >
-                      {on ? "✓ " : ""}{t.name}
+                      {on && <Icon name="check" className="h-3 w-3" />}{t.name}
                     </button>
                   );
                 })}
