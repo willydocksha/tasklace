@@ -20,6 +20,7 @@ import { StatusJourney } from "./StatusJourney";
 import { Subtasks } from "./Subtasks";
 import { cardHelpers, useBoard } from "./context";
 import { Icon, type IconName } from "@/components/ui/Icon";
+import { ScrollArea } from "@/components/ui/ScrollArea";
 
 // first-time walkthrough of the card detail
 const TOUR: TourStep[] = [
@@ -84,10 +85,11 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
 
   return (
     <Modal onClose={onClose} width={1120} floating sizeKey="card">
-      {/* sticky header doubles as the drag handle */}
-      <div data-drag-handle className="sticky top-0 z-10 cursor-move rounded-t-xl bg-surface">
-      <div className="h-2 rounded-t-xl" style={{ background: card.type === "epic" ? (card.color ?? t.color) : t.color }} />
-      <div className="flex items-start gap-3 p-5 pb-2">
+      {/* full-height column on wide screens: fixed header, columns scroll on their own */}
+      <div className="flex flex-col md:h-full">
+      {/* header doubles as the drag handle */}
+      <div data-drag-handle className="sticky top-0 z-10 shrink-0 cursor-move rounded-t-xl bg-surface md:static">
+      <div className="flex items-start gap-3 p-5 pb-3">
         <span className="mt-2" style={{ color: t.color }}><Icon name={t.icon} className="h-5 w-5" /></span>
         <div className="min-w-0 flex-1" data-tour="card-title">
           {/* sized to its text so the rest of the header stays draggable */}
@@ -104,7 +106,7 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
       </div>
 
       {!editable && (
-        <div className="mx-5 mb-1 flex items-center gap-2 rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-700 ring-1 ring-slate-200">
+        <div className="mx-5 mb-1 flex shrink-0 items-center gap-2 rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-700 border border-slate-200">
           <Icon name="eye" className="h-4 w-4 text-slate-500" />
           <span>
             Kamu hanya bisa <b>melihat</b> kartu ini
@@ -114,13 +116,15 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
         </div>
       )}
       {editable && doneLock && (
-        <div className="mx-5 mb-1 flex items-center gap-2 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-800 ring-1 ring-green-200">
+        <div className="mx-5 mb-1 flex shrink-0 items-center gap-2 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-800 border border-green-200">
           <svg viewBox="0 0 20 20" className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="4" y="9" width="12" height="8" rx="2" /><path d="M7 9V6.5a3 3 0 0 1 6 0V9" /></svg>
           <span>Kartu ini sudah <b>selesai</b> dan dikunci. Ubah <b>Status</b> untuk membukanya lagi. Komentar tetap bisa ditambahkan.</span>
         </div>
       )}
-      <div className="grid gap-6 p-5 pt-2 md:grid-cols-[1fr_300px]">
-        <div className="min-w-0 space-y-5">
+      {/* body: main content and the fields sidebar each scroll inside the modal */}
+      <div className="grid gap-6 p-5 pt-2 md:min-h-0 md:flex-1 md:grid-cols-[1fr_300px] md:gap-4 md:pr-3 md:pb-3">
+        <ScrollArea wrapperClassName="min-w-0 md:-mr-1 md:min-h-0" className="scroll-soft md:h-full md:overflow-y-auto md:pr-3 md:pb-2" innerClassName="space-y-5">
+
           <div className="flex flex-wrap gap-4">
             {card.labels.length > 0 && (
               <div>
@@ -181,9 +185,10 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
           <div data-tour="card-activity">
           <ActivityFeed activity={activity} comments={comments} user={user} doneLists={doneLists} onComment={perms.comment ? sendComment : undefined} journey={<StatusJourney card={card} lists={data.lists} activity={activity} />} />
           </div>
-        </div>
+        </ScrollArea>
 
-        <aside data-tour="card-fields" className="space-y-3.5 self-start rounded-xl bg-slate-50/80 p-3.5 ring-1 ring-slate-200/70">
+        <ScrollArea wrapperClassName="md:min-h-0" className="scroll-soft md:h-full md:overflow-y-auto md:pr-2 md:pb-2">
+        <aside data-tour="card-fields" className="space-y-3.5 rounded-xl bg-slate-50/80 p-3.5 ring-1 ring-slate-200/70">
           <Field label="Tipe">
             <Select
               disabled={locked}
@@ -298,6 +303,8 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
             Hapus kartu
           </button>}
         </aside>
+        </ScrollArea>
+      </div>
       </div>
       <Tour id="card" steps={TOUR} seen={user.tours} delay={700} />
     </Modal>
