@@ -46,7 +46,7 @@ export function NextStatus({ lists, current, onMove, variant = "button", disable
           title={hint}
           className={`group flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ring-1 transition disabled:cursor-default ${cur?.is_done ? "bg-green-50 text-green-700 ring-green-200" : "bg-slate-50 text-slate-600 ring-slate-200"} enabled:hover:bg-blue-50 enabled:hover:text-blue-700 enabled:hover:ring-blue-300`}
         >
-          {cur?.is_done && <Icon name="check" className="h-3.5 w-3.5" />}{cur?.name ?? "?"}
+          {!!cur?.is_done && <Icon name="check" className="h-3.5 w-3.5" />}{cur?.name ?? "?"}
           {options.length > 0 && !disabled && <span className="text-slate-400 group-hover:text-blue-600"><Icon name={single ? "arrow-right" : "chevron-down"} /></span>}
         </button>
       )}
