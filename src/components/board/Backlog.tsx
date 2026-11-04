@@ -8,6 +8,7 @@ import { TYPE_META } from "@/lib/theme";
 import type { Card, Sprint } from "@/lib/types";
 import { cardHelpers, daysLeft, formatDate, today, useBoard } from "./context";
 import { Icon } from "@/components/ui/Icon";
+import { Select } from "@/components/ui/Select";
 
 type Visible = (c: Card) => boolean;
 
@@ -185,24 +186,20 @@ function Row({ card }: { card: Card }) {
           <Avatar key={p.id} name={p.name} color={p.color} src={p.avatar} size={22} ring />
         ))}
       </span>
-      <select
-        value={card.sprint_id ?? ""}
-        // done cards are locked; so are cards the user may not edit
-        disabled={done || !canEdit(card)}
-        onClick={(e) => e.stopPropagation()}
-        onChange={(e) => mutate(() => api(`/api/cards/${card.id}`, "PATCH", { sprint_id: e.target.value || null }))}
-        className="w-24 shrink-0 rounded border border-slate-200 bg-surface px-1 py-0.5 text-xs text-slate-600 disabled:opacity-50"
-        title={done ? "Kartu selesai dikunci" : "Pindahkan ke sprint"}
-      >
-        <option value="">Backlog</option>
-        {data.sprints
-          .filter((s) => s.status !== "completed")
-          .map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-      </select>
+      {/* quick sprint move; wrapper keeps clicks and drags from reaching the row */}
+      <span onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()} className="shrink-0">
+        <Select
+          value={card.sprint_id ?? ""}
+          // done cards are locked; so are cards the user may not edit
+          disabled={done || !canEdit(card)}
+          onChange={(v) => mutate(() => api(`/api/cards/${card.id}`, "PATCH", { sprint_id: v || null }))}
+          variant="toolbar"
+          placement="bottom-end"
+          className="!h-6 w-24 border border-slate-200 bg-surface text-xs"
+          title={done ? "Kartu selesai dikunci" : "Pindahkan ke sprint"}
+          options={[{ value: "", label: "Backlog" }, ...data.sprints.filter((s) => s.status !== "completed").map((s) => ({ value: s.id, label: s.name }))]}
+        />
+      </span>
     </div>
   );
 }
@@ -223,13 +220,13 @@ function AddIssue({ sprintId }: { sprintId: string | null }) {
       }}
       className="flex items-center gap-2 border-t px-4 py-2"
     >
-      <select value={type} onChange={(e) => setType(e.target.value)} className="rounded border border-slate-200 bg-surface px-1 py-1 text-sm">
-        {(["story", "task", "bug"] as const).map((k) => (
-          <option key={k} value={k}>
-            {TYPE_META[k].label}
-          </option>
-        ))}
-      </select>
+      {/* issue type with its icon */}
+      <Select
+        value={type}
+        onChange={setType}
+        className="!h-8 !w-28 shrink-0"
+        options={(["story", "task", "bug"] as const).map((k) => ({ value: k, label: TYPE_META[k].label, icon: <span style={{ color: TYPE_META[k].color }}><Icon name={TYPE_META[k].icon} /></span> }))}
+      />
       <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="+ Buat issue" className="min-w-0 flex-1 rounded px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-blue-400" />
       {title && <button className="rounded bg-blue-600 px-3 py-1 text-sm text-white">Tambah</button>}
     </form>
@@ -333,14 +330,8 @@ function CompleteSprint({ sprint, onClose }: { sprint: Sprint; onClose: () => vo
         {cards.length > finished.length && (
           <label className="block text-sm">
             Pindahkan issue yang belum selesai ke
-            <select value={moveTo} onChange={(e) => setMoveTo(e.target.value)} className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
-              <option value="">Backlog</option>
-              {planned.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
+            {/* where unfinished issues go */}
+            <Select value={moveTo} onChange={setMoveTo} className="mt-1" options={[{ value: "", label: "Backlog" }, ...planned.map((s) => ({ value: s.id, label: s.name }))]} />
           </label>
         )}
         <div className="flex justify-end gap-2 pt-1">

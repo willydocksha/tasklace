@@ -24,6 +24,7 @@ import type { Card, CardType, List } from "@/lib/types";
 import { CardView, SortableCard } from "./CardTile";
 import { useBoard } from "./context";
 import { Icon } from "@/components/ui/Icon";
+import { Select } from "@/components/ui/Select";
 
 type Columns = Record<string, string[]>;
 
@@ -251,11 +252,13 @@ function AddCard({ listId, tour }: { listId: string; tour?: boolean }) {
       <textarea autoFocus rows={2} className="w-full resize-none rounded-lg p-2 text-sm shadow outline-none" placeholder="Judul kartu…" value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void add(); } if (e.key === "Escape") setOpen(false); }} />
       <div className="flex items-center gap-1.5">
         <button onClick={add} className="rounded bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 dark:hover:bg-blue-500">Tambah</button>
-        <select value={type} onChange={(e) => setType(e.target.value as CardType)} className="rounded border bg-surface px-1.5 py-1 text-xs">
-          {Object.entries(TYPE_META).map(([k, v]) => (
-            <option key={k} value={k}>{v.label}</option>
-          ))}
-        </select>
+        {/* card type with its icon */}
+        <Select
+          value={type}
+          onChange={setType}
+          className="!h-8 !w-28 text-xs"
+          options={(Object.keys(TYPE_META) as CardType[]).map((k) => ({ value: k, label: TYPE_META[k].label, icon: <span style={{ color: TYPE_META[k].color }}><Icon name={TYPE_META[k].icon} /></span> }))}
+        />
         <button onClick={() => setOpen(false)} aria-label="Batal" className="ml-auto rounded px-2 py-1 text-slate-500 hover:bg-slate-300"><Icon name="x" /></button>
       </div>
     </div>
@@ -272,7 +275,12 @@ function useDismiss(open: boolean, close: () => void) {
   });
   useEffect(() => {
     if (!open) return;
-    const onDown = (e: PointerEvent) => !ref.current?.contains(e.target as Node) && closeRef.current();
+    // portaled dropdown menus count as inside
+    const onDown = (e: PointerEvent) => {
+      const t = e.target as Element;
+      if (ref.current?.contains(t) || t.closest?.("[data-popover]")) return;
+      closeRef.current();
+    };
     document.addEventListener("pointerdown", onDown, true);
     return () => document.removeEventListener("pointerdown", onDown, true);
   }, [open]);

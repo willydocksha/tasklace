@@ -11,6 +11,7 @@ import { TopBar } from "@/components/TopBar";
 import { Tour, type TourStep } from "@/components/Tour";
 import { toast, toastError } from "@/components/ui/Dialog";
 import { Icon, type IconName } from "@/components/ui/Icon";
+import { Select } from "@/components/ui/Select";
 import type { User } from "@/lib/auth";
 import { api } from "@/lib/client";
 import { isAdminRole, ROLE_LABEL, type Role } from "@/lib/permissions";
@@ -260,13 +261,20 @@ export function BoardsClient({ user, openTeam }: { user: User; openTeam?: string
               <div className="mb-1.5 text-sm font-medium text-slate-600">Ikon</div>
               <IconPicker board={{ id: "", color: form.color, background: form.background === "u" ? null : form.background, icon: form.icon }} onPick={(icon) => setForm({ ...form, icon })} />
             </div>
-            <label className="block text-sm text-slate-600">
+            <div className="block text-sm text-slate-600">
               Tim
-              <select value={creating} onChange={(e) => setCreating(e.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2">
-                <option value="">Tanpa tim (pribadi)</option>
-                {teams.filter((t) => t.can_create_board).map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-              </select>
-            </label>
+              {/* team the new board goes into */}
+              <Select
+                value={creating}
+                onChange={setCreating}
+                className="mt-1"
+                searchable={teams.length > 6}
+                options={[
+                  { value: "", label: "Tanpa tim (pribadi)", description: "Hanya kamu dan yang kamu undang" },
+                  ...teams.filter((t) => t.can_create_board).map((t) => ({ value: t.id, label: t.name })),
+                ]}
+              />
+            </div>
             {error && <p className="text-sm text-red-600">{error}</p>}
             <p className="text-xs text-slate-500">Board baru otomatis berisi list Backlog → To Do → In Progress → Review → Done.</p>
             <div className="flex justify-end gap-2">

@@ -10,6 +10,7 @@ import { uploadBoardBackground } from "@/lib/image";
 import { BackgroundPicker, IconPicker } from "@/components/BoardLook";
 import { useBoard } from "./context";
 import { Icon, type IconName } from "@/components/ui/Icon";
+import { Select } from "@/components/ui/Select";
 import { FlowEditor, SubtaskStatusPicker, type FlowMap } from "@/components/FlowEditor";
 
 type Tab = "members" | "look" | "labels" | "flow";
@@ -107,11 +108,19 @@ function Members() {
               {m.role === "owner" || !isAdmin || !m.direct ? (
                 <span className="text-xs text-slate-500">{ROLE_LABEL[m.role as Role] ?? m.role}</span>
               ) : (
-                <select value={m.role} title="Viewer hanya bisa melihat dan berkomentar" onChange={(e) => mutate(() => api(`/api/boards/${data.board.id}/members/${m.id}`, "PATCH", { role: e.target.value }))} className="rounded border px-1 py-0.5 text-xs">
-                  <option value="admin">Admin</option>
-                  <option value="member">Member</option>
-                  <option value="viewer">Viewer</option>
-                </select>
+                <Select
+                  value={m.role}
+                  title="Viewer hanya bisa melihat dan berkomentar"
+                  placement="bottom-end"
+                  menuWidth={240}
+                  className="!h-8 !w-28 shrink-0 text-xs"
+                  onChange={(role) => mutate(() => api(`/api/boards/${data.board.id}/members/${m.id}`, "PATCH", { role }))}
+                  options={[
+                    { value: "admin", label: "Admin", description: "Kelola member & pengaturan board" },
+                    { value: "member", label: "Member", description: "Mengerjakan kartu" },
+                    { value: "viewer", label: "Viewer", description: "Hanya melihat & berkomentar" },
+                  ]}
+                />
               )}
               {m.direct && m.role !== "owner" && (isAdmin || m.id === user.id) && (
                 <button

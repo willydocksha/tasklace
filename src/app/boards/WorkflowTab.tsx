@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { FlowEditor, SubtaskStatusPicker, type FlowMap } from "@/components/FlowEditor";
 import { confirmDialog, toast, toastError } from "@/components/ui/Dialog";
 import { Icon } from "@/components/ui/Icon";
+import { Select } from "@/components/ui/Select";
 import { api } from "@/lib/client";
 import type { WorkflowStatus } from "@/lib/workflow";
 
@@ -64,10 +65,17 @@ export function WorkflowTab({ teamId, admin, boards, onChanged }: { teamId: stri
           <div className="text-sm font-semibold">Alur kerja baru</div>
           <input className="w-full rounded-md border px-2 py-1.5 text-sm" placeholder="Nama, mis. Alur Dev Squad" value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && create()} />
           <div className="flex gap-2">
-            <select value={from} onChange={(e) => setFrom(e.target.value)} className="min-w-0 flex-1 rounded-md border px-2 py-1.5 text-sm">
-              <option value="">Mulai dari status standar</option>
-              {boards.map((b) => <option key={b.id} value={b.id}>Salin status & alur dari board {b.name}</option>)}
-            </select>
+            {/* starting point: default statuses or a copy of a board's flow */}
+            <Select
+              value={from}
+              onChange={setFrom}
+              className="min-w-0 flex-1"
+              searchable={boards.length > 6}
+              options={[
+                { value: "", label: "Mulai dari status standar", description: "Backlog → To Do → In Progress → Review → Done" },
+                ...boards.map((b) => ({ value: b.id, label: `Salin dari ${b.name}`, description: "Status & alur dari board ini" })),
+              ]}
+            />
             <button disabled={!name.trim()} onClick={create} className="rounded-md bg-blue-600 px-3 text-sm text-white disabled:opacity-50">Buat</button>
           </div>
         </div>
