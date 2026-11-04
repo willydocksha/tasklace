@@ -23,13 +23,13 @@ export const EPIC_COLORS = ["#8b5cf6", "#3b82f6", "#14b8a6", "#22c55e", "#f59e0b
 export const TYPE_META = {
   epic: { label: "Epic", color: "#8b5cf6", icon: "⚡" },
   story: { label: "Story", color: "#22c55e", icon: "📖" },
-  task: { label: "Task", color: "#3b82f6", icon: "✔" },
+  task: { label: "Task", color: "#1e72e4", icon: "✔" },
   bug: { label: "Bug", color: "#ef4444", icon: "🐞" },
 } as const;
 
 export const PRIORITY_META = {
   low: { label: "Rendah", color: "#64748b" },
-  medium: { label: "Sedang", color: "#3b82f6" },
+  medium: { label: "Sedang", color: "#1e72e4" },
   high: { label: "Tinggi", color: "#f59e0b" },
   urgent: { label: "Mendesak", color: "#ef4444" },
 } as const;

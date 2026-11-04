@@ -72,7 +72,7 @@ function BrandPanel() {
   return (
     <aside className="relative hidden overflow-hidden bg-[#0a2a6b] text-white lg:flex lg:flex-col">
       {/* glow + dot grid background */}
-      <div className="absolute inset-0 bg-[radial-gradient(60%_50%_at_20%_10%,#2563eb_0%,transparent_70%),radial-gradient(50%_45%_at_90%_80%,#1d4ed8_0%,transparent_70%)] opacity-90" />
+      <div className="absolute inset-0 bg-[radial-gradient(60%_50%_at_20%_10%,#0059c9_0%,transparent_70%),radial-gradient(50%_45%_at_90%_80%,#0049aa_0%,transparent_70%)] opacity-90" />
       <div className="absolute inset-0 [background-image:radial-gradient(rgba(255,255,255,.12)_1px,transparent_1px)] [background-size:22px_22px] [mask-image:linear-gradient(to_bottom,black,transparent_85%)]" />
 
       <div className="relative flex flex-1 flex-col p-10 xl:p-14">
@@ -268,7 +268,7 @@ export function AuthForm({ mode, providers }: { mode: "login" | "register"; prov
 
         <button
           disabled={busy}
-          className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-blue-500 to-blue-600 text-[15px] font-semibold text-white shadow-[0_1px_0_rgba(255,255,255,.25)_inset,0_8px_20px_-6px_rgba(37,99,235,.6)] transition hover:from-blue-600 hover:to-blue-700 disabled:opacity-70"
+          className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-blue-500 to-blue-600 text-[15px] font-semibold text-white shadow-[0_1px_0_rgba(255,255,255,.25)_inset,0_8px_20px_-6px_rgba(0,89,201,.5)] transition hover:from-blue-600 hover:to-blue-700 disabled:opacity-70"
         >
           {busy && <Spinner />}
           {busy ? "Memproses…" : isLogin ? "Masuk" : "Buat akun"}

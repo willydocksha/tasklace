@@ -5,9 +5,12 @@ import { CSS } from "@dnd-kit/utilities";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { TopBar } from "@/components/TopBar";
+import { Tour, type TourStep } from "@/components/Tour";
 import { Select } from "@/components/ui/Select";
+import { toastError } from "@/components/ui/Dialog";
 import type { User } from "@/lib/auth";
 import { api } from "@/lib/client";
+import { canEditCard } from "@/lib/permissions";
 import { realtimeEnabled, useBoardChannel } from "@/lib/realtime";
 import { boardBg, TYPE_META } from "@/lib/theme";
 import type { BoardData, Card } from "@/lib/types";
@@ -27,6 +30,22 @@ const VIEWS: { id: View; label: string }[] = [
   { id: "storyline", label: "📚 Storyline" },
 ];
 const ORDER_KEY = "tl-view-order";
+
+// first-visit walkthrough of a board
+const TOUR: TourStep[] = [
+  {
+    title: "Ini board kamu 📋",
+    body: "Board menampilkan semua pekerjaan proyek. Setiap kolom adalah satu tahap kerja, dan setiap kartu adalah satu tugas (tiket). Begini cara pakainya:",
+  },
+  { target: "list", placement: "right", title: "List = tahap kerja", body: "Kolom seperti To Do, In Progress dan Done menunjukkan status kartu. Klik nama list untuk mengganti nama, tombol ⋯ untuk warna atau menandainya sebagai list \"selesai\". Geser judul list untuk mengubah urutan kolom." },
+  { target: "card", title: "Kartu = satu tugas", body: "Klik kartu untuk melihat detailnya. Geser kartu ke kolom lain untuk mengubah statusnya, mis. dari To Do ke In Progress." },
+  { target: "add-card", title: "Tambah kartu", body: "Tulis judul tugas lalu Enter. Pilih tipenya: Task (tugas biasa), Story (fitur dari sisi pengguna), Bug (masalah), atau Epic (tujuan besar yang menampung banyak story)." },
+  { target: "add-list", title: "Tambah list", body: "Butuh tahap lain, misal \"QA\" atau \"Siap rilis\"? Tambahkan list baru di sini." },
+  { target: "views", title: "Ganti tampilan", body: (<><b>Board</b>: kolom kanban. <b>Backlog</b>: rencanakan sprint (periode kerja 1–2 minggu). <b>List</b>: semua kartu dalam tabel. <b>Storyline</b>: epic dan story dalam timeline. Tab bisa digeser untuk atur urutan.</>) },
+  { target: "filters", title: "Cari & saring", body: "Cari kartu dari judul atau kode (mis. WEB-12). Saring per tipe, per orang, atau pilih \"Tugas saya\" untuk melihat pekerjaanmu saja." },
+  { target: "share", title: "Undang & atur board", body: "Undang orang lewat link atau email, atur perannya, warna board, label, dan alur status (kolom mana boleh pindah ke mana). Di sini juga terlihat hak akses kamu." },
+  { target: "board-switcher", title: "Pindah board cepat", body: "Klik nama board di atas untuk loncat ke board lain tanpa kembali ke halaman utama." },
+];
 
 // view switcher; tabs can be dragged into a new order (remembered on this device)
 function ViewTabs({ view, onSelect }: { view: View; onSelect: (v: View) => void }) {
@@ -55,7 +74,7 @@ function ViewTabs({ view, onSelect }: { view: View; onSelect: (v: View) => void 
   return (
     <DndContext id="view-tabs" sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
       <SortableContext items={order} strategy={horizontalListSortingStrategy}>
-        <div className="flex rounded-lg bg-black/20 p-0.5 text-sm" title="Geser untuk mengatur urutan">
+        <div data-tour="views" className="flex rounded-lg bg-black/20 p-0.5 text-sm" title="Geser untuk mengatur urutan">
           {order.map((id) => <ViewTab key={id} id={id} active={view === id} onSelect={onSelect} />)}
         </div>
       </SortableContext>
@@ -111,7 +130,7 @@ export function BoardClient({ user, initial }: { user: User; initial: BoardData 
         await fn();
         ping();
       } catch (e) {
-        alert((e as Error).message);
+        toastError(e);
       }
       await refresh().catch(() => {});
     },
@@ -130,6 +149,24 @@ export function BoardClient({ user, initial }: { user: User; initial: BoardData 
       document.removeEventListener("visibilitychange", tick);
     };
   }, [refresh]);
+
+  // open the card named in the url (?card=TKO-12) on first load; match by number so a renamed key still works
+  useEffect(() => {
+    const ref = new URLSearchParams(window.location.search).get("card");
+    const num = Number(ref?.match(/(\d+)$/)?.[1]);
+    const hit = initial.cards.find((c) => c.id === ref || c.number === num);
+    if (hit) setOpenId(hit.id);
+  }, [initial.cards]);
+
+  // mirror the open card in the url so it can be copied and shared
+  const shown = data.cards.find((c) => c.id === openId);
+  const urlKey = shown ? `${data.board.key}-${shown.number}` : null;
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (urlKey) url.searchParams.set("card", urlKey);
+    else url.searchParams.delete("card");
+    if (url.href !== window.location.href) window.history.replaceState(null, "", url);
+  }, [urlKey]);
 
   // remember the chosen view per board
   useEffect(() => {
@@ -151,22 +188,23 @@ export function BoardClient({ user, initial }: { user: User; initial: BoardData 
   const matchQ = (c: Card) => !q || c.title.toLowerCase().includes(q.toLowerCase()) || keyOf(c).toLowerCase() === q.trim().toLowerCase();
   const matchSprint = (c: Card) =>
     !fSprint || (fSprint === "none" ? !c.sprint_id : fSprint === "active" ? !!activeSprint && c.sprint_id === activeSprint.id : c.sprint_id === fSprint);
-  const visible = (c: Card) => matchQ(c) && (!fType || c.type === fType) && (!fMember || c.assignees.includes(fMember)) && matchSprint(c);
+  const visible = (c: Card) => matchQ(c) && (!fType || c.type === fType) && (!fMember || c.assignees.includes(fMember) || c.subtasks.some((s) => s.assignees.includes(fMember))) && matchSprint(c);
   const openCard = data.cards.find((c) => c.id === openId);
-  const isAdmin = data.role !== "member";
+  const isAdmin = data.perms.admin;
+  const canEdit = (c: Card) => canEditCard(data.perms, c, user.id);
   const filtering = !!(q || fType || fMember || fSprint);
   const sprintCards = activeSprint ? data.cards.filter((c) => c.sprint_id === activeSprint.id) : [];
   const sprintPts = points(sprintCards);
   const sprintLeft = daysLeft(activeSprint?.end_date ?? null);
 
   return (
-    <Ctx.Provider value={{ data, user, refresh, mutate, openCard: setOpenId, isAdmin }}>
+    <Ctx.Provider value={{ data, user, refresh, mutate, openCard: setOpenId, isAdmin, perms: data.perms, canEdit }}>
       <div className="flex h-screen flex-col" style={{ background: `linear-gradient(var(--board-dim), var(--board-dim)), ${boardBg(data.board.color)}` }}>
-        <TopBar user={user} dark />
+        <TopBar user={user} dark board={data.board} />
         <div className="flex flex-wrap items-center gap-2 bg-black/15 px-3 py-2 text-white sm:px-4">
           <h1 className="mr-2 text-lg font-bold drop-shadow">{data.board.name}</h1>
           <ViewTabs view={view} onSelect={switchView} />
-          <div className="flex flex-wrap items-center gap-1.5 text-sm">
+          <div data-tour="filters" className="flex flex-wrap items-center gap-1.5 text-sm">
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="🔍 Cari kartu" className="h-8 w-40 rounded-lg bg-white/15 px-2.5 ring-1 ring-white/15 placeholder-white/70 outline-none transition focus:w-52 focus:bg-surface focus:text-slate-800 focus:placeholder-slate-400 focus:ring-blue-200" />
             <Select
               variant="dark"
@@ -208,7 +246,7 @@ export function BoardClient({ user, initial }: { user: User; initial: BoardData 
               {data.members.slice(0, 5).map((m) => <Avatar key={m.id} name={m.name} color={m.color} src={m.avatar} size={28} ring />)}
               {data.members.length > 5 && <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/30 text-xs ring-2 ring-surface">+{data.members.length - 5}</span>}
             </button>
-            <button onClick={() => setSettings(true)} className="rounded-md bg-surface px-3 py-1 text-sm font-medium text-slate-800 hover:bg-slate-100">
+            <button data-tour="share" onClick={() => setSettings(true)} className="rounded-md bg-surface px-3 py-1 text-sm font-medium text-slate-800 hover:bg-slate-100">
               Bagikan / Atur
             </button>
           </div>
@@ -237,6 +275,8 @@ export function BoardClient({ user, initial }: { user: User; initial: BoardData 
       </div>
       {openCard && <CardModal card={openCard} onClose={() => setOpenId(null)} />}
       {settings && <Settings onClose={() => setSettings(false)} />}
+      {/* the card tour goes first when a card link opens a card on load */}
+      <Tour id="board" steps={TOUR} seen={user.tours} enabled={!openCard && !settings && view === "board"} />
     </Ctx.Provider>
   );
 }

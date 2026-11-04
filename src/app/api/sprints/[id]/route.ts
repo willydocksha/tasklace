@@ -1,5 +1,5 @@
 import { logActivity } from "@/lib/activity";
-import { body, HttpError, requireMember, route } from "@/lib/api";
+import { body, HttpError, requirePerm, route } from "@/lib/api";
 import { sql } from "@/lib/db";
 
 type P = { id: string };
@@ -9,7 +9,7 @@ async function sprintOf(id: string, userId: string) {
   const [s] = await sql<{ board_id: string; status: string; start_date: string | null; end_date: string | null }[]>`
     select board_id, status, start_date, end_date from sprints where id = ${id}`;
   if (!s) throw new HttpError(404, "Sprint tidak ditemukan");
-  await requireMember(s.board_id, userId);
+  await requirePerm(s.board_id, userId, "structure");
   return s;
 }
 

@@ -3,17 +3,37 @@ import { useCallback, useEffect, useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { Modal } from "@/components/Modal";
 import { RichText } from "@/components/RichText";
+import { Tour, type TourStep } from "@/components/Tour";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { Select } from "@/components/ui/Select";
+import { confirmDialog, promptDialog } from "@/components/ui/Dialog";
 import { api } from "@/lib/client";
+import { canMove } from "@/lib/flow";
+import { uploadCardImage } from "@/lib/image";
 import { EPIC_COLORS, PRIORITY_META, TYPE_META, labelText } from "@/lib/theme";
 import type { Activity, Card, CardType, Comment, Priority } from "@/lib/types";
 import { ActivityFeed } from "./ActivityFeed";
+import { AssigneePicker } from "./AssigneePicker";
+import { NextStatus } from "./NextStatus";
+import { Attachments } from "./Attachments";
 import { StatusJourney } from "./StatusJourney";
+import { Subtasks } from "./Subtasks";
 import { cardHelpers, useBoard } from "./context";
 
+// first-time walkthrough of the card detail
+const TOUR: TourStep[] = [
+  { target: "card-title", title: "Detail kartu", body: "Ini judul dan kode kartu (mis. WEB-12). Klik judul untuk mengubahnya. Tombol Bagikan menyalin link langsung ke kartu ini." },
+  { target: "card-desc", title: "Deskripsi", body: "Tulis detail tugas, acceptance criteria, atau catatan. Bisa pakai heading, list, checklist, blok kode, dan tempel gambar langsung (Ctrl/⌘+V)." },
+  { target: "card-subtasks", title: "Subtask", body: "Pecah tugas jadi bagian kecil (mis. Backend, Frontend). Tiap subtask punya status dan penanggung jawab sendiri, dan progresnya terlihat di kartu." },
+  { target: "card-attachments", title: "Lampiran", body: "Upload screenshot atau gambar pendukung. Klik gambar untuk melihat ukuran penuh." },
+  { target: "card-status", title: "Status", body: "Pindahkan kartu ke tahap berikutnya dari sini (sama seperti menggeser di board). Kalau admin mengatur alur status, hanya tahap yang diizinkan yang muncul. Kartu di list \"selesai\" otomatis dikunci." },
+  { target: "card-assignees", title: "Siapa yang mengerjakan", body: "Tugaskan kartu ke satu orang atau lebih. Mereka bisa menyaring \"Tugas saya\" untuk melihat semua kerjaannya." },
+  { target: "card-fields", placement: "left", title: "Info lain", body: "Atur tipe, epic induk, sprint, story point (perkiraan besar pekerjaan), prioritas, tanggal mulai dan deadline, serta label." },
+  { target: "card-activity", placement: "top", title: "Komentar & riwayat", body: "Diskusi dengan tim lewat komentar. Semua perubahan (status, assignee, deadline, dll) tercatat otomatis, dan tab Perjalanan Status menunjukkan berapa lama kartu di tiap tahap." },
+];
+
 export function CardModal({ card, onClose }: { card: Card; onClose: () => void }) {
-  const { data, mutate, openCard, user } = useBoard();
+  const { data, mutate, openCard, user, perms, canEdit } = useBoard();
   const { childrenOf, progress, isDone, keyOf, points } = cardHelpers(data);
   const [title, setTitle] = useState(card.title);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -37,8 +57,10 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
   const kids = card.type === "epic" ? childrenOf(card.id) : [];
   const prog = progress(card.id);
   const t = TYPE_META[card.type];
-  // done cards are read-only except for their status
-  const locked = isDone(card);
+  // done cards are read-only except for their status; without edit rights everything is
+  const editable = canEdit(card);
+  const doneLock = isDone(card);
+  const locked = doneLock || !editable;
   const doneLists = new Set(data.lists.filter((l) => l.is_done).map((l) => l.id));
 
   async function sendComment(text: string) {
@@ -47,31 +69,56 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
     void mutate(async () => {});
   }
 
+  // refresh the board (tile counts) and tell other viewers
+  const refreshBoard = useCallback(() => void mutate(async () => {}), [mutate]);
+
+  // description images are stored as card attachments
+  async function uploadImage(f: File) {
+    const id = await uploadCardImage(card.id, f);
+    refreshBoard();
+    return `/api/attachments/${id}`;
+  }
+
   const lbl = "mb-1 block text-xs font-semibold tracking-wide text-slate-500 uppercase";
 
   return (
-    <Modal onClose={onClose} width={820}>
+    <Modal onClose={onClose} width={1120} floating sizeKey="card">
+      {/* sticky header doubles as the drag handle */}
+      <div data-drag-handle className="sticky top-0 z-10 cursor-move rounded-t-xl bg-surface">
       <div className="h-2 rounded-t-xl" style={{ background: card.type === "epic" ? (card.color ?? t.color) : t.color }} />
       <div className="flex items-start gap-3 p-5 pb-2">
         <span className="mt-1.5 text-lg" style={{ color: t.color }}>{t.icon}</span>
-        <div className="flex-1">
-          <input readOnly={locked} className="w-full rounded px-1 py-0.5 text-xl font-bold outline-none read-only:cursor-default focus:ring-2 focus:ring-blue-400 read-only:focus:ring-0" value={title} onChange={(e) => setTitle(e.target.value)} onBlur={() => title.trim() && title !== card.title && patch({ title })} onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()} />
-          <div className="px-1 text-xs text-slate-500">
+        <div className="min-w-0 flex-1" data-tour="card-title">
+          {/* sized to its text so the rest of the header stays draggable */}
+          <input readOnly={locked} className="field-sizing-content -ml-0.5 block max-w-full min-w-24 cursor-text rounded-md px-1.5 py-0.5 text-xl font-bold transition outline-none hover:bg-slate-100 focus:bg-surface focus:ring-2 focus:ring-blue-400 read-only:cursor-default read-only:hover:bg-transparent read-only:focus:ring-0" value={title} onChange={(e) => setTitle(e.target.value)} onBlur={() => title.trim() && title !== card.title && patch({ title })} onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()} />
+          <div className="mt-1.5 px-1 text-xs text-slate-500">
             <span className="mr-1.5 rounded bg-slate-100 px-1.5 py-0.5 font-semibold text-slate-600">{keyOf(card)}</span>
             di list <b>{data.lists.find((l) => l.id === card.list_id)?.name}</b>
             {isDone(card) && <span className="ml-2 rounded bg-green-100 px-1.5 text-green-700">✓ selesai</span>}
           </div>
         </div>
+        <ShareButton url={`${typeof window !== "undefined" ? window.location.origin : ""}/b/${data.board.id}?card=${keyOf(card)}`} />
         <button onClick={onClose} className="rounded-full px-2.5 py-1 text-slate-500 hover:bg-slate-100">✕</button>
       </div>
+      </div>
 
-      {locked && (
+      {!editable && (
+        <div className="mx-5 mb-1 flex items-center gap-2 rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-700 ring-1 ring-slate-200">
+          <span aria-hidden>👁️</span>
+          <span>
+            Kamu hanya bisa <b>melihat</b> kartu ini
+            {perms.editCard === "own" ? ": di board ini kamu cuma bisa mengubah kartu yang kamu buat atau ditugaskan ke kamu." : "."}
+            {perms.comment && " Komentar tetap bisa ditambahkan."}
+          </span>
+        </div>
+      )}
+      {editable && doneLock && (
         <div className="mx-5 mb-1 flex items-center gap-2 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-800 ring-1 ring-green-200">
           <svg viewBox="0 0 20 20" className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="4" y="9" width="12" height="8" rx="2" /><path d="M7 9V6.5a3 3 0 0 1 6 0V9" /></svg>
           <span>Kartu ini sudah <b>selesai</b> dan dikunci. Ubah <b>Status</b> untuk membukanya lagi. Komentar tetap bisa ditambahkan.</span>
         </div>
       )}
-      <div className="grid gap-6 p-5 pt-2 md:grid-cols-[1fr_250px]">
+      <div className="grid gap-6 p-5 pt-2 md:grid-cols-[1fr_300px]">
         <div className="min-w-0 space-y-5">
           <div className="flex flex-wrap gap-4">
             {card.labels.length > 0 && (
@@ -86,7 +133,7 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
             )}
             {card.assignees.length > 0 && (
               <div>
-                <span className={lbl}>Ditugaskan ke</span>
+                <span className={lbl}>Assignees</span>
                 <div className="flex gap-1">
                   {data.members.filter((m) => card.assignees.includes(m.id)).map((m) => <Avatar key={m.id} name={m.name} color={m.color} src={m.avatar} size={30} />)}
                 </div>
@@ -94,9 +141,17 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
             )}
           </div>
 
-          <div>
+          <div data-tour="card-desc">
             <span className={lbl}>Deskripsi</span>
-            <RichText key={card.id} readOnly={locked} value={card.description} onSave={(md) => void patch({ description: md })} placeholder="Tulis detail, acceptance criteria, catatan…" />
+            <RichText key={card.id} readOnly={locked} value={card.description} onSave={(md) => void patch({ description: md })} onImage={uploadImage} placeholder="Tulis detail, acceptance criteria, catatan…" />
+          </div>
+
+          <div data-tour="card-subtasks">
+            <Subtasks card={card} locked={locked} />
+          </div>
+
+          <div data-tour="card-attachments">
+            <Attachments card={card} locked={locked} onChanged={refreshBoard} />
           </div>
 
           {card.type === "epic" && (
@@ -122,17 +177,12 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
             </div>
           )}
 
-          <div>
-            <span className={lbl}>Perjalanan status</span>
-            <div className="rounded-xl border border-slate-200 bg-surface p-4">
-              <StatusJourney card={card} lists={data.lists} activity={activity} />
-            </div>
+          <div data-tour="card-activity">
+          <ActivityFeed activity={activity} comments={comments} user={user} doneLists={doneLists} onComment={perms.comment ? sendComment : undefined} journey={<StatusJourney card={card} lists={data.lists} activity={activity} />} />
           </div>
-
-          <ActivityFeed activity={activity} comments={comments} user={user} doneLists={doneLists} onComment={sendComment} />
         </div>
 
-        <aside className="space-y-3.5 self-start rounded-xl bg-slate-50/80 p-3.5 ring-1 ring-slate-200/70">
+        <aside data-tour="card-fields" className="space-y-3.5 self-start rounded-xl bg-slate-50/80 p-3.5 ring-1 ring-slate-200/70">
           <Field label="Tipe">
             <Select
               disabled={locked}
@@ -141,12 +191,22 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
               onChange={(v) => patch({ type: v, ...(v === "epic" ? { parent_id: null, color: card.color ?? EPIC_COLORS[0] } : {}) })}
             />
           </Field>
+          <div data-tour="card-status">
           <Field label="Status">
             <Select
+              disabled={!editable}
               value={card.list_id}
-              options={data.lists.map((l) => ({ value: l.id, label: l.name, icon: <StatusDot done={!!l.is_done} />, hint: l.is_done ? <span className="text-[11px] text-green-600">selesai</span> : undefined }))}
+              // only the current list and the lists its status flow allows
+              options={data.lists.filter((l) => canMove(data.lists.find((x) => x.id === card.list_id), l.id)).map((l) => ({ value: l.id, label: l.name, icon: <StatusDot done={!!l.is_done} />, hint: l.is_done ? <span className="text-[11px] text-green-600">selesai</span> : undefined }))}
               onChange={(v) => patch({ list_id: v })}
             />
+            <div className="mt-1.5">
+              <NextStatus lists={data.lists} current={card.list_id} disabled={!editable} onMove={(id) => patch({ list_id: id })} />
+            </div>
+          </Field>
+          </div>
+          <Field label="Assignees (ditugaskan ke)" tour="card-assignees">
+            <AssigneePicker value={card.assignees} disabled={locked} onChange={(ids) => patch({ assignees: ids })} />
           </Field>
           {card.type !== "epic" ? (
             <Field label="Bagian dari epic">
@@ -232,34 +292,42 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
               })}
             </div>
           </Field>
-          <Field label="Member">
-            <div className="overflow-hidden rounded-lg border border-slate-200 bg-surface">
-              {data.members.map((m) => {
-                const on = card.assignees.includes(m.id);
-                return (
-                  <button key={m.id} disabled={locked} onClick={() => patch({ assignees: toggle(card.assignees, m.id) })} className={`flex w-full items-center gap-2 border-b border-slate-100 px-2 py-1.5 text-left text-sm transition last:border-0 disabled:pointer-events-none ${on ? "bg-blue-50/70" : "hover:bg-slate-50"}`}>
-                    <Avatar name={m.name} color={m.color} src={m.avatar} size={22} />
-                    <span className="flex-1 truncate">{m.name}</span>
-                    <span className={`flex h-4 w-4 items-center justify-center rounded border text-[10px] ${on ? "border-blue-600 bg-blue-600 text-white" : "border-slate-300"}`}>{on && "✓"}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </Field>
-          {!locked && <button onClick={() => { if (confirm("Hapus kartu ini?")) { onClose(); void mutate(() => api(`/api/cards/${card.id}`, "DELETE")); } }} className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-red-100 bg-surface py-2 text-sm font-medium text-red-600 transition hover:border-red-200 hover:bg-red-50">
+          {!locked && <button onClick={async () => { if (await confirmDialog({ title: "Hapus kartu ini?", message: "Kartu beserta komentar dan lampirannya akan terhapus.", danger: true })) { onClose(); void mutate(() => api(`/api/cards/${card.id}`, "DELETE")); } }} className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-red-100 bg-surface py-2 text-sm font-medium text-red-600 transition hover:border-red-200 hover:bg-red-50">
             <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M4 6h12M8 6V4.5h4V6m-6 0 .7 10h6.6L14 6" strokeLinecap="round" strokeLinejoin="round" /></svg>
             Hapus kartu
           </button>}
         </aside>
       </div>
+      <Tour id="card" steps={TOUR} seen={user.tours} delay={700} />
     </Modal>
   );
 }
 
-// sidebar field: small caps label above a control
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+// copies the card link; shows a short confirmation
+function ShareButton({ url }: { url: string }) {
+  const [copied, setCopied] = useState(false);
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      void promptDialog({ title: "Salin link kartu ini", defaultValue: url, readOnly: true });
+      return;
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
   return (
-    <div>
+    <button onClick={copy} title={url} className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium transition ${copied ? "bg-green-50 text-green-700" : "text-slate-600 hover:bg-slate-100"}`}>
+      <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 11.5a3 3 0 0 0 4.2 0l2.6-2.6a3 3 0 0 0-4.2-4.2l-.9.9M11.5 8.5a3 3 0 0 0-4.2 0l-2.6 2.6a3 3 0 0 0 4.2 4.2l.9-.9" /></svg>
+      {copied ? "Link tersalin ✓" : "Bagikan"}
+    </button>
+  );
+}
+
+// sidebar field: small caps label above a control
+function Field({ label, children, tour }: { label: string; children: React.ReactNode; tour?: string }) {
+  return (
+    <div data-tour={tour}>
       <div className="mb-1 text-[11px] font-semibold tracking-wide text-slate-500 uppercase">{label}</div>
       {children}
     </div>

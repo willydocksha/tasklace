@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { Modal } from "@/components/Modal";
+import { confirmDialog } from "@/components/ui/Dialog";
 import { api } from "@/lib/client";
 import { TYPE_META } from "@/lib/theme";
 import type { Card, Sprint } from "@/lib/types";
@@ -10,7 +11,7 @@ import { cardHelpers, daysLeft, formatDate, today, useBoard } from "./context";
 type Visible = (c: Card) => boolean;
 
 export function Backlog({ visible }: { visible: Visible }) {
-  const { data, mutate } = useBoard();
+  const { data, mutate, perms } = useBoard();
   const [editing, setEditing] = useState<{ sprint: Sprint; start: boolean } | null>(null);
   const [completing, setCompleting] = useState<Sprint | null>(null);
   const [history, setHistory] = useState(false);
@@ -26,9 +27,11 @@ export function Backlog({ visible }: { visible: Visible }) {
       <div className="mx-auto max-w-5xl space-y-4">
         <div className="flex items-center gap-2">
           <h2 className="text-lg font-bold text-white drop-shadow">Backlog &amp; Sprint</h2>
-          <button onClick={() => mutate(() => api(`/api/boards/${data.board.id}/sprints`, "POST", {}))} className="ml-auto rounded-md bg-surface px-3 py-1.5 text-sm font-medium text-slate-800 shadow hover:bg-slate-100">
-            + Buat sprint
-          </button>
+          {perms.structure && (
+            <button onClick={() => mutate(() => api(`/api/boards/${data.board.id}/sprints`, "POST", {}))} className="ml-auto rounded-md bg-surface px-3 py-1.5 text-sm font-medium text-slate-800 shadow hover:bg-slate-100">
+              + Buat sprint
+            </button>
+          )}
         </div>
 
         {open.map((s) => (
@@ -77,7 +80,7 @@ function Section({
   onStart?: () => void;
   onComplete?: () => void;
 }) {
-  const { data, mutate } = useBoard();
+  const { data, mutate, perms } = useBoard();
   const { points, isDone } = cardHelpers(data);
   const pts = points(cards);
   const left = sprint?.status === "active" ? daysLeft(sprint.end_date) : null;
@@ -103,7 +106,7 @@ function Section({
             </div>
           )}
         </div>
-        {sprint && (
+        {sprint && perms.structure && (
           <div className="ml-auto flex items-center gap-1.5 text-sm">
             {sprint.status === "planned" && (
               <button
@@ -125,7 +128,7 @@ function Section({
             </button>
             {sprint.status === "planned" && (
               <button
-                onClick={() => confirm(`Hapus ${sprint.name}? Issue di dalamnya kembali ke backlog.`) && mutate(() => api(`/api/sprints/${sprint.id}`, "DELETE"))}
+                onClick={async () => (await confirmDialog({ title: `Hapus ${sprint.name}?`, message: "Issue di dalamnya kembali ke backlog.", danger: true })) && mutate(() => api(`/api/sprints/${sprint.id}`, "DELETE"))}
                 className="rounded-md px-2 py-1 text-slate-400 hover:bg-red-50 hover:text-red-600"
               >
                 ✕
@@ -150,7 +153,7 @@ function Section({
 
 // a compact issue row with a quick "move to sprint" picker
 function Row({ card }: { card: Card }) {
-  const { data, mutate, openCard } = useBoard();
+  const { data, mutate, openCard, canEdit } = useBoard();
   const { byId, isDone, keyOf } = cardHelpers(data);
   const t = TYPE_META[card.type];
   const epic = card.parent_id ? byId.get(card.parent_id) : undefined;
@@ -183,8 +186,8 @@ function Row({ card }: { card: Card }) {
       </span>
       <select
         value={card.sprint_id ?? ""}
-        // done cards are locked
-        disabled={done}
+        // done cards are locked; so are cards the user may not edit
+        disabled={done || !canEdit(card)}
         onClick={(e) => e.stopPropagation()}
         onChange={(e) => mutate(() => api(`/api/cards/${card.id}`, "PATCH", { sprint_id: e.target.value || null }))}
         className="w-24 shrink-0 rounded border border-slate-200 bg-surface px-1 py-0.5 text-xs text-slate-600 disabled:opacity-50"
@@ -205,9 +208,10 @@ function Row({ card }: { card: Card }) {
 
 // quick-create an issue straight into a sprint or the backlog
 function AddIssue({ sprintId }: { sprintId: string | null }) {
-  const { data, mutate } = useBoard();
+  const { data, mutate, perms } = useBoard();
   const [title, setTitle] = useState("");
   const [type, setType] = useState("story");
+  if (!perms.createCard) return null;
 
   return (
     <form

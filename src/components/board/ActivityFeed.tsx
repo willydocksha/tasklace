@@ -5,7 +5,7 @@ import { PRIORITY_META, TYPE_META } from "@/lib/theme";
 import type { User } from "@/lib/auth";
 import type { Activity, Comment } from "@/lib/types";
 
-type Tab = "all" | "activity" | "comments";
+type Tab = "all" | "activity" | "comments" | "status";
 type Item = { at: number; activity?: Activity; comment?: Comment };
 
 // relative time for the feed ("5 menit lalu"), full date on hover
@@ -68,31 +68,51 @@ function describe(a: Activity, doneLists: Set<string>): { icon: string; text: Re
         ),
       };
     }
+    case "attachment":
+      return { icon: "📎", text: d.removed ? <>menghapus lampiran <Chip>{d.name}</Chip></> : <>melampirkan <Chip>{d.name}</Chip></> };
+    case "subtask":
+      if (d.action === "assignees")
+        return {
+          icon: "☑",
+          text: (
+            <>
+              subtask <b>“{d.title}”</b>:{" "}
+              {(d.added as unknown[])?.length > 0 && <>menugaskan <Chip>{list(d.added)}</Chip></>}
+              {(d.added as unknown[])?.length > 0 && (d.removed as unknown[])?.length > 0 && ", "}
+              {(d.removed as unknown[])?.length > 0 && <>melepas <Chip>{list(d.removed)}</Chip></>}
+            </>
+          ),
+        };
+      if (d.action === "status") return { icon: "☑", text: <>subtask <b>“{d.title}”</b> <Chip>{d.fromName ?? "?"}</Chip> → <Chip tone={doneLists.has(d.to) ? "green" : "blue"}>{d.toName ?? "?"}</Chip></> };
+      return { icon: "☑", text: <>{d.action === "removed" ? "menghapus" : "menambah"} subtask <b>“{d.title}”</b></> };
     default:
       return { icon: "•", text: <>mengubah kartu</> };
   }
 }
 
-// activity + comments with "semua / aktivitas / komentar" tabs and the comment box
-export function ActivityFeed({ activity, comments, user, doneLists, onComment }: {
+// activity + comments with "semua / aktivitas / komentar / status" tabs and the comment box
+export function ActivityFeed({ activity, comments, user, doneLists, onComment, journey }: {
   activity: Activity[];
   comments: Comment[];
   user: User;
   doneLists: Set<string>;
-  onComment: (text: string) => Promise<void>;
+  // missing when the user may not comment
+  onComment?: (text: string) => Promise<void>;
+  // status journey, shown in its own tab
+  journey?: React.ReactNode;
 }) {
   const [tab, setTab] = useState<Tab>("all");
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
 
-  // newest first, merged by timestamp
-  const items: Item[] = [
+  // newest first, merged by timestamp (status tab has no feed)
+  const items: Item[] = tab === "status" ? [] : [
     ...(tab !== "comments" ? activity.map((a) => ({ at: a.created_at, activity: a })) : []),
     ...(tab !== "activity" ? comments.map((c) => ({ at: c.created_at, comment: c })) : []),
   ].sort((a, b) => b.at - a.at);
 
   async function send() {
-    if (!text.trim() || sending) return;
+    if (!text.trim() || sending || !onComment) return;
     setSending(true);
     try {
       await onComment(text);
@@ -102,13 +122,17 @@ export function ActivityFeed({ activity, comments, user, doneLists, onComment }:
     }
   }
 
-  const tabs: [Tab, string, number][] = [["all", "Semua", activity.length + comments.length], ["activity", "Aktivitas", activity.length], ["comments", "Komentar", comments.length]];
+  const tabs: [Tab, string, number | null][] = [
+    ["all", "Semua", activity.length + comments.length],
+    ["activity", "Aktivitas", activity.length],
+    ["comments", "Komentar", comments.length],
+    ...(journey ? [["status", "Perjalanan Status", null] as [Tab, string, null]] : []),
+  ];
 
   return (
     <div>
       {/* tab bar */}
       <div className="mb-3 flex items-center gap-1 border-b border-slate-200">
-        <span className="mr-2 text-[11px] font-semibold tracking-wide text-slate-500 uppercase">Aktivitas</span>
         {tabs.map(([id, label, n]) => (
           <button
             key={id}
@@ -116,13 +140,13 @@ export function ActivityFeed({ activity, comments, user, doneLists, onComment }:
             className={`relative -mb-px flex items-center gap-1.5 border-b-2 px-2.5 pt-1 pb-2 text-sm transition ${tab === id ? "border-blue-600 font-medium text-blue-700" : "border-transparent text-slate-500 hover:text-slate-800"}`}
           >
             {label}
-            <span className={`rounded-full px-1.5 text-[11px] ${tab === id ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-500"}`}>{n}</span>
+            {n !== null && <span className={`rounded-full px-1.5 text-[11px] ${tab === id ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-500"}`}>{n}</span>}
           </button>
         ))}
       </div>
 
-      {/* comment box (not on the activity-only tab) */}
-      {tab !== "activity" && (
+      {/* comment box (only where comments are listed) */}
+      {onComment && (tab === "all" || tab === "comments") && (
         <div className="mb-4 flex gap-2">
           <Avatar name={user.name} color={user.color} src={user.avatar} size={30} />
           <div className="flex-1 space-y-2">
@@ -145,8 +169,11 @@ export function ActivityFeed({ activity, comments, user, doneLists, onComment }:
         </div>
       )}
 
+      {/* status journey (own tab) */}
+      {tab === "status" && journey && <div className="rounded-xl border border-slate-200 bg-surface p-4">{journey}</div>}
+
       {/* feed */}
-      {items.length === 0 && <div className="rounded-lg border border-dashed border-slate-200 py-6 text-center text-sm text-slate-400">{tab === "comments" ? "Belum ada komentar" : "Belum ada aktivitas"}</div>}
+      {tab !== "status" && items.length === 0 && <div className="rounded-lg border border-dashed border-slate-200 py-6 text-center text-sm text-slate-400">{tab === "comments" ? "Belum ada komentar" : "Belum ada aktivitas"}</div>}
       <ol className="space-y-3">
         {items.map((it) =>
           it.comment ? (

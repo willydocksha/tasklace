@@ -147,11 +147,14 @@ create table if not exists team_boards (
 );
 
 -- who can open a board: direct board members plus members of every team the board is in.
--- team owners/admins act as board admins. security_invoker keeps it behind the tables' rls.
+-- team owners/admins act as board admins, team viewers stay viewers; team_id points at the
+-- team's permission policy (null for direct members). security_invoker keeps it behind the tables' rls.
 create or replace view board_access with (security_invoker = true) as
-  select board_id, user_id, role, true as direct from board_members
+  select board_id, user_id, role, true as direct, null::text as team_id from board_members
   union all
-  select tb.board_id, tm.user_id, case when tm.role in ('owner', 'admin') then 'admin' else 'member' end, false
+  select tb.board_id, tm.user_id,
+    case when tm.role in ('owner', 'admin') then 'admin' when tm.role = 'viewer' then 'viewer' else 'member' end,
+    false, tm.team_id
   from team_boards tb join team_members tm on tm.team_id = tb.team_id;
 
 -- email verification: accounts created before this existed count as verified
@@ -177,6 +180,10 @@ create table if not exists email_tokens (
 -- profile: unique handle, photo url (own upload or provider picture)
 alter table users add column if not exists username text;
 alter table users add column if not exists avatar_url text;
+
+-- optional list color (hex) for tinting kanban columns
+alter table lists add column if not exists color text;
+
 create unique index if not exists idx_users_username on users(lower(username));
 
 -- uploaded profile photos (small, resized in the browser)
@@ -241,3 +248,67 @@ do $$ begin
     revoke all on board_access from anon, authenticated;
   end if;
 end $$;
+
+-- images attached to a card (compressed in the browser), plus a small thumbnail
+create table if not exists card_attachments (
+  id text primary key,
+  card_id text not null references cards(id) on delete cascade,
+  user_id text references users(id) on delete set null,
+  name text not null,
+  mime text not null,
+  width int not null,
+  height int not null,
+  size int not null,
+  data bytea not null,
+  thumb bytea not null,
+  created_at bigint not null
+);
+create index if not exists idx_card_attachments_card on card_attachments(card_id);
+
+-- status flow: lists a card in this list may move to (null = any list)
+alter table lists add column if not exists next_ids text[];
+
+-- plain-text subtasks of a card, each with its own status (a list of the board; null = first list)
+create table if not exists card_subtasks (
+  id text primary key,
+  card_id text not null references cards(id) on delete cascade,
+  title text not null,
+  list_id text references lists(id) on delete set null,
+  position integer not null,
+  created_at bigint not null
+);
+create index if not exists idx_card_subtasks_card on card_subtasks(card_id);
+alter table card_subtasks enable row level security;
+
+-- people responsible for a subtask (one or more)
+create table if not exists card_subtask_assignees (
+  subtask_id text not null references card_subtasks(id) on delete cascade,
+  user_id text not null references users(id) on delete cascade,
+  primary key (subtask_id, user_id)
+);
+alter table card_subtask_assignees enable row level security;
+
+-- team photo (small, cropped and compressed in the browser)
+alter table teams add column if not exists avatar_url text;
+create table if not exists team_avatars (
+  team_id text primary key references teams(id) on delete cascade,
+  mime text not null,
+  data bytea not null,
+  updated_at bigint not null
+);
+alter table team_avatars enable row level security;
+
+-- team permission policy (see src/lib/permissions.ts); missing keys use the defaults
+alter table teams add column if not exists permissions jsonb not null default '{}';
+
+-- each user's own order of the boards page (dragged by hand; new boards have no row)
+create table if not exists board_positions (
+  user_id text not null references users(id) on delete cascade,
+  board_id text not null references boards(id) on delete cascade,
+  position integer not null,
+  primary key (user_id, board_id)
+);
+alter table board_positions enable row level security;
+
+-- onboarding tours a user has finished or skipped
+alter table users add column if not exists tours_seen text[] not null default '{}';

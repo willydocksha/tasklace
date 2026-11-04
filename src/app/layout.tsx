@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { THEME_SCRIPT } from "@/lib/themeScript";
+import { DialogHost } from "@/components/ui/Dialog";
 import "./globals.css";
 
 const sans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -18,7 +19,11 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
-      <body className={`${sans.variable} ${mono.variable} antialiased`}>{children}</body>
+      <body className={`${sans.variable} ${mono.variable} antialiased`}>
+        {children}
+        {/* in-app confirm / prompt dialogs and toasts */}
+        <DialogHost />
+      </body>
     </html>
   );
 }

@@ -1,16 +1,18 @@
 import { body, HttpError, route } from "@/lib/api";
 import { newId, sql } from "@/lib/db";
+import { canCreateTeamBoard, policyOf } from "@/lib/permissions";
 import { newInvite } from "@/lib/teams";
 
-// teams the user is in, with member and board counts
-export const GET = route(({ user }) =>
-  sql`
-    select t.id, t.name, m.role,
+// teams the user is in, with member and board counts and whether they may add boards
+export const GET = route(async ({ user }) => {
+  const rows = await sql<{ id: string; name: string; avatar: string | null; role: string; permissions: unknown; member_count: number; board_count: number }[]>`
+    select t.id, t.name, t.avatar_url as avatar, m.role, t.permissions,
       (select count(*) from team_members where team_id = t.id) as member_count,
       (select count(*) from team_boards where team_id = t.id) as board_count
     from teams t join team_members m on m.team_id = t.id and m.user_id = ${user.id}
-    order by t.created_at`,
-);
+    order by t.created_at`;
+  return rows.map(({ permissions, ...t }) => ({ ...t, can_create_board: canCreateTeamBoard(t.role, policyOf(permissions)) }));
+});
 
 // create a team; the creator becomes its owner
 export const POST = route(async ({ req, user }) => {

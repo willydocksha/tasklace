@@ -4,7 +4,7 @@ import { newId, type Sql } from "./db";
 // so history still reads right after a list or label is renamed)
 export type ActivityKind =
   | "created" | "status" | "title" | "description" | "type" | "priority"
-  | "epic" | "sprint" | "points" | "start_date" | "due_date" | "labels" | "assignees";
+  | "epic" | "sprint" | "points" | "start_date" | "due_date" | "labels" | "assignees" | "attachment" | "subtask";
 
 export type ActivityRow = { cardId: string; kind: ActivityKind; data?: Record<string, unknown> };
 

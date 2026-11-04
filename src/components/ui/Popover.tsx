@@ -58,6 +58,8 @@ export function PopoverPanel({ pop, children, className = "", onKeyDown }: {
       // the entrance animation starts only once the panel is in place
       style={{ ...pop.floatingStyles, opacity: pop.isPositioned ? undefined : 0 }}
       onKeyDown={onKeyDown}
+      // lets click-outside handlers treat the portaled panel as "inside"
+      data-popover
       // keep clicks inside from reaching modal backdrops
       onMouseDown={(e) => e.stopPropagation()}
       className={`z-[100] flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-surface text-slate-800 shadow-[0_12px_40px_-8px_rgba(15,23,42,0.28)] ring-1 ring-black/[0.03] ${pop.isPositioned ? "animate-[pop_120ms_ease-out]" : ""} ${className}`}

@@ -4,7 +4,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { Avatar } from "@/components/Avatar";
 import { PRIORITY_META, TYPE_META, labelText } from "@/lib/theme";
 import type { Card } from "@/lib/types";
-import { cardHelpers, formatDate, today, useBoard } from "./context";
+import { cardHelpers, formatDate, subtaskProgress, today, useBoard } from "./context";
 
 export function CardView({ card, overlay }: { card: Card; overlay?: boolean }) {
   const { data, openCard } = useBoard();
@@ -16,6 +16,7 @@ export function CardView({ card, overlay }: { card: Card; overlay?: boolean }) {
   const done = isDone(card);
   const overdue = card.due_date && !done && card.due_date < today();
   const prog = card.type === "epic" ? progress(card.id) : null;
+  const subs = subtaskProgress(data, card);
 
   return (
     <div
@@ -65,6 +66,10 @@ export function CardView({ card, overlay }: { card: Card; overlay?: boolean }) {
         )}
         {card.description && <span title="Ada deskripsi">≡</span>}
         {card.comment_count > 0 && <span>💬 {card.comment_count}</span>}
+        {card.attachment_count > 0 && <span title="Lampiran">📎 {card.attachment_count}</span>}
+        {subs.total > 0 && (
+          <span title="Subtask selesai" className={`rounded px-1 ${subs.done === subs.total ? "bg-green-100 text-green-700" : ""}`}>☑ {subs.done}/{subs.total}</span>
+        )}
         {card.points != null && (
           <span title="Story points" className="rounded-full bg-slate-200 px-1.5 font-semibold text-slate-700">
             {card.points}
@@ -80,10 +85,11 @@ export function CardView({ card, overlay }: { card: Card; overlay?: boolean }) {
   );
 }
 
-export function SortableCard({ card, disabled }: { card: Card; disabled?: boolean }) {
+// tour marks the card the board tour points at
+export function SortableCard({ card, disabled, tour }: { card: Card; disabled?: boolean; tour?: boolean }) {
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({ id: "c:" + card.id, data: { type: "card" }, disabled });
   return (
-    <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.35 : 1 }} {...attributes} {...listeners}>
+    <div ref={setNodeRef} data-tour={tour ? "card" : undefined} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.35 : 1 }} {...attributes} {...listeners}>
       <CardView card={card} />
     </div>
   );

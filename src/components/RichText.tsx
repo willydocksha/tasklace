@@ -2,14 +2,17 @@
 import { CodeBlockLowlight } from "@tiptap/extension-code-block-lowlight";
 import { TaskItem, TaskList } from "@tiptap/extension-list";
 import { Extension } from "@tiptap/core";
+import { Image } from "@tiptap/extension-image";
 import { Placeholder } from "@tiptap/extensions";
 import { Markdown } from "@tiptap/markdown";
 import type { Node as PMNode } from "@tiptap/pm/model";
+import type { EditorView } from "@tiptap/pm/view";
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { common, createLowlight } from "lowlight";
 import { useEffect, useRef, useState } from "react";
 import { Kbd, Select, type Option } from "@/components/ui/Select";
+import { promptDialog, toastError } from "@/components/ui/Dialog";
 import { FORMATTABLE, formatCode } from "@/lib/codeFormat";
 
 const lowlight = createLowlight(common);
@@ -53,7 +56,7 @@ const CodeHelpers = Extension.create({
       },
       "Shift-Alt-f": ({ editor }) => {
         if (!editor.isActive("codeBlock")) return false;
-        void formatBlock(editor).catch((e) => alert((e as Error).message));
+        void formatBlock(editor).catch(toastError);
         return true;
       },
     };
@@ -70,14 +73,18 @@ const extensions = (placeholder: string, onTick: (node: PMNode, checked: boolean
   // checklists can be ticked in view mode too
   TaskItem.configure({ nested: true, onReadOnlyChecked: onTick }),
   Placeholder.configure({ placeholder }),
+  // pasted / dropped pictures get their own line, stored as ![alt](url)
+  Image,
   // breaks: single newlines in old plain-text descriptions stay as line breaks
   Markdown.configure({ markedOptions: { gfm: true, breaks: true } }),
 ];
 
 // markdown description: formatted view, click to edit with a toolbar
-export function RichText({ value, onSave, placeholder = "Tulis sesuatu…", empty = "Klik untuk menambah deskripsi…", readOnly = false }: {
+export function RichText({ value, onSave, onImage, placeholder = "Tulis sesuatu…", empty = "Klik untuk menambah deskripsi…", readOnly = false }: {
   value: string;
   onSave: (markdown: string) => void;
+  // uploads a pasted/dropped image and resolves to its url; no handler = no images
+  onImage?: (file: File) => Promise<string>;
   placeholder?: string;
   empty?: string;
   // view only: no editing, checklists cannot be ticked
@@ -89,6 +96,48 @@ export function RichText({ value, onSave, placeholder = "Tulis sesuatu…", empt
   const ed = useRef<Editor | null>(null);
   const lockRef = useRef(readOnly);
   lockRef.current = readOnly;
+  const imageRef = useRef(onImage);
+  imageRef.current = onImage;
+  // images still uploading; saving waits until they have real urls
+  const [uploads, setUploads] = useState(0);
+
+  // swap a local preview url for the uploaded one (or drop the image on failure)
+  function swapImage(tmp: string, url: string | null) {
+    const e = ed.current;
+    if (!e) return;
+    let at = -1;
+    e.state.doc.descendants((n, p) => {
+      if (n.type.name === "image" && n.attrs.src === tmp) at = p;
+      return at < 0;
+    });
+    if (at < 0) return;
+    const node = e.state.doc.nodeAt(at)!;
+    e.view.dispatch(url ? e.state.tr.setNodeMarkup(at, undefined, { ...node.attrs, src: url }) : e.state.tr.delete(at, at + node.nodeSize));
+  }
+
+  // insert pasted/dropped images at once with a local preview, then upload each
+  function insertImages(view: EditorView, files: File[], pos?: number) {
+    const upload = imageRef.current;
+    const images = files.filter((f) => f.type.startsWith("image/"));
+    if (!upload || !view.editable || !images.length) return false;
+    for (const f of images) {
+      const tmp = URL.createObjectURL(f);
+      const node = view.state.schema.nodes.image.create({ src: tmp, alt: (f.name || "gambar").replace(/\.[^.]+$/, "") });
+      view.dispatch(pos == null ? view.state.tr.replaceSelectionWith(node) : view.state.tr.replaceRangeWith(pos, pos, node));
+      setUploads((n) => n + 1);
+      upload(f)
+        .then((url) => swapImage(tmp, url))
+        .catch((err) => {
+          swapImage(tmp, null);
+          toastError(err);
+        })
+        .finally(() => {
+          URL.revokeObjectURL(tmp);
+          setUploads((n) => n - 1);
+        });
+    }
+    return true;
+  }
 
   // read-only tick: tiptap only reports it, so update the node and save here
   function tick(node: PMNode, checked: boolean) {
@@ -112,7 +161,17 @@ export function RichText({ value, onSave, placeholder = "Tulis sesuatu…", empt
     editable: false,
     immediatelyRender: false,
     shouldRerenderOnTransaction: true,
-    editorProps: { attributes: { class: "rich outline-none" } },
+    editorProps: {
+      attributes: { class: "rich outline-none" },
+      handlePaste: (view, e) => insertImages(view, [...(e.clipboardData?.files ?? [])]),
+      handleDrop: (view, e) => {
+        const files = [...(e.dataTransfer?.files ?? [])];
+        const pos = view.posAtCoords({ left: e.clientX, top: e.clientY })?.pos;
+        if (!insertImages(view, files, pos)) return false;
+        e.preventDefault();
+        return true;
+      },
+    },
   });
 
   ed.current = editor;
@@ -128,22 +187,40 @@ export function RichText({ value, onSave, placeholder = "Tulis sesuatu…", empt
     editor.setEditable(true);
     setEditing(true);
   }
-  // focus once the editor is visible
+  // focus once the editor is visible; a doc ending in an image gets a line to type on
   useEffect(() => {
-    if (editing) editor?.commands.focus("end");
+    if (!editing || !editor) return;
+    const last = editor.state.doc.lastChild;
+    if (last && !last.isTextblock) editor.commands.insertContentAt(editor.state.doc.content.size, { type: "paragraph" });
+    editor.commands.focus("end");
   }, [editing, editor]);
   function stop(save: boolean) {
-    if (!editor) return;
-    const md = editor.getMarkdown().trim();
+    if (!editor || (save && uploads > 0)) return;
+    // drop trailing empty lines (they serialize as &nbsp;)
+    const md = editor.getMarkdown().replace(/(\s|&nbsp;)+$/, "").trim();
     if (save && md !== value.trim()) onSave(md);
     else if (!save) editor.commands.setContent(value, { contentType: "markdown", emitUpdate: false });
     editor.setEditable(false);
     setEditing(false);
   }
 
+  // clicking anywhere outside the editor (or its dropdowns) saves and closes it
+  const box = useRef<HTMLDivElement>(null);
+  const stopRef = useRef(stop);
+  stopRef.current = stop;
+  useEffect(() => {
+    if (!editing) return;
+    const onDown = (e: PointerEvent) => {
+      const t = e.target as HTMLElement;
+      if (!box.current?.contains(t) && !t.closest("[data-popover]")) stopRef.current(true);
+    };
+    document.addEventListener("pointerdown", onDown, true);
+    return () => document.removeEventListener("pointerdown", onDown, true);
+  }, [editing]);
+
   const isEmpty = !value.trim();
   return (
-    <div>
+    <div ref={box}>
       <div
         onClick={(e) => !editing && !readOnly && !(e.target as HTMLElement).closest("a, label, input") && start()}
         className={readOnly && !editing ? "min-h-16 rounded-lg bg-slate-50 p-2.5" : editing ? "rounded-lg border border-blue-400 bg-surface shadow-[0_1px_2px_rgba(15,23,42,0.05)] ring-3 ring-blue-100" : "min-h-16 cursor-text rounded-lg border border-transparent bg-slate-50 p-2.5 transition hover:border-slate-200 hover:bg-slate-100/70"}
@@ -156,9 +233,9 @@ export function RichText({ value, onSave, placeholder = "Tulis sesuatu…", empt
       </div>
       {editing && (
         <div className="mt-2 flex items-center gap-2">
-          <button className="rounded-lg bg-blue-600 px-3.5 py-1.5 text-sm font-medium text-white shadow-sm hover:bg-blue-700 dark:hover:bg-blue-500" onClick={() => stop(true)}>Simpan</button>
+          <button className="rounded-lg bg-blue-600 px-3.5 py-1.5 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:opacity-60 dark:hover:bg-blue-500" onClick={() => stop(true)} disabled={uploads > 0}>{uploads > 0 ? "Mengunggah gambar…" : "Simpan"}</button>
           <button className="rounded-lg px-3.5 py-1.5 text-sm text-slate-600 hover:bg-slate-100" onClick={() => stop(false)}>Batal</button>
-          <span className="ml-auto hidden text-xs text-slate-400 sm:block">Tips: ketik <code>#</code> <code>-</code> <code>1.</code> <code>[]</code> + spasi, atau <code>```</code></span>
+          <span className="ml-auto hidden text-xs text-slate-400 sm:block">Tips: ketik <code>#</code> <code>-</code> <code>1.</code> <code>[]</code> + spasi, atau <code>```</code>{onImage && " · tempel gambar langsung"}</span>
         </div>
       )}
     </div>
@@ -194,9 +271,9 @@ function Toolbar({ editor }: { editor: Editor }) {
   }
 
   // prompt for a link; empty input removes it
-  function link() {
+  async function link() {
     const prev = editor.getAttributes("link").href as string | undefined;
-    const url = prompt("URL link", prev ?? "https://");
+    const url = await promptDialog({ title: prev ? "Ubah link" : "Tambah link", message: "Kosongkan untuk menghapus link.", defaultValue: prev ?? "https://", placeholder: "https://", confirmLabel: "Simpan" });
     if (url === null) return;
     if (!url.trim()) c().extendMarkRange("link").unsetLink().run();
     else c().extendMarkRange("link").setLink({ href: url.trim() }).run();

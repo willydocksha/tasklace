@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { Avatar } from "@/components/Avatar";
+import { PhotoCropper } from "@/components/PhotoCropper";
 import { TopBar } from "@/components/TopBar";
 import { api } from "@/lib/client";
 import type { User } from "@/lib/auth";
@@ -13,19 +14,6 @@ const GHOST = "h-9 rounded-lg border border-slate-200 bg-surface px-3.5 text-sm 
 const PROVIDER_LABEL: Record<string, string> = { github: "GitHub", google: "Google" };
 
 type Note = { ok: boolean; text: string } | null;
-
-// crop to a centered square and shrink to 256px webp (jpeg fallback)
-async function squarePhoto(file: File): Promise<Blob> {
-  const img = await createImageBitmap(file);
-  const side = Math.min(img.width, img.height);
-  const c = document.createElement("canvas");
-  c.width = c.height = 256;
-  c.getContext("2d")!.drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, 256, 256);
-  const out = (type: string) => new Promise<Blob | null>((r) => c.toBlob(r, type, 0.86));
-  const blob = (await out("image/webp")) ?? (await out("image/jpeg"));
-  if (!blob) throw new Error("Foto tidak bisa diproses");
-  return blob;
-}
 
 // one settings card: title, hint, body
 function Section({ title, hint, children }: { title: string; hint?: React.ReactNode; children: React.ReactNode }) {
@@ -68,6 +56,7 @@ export function ProfileClient({ user: initial, hasPassword: hadPassword, provide
   const fileRef = useRef<HTMLInputElement>(null);
   const [photoBusy, setPhotoBusy] = useState(false);
   const [photoNote, setPhotoNote] = useState<Note>(null);
+  const [cropFile, setCropFile] = useState<File | null>(null);
 
   // name + username
   const [name, setName] = useState(user.name);
@@ -91,11 +80,18 @@ export function ProfileClient({ user: initial, hasPassword: hadPassword, provide
 
   const infoDirty = name.trim() !== user.name || username.trim().replace(/^@/, "").toLowerCase() !== (user.username ?? "");
 
-  async function uploadPhoto(file: File) {
+  // open the crop editor for the picked file
+  function pickPhoto(file: File) {
+    setPhotoNote(null);
+    setCropFile(file);
+    if (fileRef.current) fileRef.current.value = "";
+  }
+
+  // upload the cropped square from the editor
+  async function uploadPhoto(blob: Blob) {
     setPhotoBusy(true);
     setPhotoNote(null);
     try {
-      const blob = await squarePhoto(file);
       const res = await fetch("/api/profile/avatar", { method: "PUT", headers: { "content-type": blob.type }, body: blob });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Gagal mengunggah foto");
@@ -105,7 +101,7 @@ export function ProfileClient({ user: initial, hasPassword: hadPassword, provide
       setPhotoNote({ ok: false, text: (e as Error).message });
     } finally {
       setPhotoBusy(false);
-      if (fileRef.current) fileRef.current.value = "";
+      setCropFile(null);
     }
   }
 
@@ -191,14 +187,14 @@ export function ProfileClient({ user: initial, hasPassword: hadPassword, provide
         </div>
 
         {/* photo */}
-        <Section title="Foto profil" hint="JPG, PNG atau WebP. Otomatis dipotong persegi.">
+        <Section title="Foto profil" hint="JPG, PNG atau WebP. Bisa dipotong, digeser dan di-zoom sebelum disimpan.">
           <div className="flex flex-wrap items-center gap-5">
             <div className="relative">
               <Avatar name={user.name} color={user.color} src={user.avatar} size={84} />
               {photoBusy && <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 text-xs text-white">…</span>}
             </div>
             <div className="flex flex-wrap gap-2">
-              <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={(e) => e.target.files?.[0] && uploadPhoto(e.target.files[0])} />
+              <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={(e) => e.target.files?.[0] && pickPhoto(e.target.files[0])} />
               <button onClick={() => fileRef.current?.click()} disabled={photoBusy} className={PRIMARY}>
                 {user.avatar ? "Ganti foto" : "Unggah foto"}
               </button>
@@ -210,6 +206,7 @@ export function ProfileClient({ user: initial, hasPassword: hadPassword, provide
             </div>
           </div>
           <Feedback note={photoNote} />
+          {cropFile && <PhotoCropper file={cropFile} onCancel={() => setCropFile(null)} onSave={uploadPhoto} />}
         </Section>
 
         {/* name + username */}

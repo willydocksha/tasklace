@@ -1,6 +1,7 @@
 import { DONE_LOCKED, logActivity, type ActivityRow } from "@/lib/activity";
-import { body, boardOf, HttpError, route } from "@/lib/api";
+import { body, HttpError, requireCardEdit, route } from "@/lib/api";
 import { sql, type Sql } from "@/lib/db";
+import { canMove, flowError } from "@/lib/flow";
 
 type P = { id: string };
 
@@ -38,7 +39,7 @@ async function names(q: Sql, table: "labels" | "users" | "lists" | "sprints" | "
 }
 
 export const PATCH = route<P>(async ({ req, user, params }) => {
-  const boardId = await boardOf("cards", params.id, user.id);
+  const boardId = await requireCardEdit(params.id, user.id);
   const b = await body<Patch>(req);
   await sql.begin(async (tx) => {
     const before = await snapshot(tx, params.id);
@@ -70,7 +71,10 @@ export const PATCH = route<P>(async ({ req, user, params }) => {
     }
     // move to the bottom of another list on the same board
     if (b.list_id && b.list_id !== before.list_id) {
-      const [list] = await tx`select 1 from lists where id = ${b.list_id} and board_id = ${boardId}`;
+      const [list] = await tx<{ name: string }[]>`select name from lists where id = ${b.list_id} and board_id = ${boardId}`;
+      // respect the status flow of the current list
+      const [cur] = await tx<{ id: string; name: string; next_ids: string[] | null }[]>`select id, name, next_ids from lists where id = ${before.list_id}`;
+      if (list && !canMove(cur, b.list_id)) throw new HttpError(409, flowError(cur.name, list.name));
       if (list) {
         const [{ n }] = await tx<{ n: number }[]>`select coalesce(max(position), -1) + 1 as n from cards where list_id = ${b.list_id}`;
         await tx`update cards set list_id = ${b.list_id}, position = ${n} where id = ${params.id}`;
@@ -152,7 +156,7 @@ async function diff(tx: Sql, id: string, before: Snapshot, b: Patch, oldLabels: 
 }
 
 export const DELETE = route<P>(async ({ user, params }) => {
-  await boardOf("cards", params.id, user.id);
+  await requireCardEdit(params.id, user.id);
   // done cards are locked, including deletion
   const [c] = await sql<{ done: boolean }[]>`select l.is_done = 1 as done from cards c join lists l on l.id = c.list_id where c.id = ${params.id}`;
   if (c?.done) throw new HttpError(409, DONE_LOCKED);

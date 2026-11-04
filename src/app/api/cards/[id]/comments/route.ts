@@ -1,4 +1,4 @@
-import { body, boardOf, HttpError, route } from "@/lib/api";
+import { body, boardOf, HttpError, requirePerm, route } from "@/lib/api";
 import { newId, sql } from "@/lib/db";
 
 type P = { id: string };
@@ -11,7 +11,7 @@ export const GET = route<P>(async ({ user, params }) => {
 });
 
 export const POST = route<P>(async ({ req, user, params }) => {
-  await boardOf("cards", params.id, user.id);
+  await requirePerm(await boardOf("cards", params.id, user.id), user.id, "comment");
   const { text } = await body<{ text?: string }>(req);
   if (!text?.trim()) throw new HttpError(400, "Komentar kosong");
   await sql`insert into comments (id, card_id, user_id, body, created_at)

@@ -4,7 +4,9 @@ import { api } from "@/lib/client";
 import type { User } from "@/lib/auth";
 import { useTheme, type ThemeMode } from "@/lib/themeMode";
 import { Avatar } from "./Avatar";
+import { BoardSwitcher } from "./BoardSwitcher";
 import { Logo } from "./Logo";
+import { replayTours } from "./Tour";
 import { PopoverPanel, usePopover } from "./ui/Popover";
 
 // sun / moon / monitor glyphs for the theme controls
@@ -28,7 +30,8 @@ const ICONS: Record<ThemeMode, React.ReactNode> = {
   ),
 };
 
-export function TopBar({ user, dark }: { user: User; dark?: boolean }) {
+// board: when set (inside a board), shows a switcher after "Board saya"
+export function TopBar({ user, dark, board }: { user: User; dark?: boolean; board?: { id: string; name: string; color: string } }) {
   const theme = useTheme();
   const menu = usePopover({ placement: "bottom-end" });
 
@@ -45,6 +48,7 @@ export function TopBar({ user, dark }: { user: User; dark?: boolean }) {
       <Link href="/boards" className="rounded px-2 py-1 text-sm hover:bg-white/20">
         Board saya
       </Link>
+      {board && <BoardSwitcher current={board} />}
 
       <div className="ml-auto flex items-center gap-1.5">
         {/* quick light/dark switch */}
@@ -60,6 +64,7 @@ export function TopBar({ user, dark }: { user: User; dark?: boolean }) {
         {/* profile: name + email on the left, photo on the right */}
         <button
           ref={menu.refs.setReference}
+          data-tour="profile"
           onClick={() => menu.setOpen(!menu.open)}
           data-open={menu.open}
           className="flex items-center gap-2.5 rounded-xl py-1 pr-1 pl-2.5 transition hover:bg-white/15 data-[open=true]:bg-white/20"
@@ -90,6 +95,14 @@ export function TopBar({ user, dark }: { user: User; dark?: boolean }) {
             </svg>
             Edit profil
           </Link>
+          {/* replays the walkthrough of the page you're on */}
+          <button onClick={() => (menu.setOpen(false), setTimeout(replayTours, 150))} className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm hover:bg-slate-100">
+            <svg viewBox="0 0 20 20" className="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="10" cy="10" r="7" />
+              <path d="M8.2 7.8a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.6-.8 1.1v.6M10 13.6v.1" />
+            </svg>
+            Lihat tutorial halaman ini
+          </button>
         </div>
 
         {/* theme: light / dark / follow os */}

@@ -1,5 +1,5 @@
 import { logActivity } from "@/lib/activity";
-import { body, HttpError, requireMember, route } from "@/lib/api";
+import { body, HttpError, requirePerm, route } from "@/lib/api";
 import { nextNumber } from "@/lib/board";
 import { newId, sql } from "@/lib/db";
 import { EPIC_COLORS } from "@/lib/theme";
@@ -7,7 +7,7 @@ import { EPIC_COLORS } from "@/lib/theme";
 const TYPES = ["epic", "story", "task", "bug"];
 
 export const POST = route<{ id: string }>(async ({ req, user, params }) => {
-  await requireMember(params.id, user.id);
+  await requirePerm(params.id, user.id, "createCard");
   const b = await body<{ title?: string; listId?: string; type?: string; parentId?: string | null; sprintId?: string | null }>(req);
   if (!b.title?.trim()) throw new HttpError(400, "Judul kartu wajib diisi");
   // use the given list, or the first list of the board

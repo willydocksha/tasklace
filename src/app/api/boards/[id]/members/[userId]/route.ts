@@ -13,7 +13,7 @@ async function targetRole(boardId: string, userId: string) {
 export const PATCH = route<P>(async ({ req, user, params }) => {
   await requireAdmin(params.id, user.id);
   const { role } = await body<{ role?: string }>(req);
-  if (role !== "admin" && role !== "member") throw new HttpError(400, "Role tidak valid");
+  if (role !== "admin" && role !== "member" && role !== "viewer") throw new HttpError(400, "Role tidak valid");
   if ((await targetRole(params.id, params.userId)) === "owner") throw new HttpError(400, "Role owner tidak bisa diubah");
   await sql`update board_members set role = ${role} where board_id = ${params.id} and user_id = ${params.userId}`;
 });

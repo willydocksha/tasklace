@@ -1,8 +1,8 @@
-import { body, HttpError, requireMember, route } from "@/lib/api";
+import { body, HttpError, requirePerm, route } from "@/lib/api";
 import { newId, sql } from "@/lib/db";
 
 export const POST = route<{ id: string }>(async ({ req, user, params }) => {
-  await requireMember(params.id, user.id);
+  await requirePerm(params.id, user.id, "structure");
   const { name } = await body<{ name?: string }>(req);
   if (!name?.trim()) throw new HttpError(400, "Nama list wajib diisi");
   // append the new list at the end

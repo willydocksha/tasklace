@@ -9,13 +9,26 @@
 @theme {
   --color-surface: #ffffff;
   --color-column: #f1f2f4;
+
+  /* accent: a deeper, cleaner blue instead of the stock tailwind blue */
+  --color-blue-50: #f0f6ff;
+  --color-blue-100: #e0edff;
+  --color-blue-200: #c3ddff;
+  --color-blue-300: #99c3ff;
+  --color-blue-400: #61a1ff;
+  --color-blue-500: #1e72e4;
+  --color-blue-600: #0059c9;
+  --color-blue-700: #0049aa;
+  --color-blue-800: #003b87;
+  --color-blue-900: #0a2f66;
+  --color-blue-950: #052451;
 }
 
 /* `dark:` classes follow the .dark class on <html> (set by the theme switch) */
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --page-bg: #eef3fb;
+  --page-bg: #f0f4f9;
   --page-fg: #172b4d;
   --board-dim: transparent;
 }
@@ -43,12 +56,12 @@
   --color-slate-900: #eceff4;
   --color-slate-950: #f7f9fb;
 
-  --color-blue-50: color-mix(in oklab, #3b82f6 12%, #1d2330);
-  --color-blue-100: color-mix(in oklab, #3b82f6 22%, #1d2330);
-  --color-blue-200: color-mix(in oklab, #3b82f6 36%, #1d2330);
-  --color-blue-700: #7cb4ff;
-  --color-blue-800: #a8ccff;
-  --color-blue-900: #cfe2ff;
+  --color-blue-50: color-mix(in oklab, #1e72e4 12%, #1d2330);
+  --color-blue-100: color-mix(in oklab, #1e72e4 22%, #1d2330);
+  --color-blue-200: color-mix(in oklab, #1e72e4 36%, #1d2330);
+  --color-blue-700: #8ab8ff;
+  --color-blue-800: #b5d2ff;
+  --color-blue-900: #dbe9ff;
 
   --color-green-50: color-mix(in oklab, #22c55e 10%, #1d2330);
   --color-green-100: color-mix(in oklab, #22c55e 20%, #1d2330);
@@ -101,7 +114,7 @@ body {
 .rich h5 { font-size: 0.875rem; font-weight: 650; margin-top: 0.8em; }
 .rich h6 { font-size: 0.8rem; font-weight: 650; color: #64748b; text-transform: uppercase; letter-spacing: 0.03em; margin-top: 0.8em; }
 .rich > :first-child { margin-top: 0; }
-.rich a { color: #2563eb; text-decoration: underline; text-underline-offset: 2px; }
+.rich a { color: #0059c9; text-decoration: underline; text-underline-offset: 2px; }
 .rich ul { list-style: disc; padding-left: 1.4em; }
 .rich ol { list-style: decimal; padding-left: 1.6em; }
 .rich li > p { margin: 0; }
@@ -109,18 +122,22 @@ body {
 .rich ul[data-type="taskList"] { list-style: none; padding-left: 0.2em; }
 .rich ul[data-type="taskList"] li { display: flex; gap: 0.5em; align-items: flex-start; }
 .rich ul[data-type="taskList"] li > label { margin-top: 0.2em; user-select: none; }
-.rich ul[data-type="taskList"] li > label input { accent-color: #2563eb; width: 0.95em; height: 0.95em; }
+.rich ul[data-type="taskList"] li > label input { accent-color: #0059c9; width: 0.95em; height: 0.95em; }
 .rich ul[data-type="taskList"] li > div { flex: 1; }
 .rich ul[data-type="taskList"] li[data-checked="true"] > div { color: #94a3b8; text-decoration: line-through; }
 .rich blockquote { border-left: 3px solid #cbd5e1; padding-left: 0.9em; color: #475569; }
 .rich hr { border: 0; border-top: 1px solid #e2e8f0; margin: 1em 0; }
 .rich code { font-family: var(--font-geist-mono), ui-monospace, monospace; font-size: 0.85em; background: #eef2f7; color: #be185d; padding: 0.1em 0.35em; border-radius: 4px; }
 .rich pre { font-family: var(--font-geist-mono), ui-monospace, monospace; font-size: 0.8rem; line-height: 1.55; background: #0f172a; color: #e2e8f0; padding: 0.8em 1em; border-radius: 8px; overflow-x: auto; }
+.rich img:not(.ProseMirror-separator) { display: block; max-width: 100%; height: auto; border-radius: 6px; box-shadow: 0 0 0 1px rgb(15 23 42 / 0.08); }
+.rich img.ProseMirror-selectednode { outline: 2px solid var(--color-blue-500); outline-offset: 2px; }
+/* still uploading: local preview, dimmed */
+.rich img[src^="blob:"] { opacity: 0.55; filter: saturate(0.6); }
 .rich pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
 .dark .rich { color: #dbe0e8; }
 .dark .rich code { background: #262d3b; color: #f9a8d4; }
 .dark .rich pre { background: #0b0f16; box-shadow: inset 0 0 0 1px #262d3b; }
-.dark .rich a { color: #7cb4ff; }
+.dark .rich a { color: #8ab8ff; }
 .dark .rich blockquote { border-left-color: #434d61; color: #a9b3c3; }
 .dark .rich hr { border-top-color: #313a4b; }
 .dark .rich h6 { color: #8d98ab; }

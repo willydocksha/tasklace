@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/migrate.mjs --deploy && next build",
     "start": "next start",
     "lint": "eslint",
     "db:migrate": "node scripts/migrate.mjs"
@@ -17,6 +17,7 @@
     "@supabase/realtime-js": "^2.118.0",
     "@tiptap/core": "^3.32.2",
     "@tiptap/extension-code-block-lowlight": "^3.32.2",
+    "@tiptap/extension-image": "^3.32.2",
     "@tiptap/extension-list": "^3.32.2",
     "@tiptap/extensions": "^3.32.2",
     "@tiptap/markdown": "^3.32.2",

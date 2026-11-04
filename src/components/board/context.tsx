@@ -1,6 +1,7 @@
 "use client";
 import { createContext, useContext } from "react";
 import type { User } from "@/lib/auth";
+import type { Perms } from "@/lib/permissions";
 import type { BoardData, Card } from "@/lib/types";
 
 export type BoardCtx = {
@@ -11,6 +12,9 @@ export type BoardCtx = {
   mutate: (fn: () => Promise<unknown>) => Promise<void>;
   openCard: (id: string) => void;
   isAdmin: boolean;
+  // what the user may do here (see lib/permissions.ts)
+  perms: Perms;
+  canEdit: (c: Card) => boolean;
 };
 
 export const Ctx = createContext<BoardCtx | null>(null);
@@ -35,6 +39,15 @@ export function cardHelpers(data: BoardData) {
     return { total, done };
   };
   return { doneLists, byId, isDone, childrenOf, progress, keyOf, points };
+}
+
+// done/total of a card's subtasks; a subtask without status sits in the first list
+export function subtaskProgress(data: BoardData, card: Card) {
+  const doneLists = new Set(data.lists.filter((l) => l.is_done).map((l) => l.id));
+  const first = [...data.lists].sort((a, b) => a.position - b.position)[0]?.id;
+  const total = card.subtasks.length;
+  const done = card.subtasks.filter((s) => doneLists.has(s.list_id ?? first ?? "")).length;
+  return { total, done, pct: total ? Math.round((done / total) * 100) : 0 };
 }
 
 export function formatDate(d: string | null) {

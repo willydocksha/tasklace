@@ -1,5 +1,6 @@
 import { HttpError } from "./api";
 import { sql } from "./db";
+import { isAdminRole } from "./permissions";
 
 // the user's role in a team, 404 if not a member
 export async function requireTeam(teamId: string, userId: string) {
@@ -10,7 +11,7 @@ export async function requireTeam(teamId: string, userId: string) {
 
 export async function requireTeamAdmin(teamId: string, userId: string) {
   const role = await requireTeam(teamId, userId);
-  if (role === "member") throw new HttpError(403, "Hanya admin tim yang bisa melakukan ini");
+  if (!isAdminRole(role)) throw new HttpError(403, "Hanya admin tim yang bisa melakukan ini");
   return role;
 }
 

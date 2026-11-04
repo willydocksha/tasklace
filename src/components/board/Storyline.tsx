@@ -11,7 +11,7 @@ const DAY = 86400_000;
 const toMs = (d: string) => new Date(d + "T00:00:00").getTime();
 
 export function Storyline({ visible }: { visible: (c: Card) => boolean }) {
-  const { data, mutate } = useBoard();
+  const { data, mutate, perms } = useBoard();
   const [newEpic, setNewEpic] = useState("");
   const epics = data.cards
     .filter((c) => c.type === "epic")
@@ -30,10 +30,10 @@ export function Storyline({ visible }: { visible: (c: Card) => boolean }) {
       <div className="mx-auto max-w-5xl space-y-5">
         <Timeline epics={epics} />
 
-        <div className="flex gap-2 rounded-xl bg-surface/95 p-3 shadow-sm">
+        {perms.createCard && <div className="flex gap-2 rounded-xl bg-surface/95 p-3 shadow-sm">
           <input className="flex-1 rounded-md border px-3 py-2 text-sm" placeholder="⚡ Nama epic baru, mis. 'Checkout & Pembayaran'" value={newEpic} onChange={(e) => setNewEpic(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addEpic()} />
           <button onClick={addEpic} className="rounded-md bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700 dark:hover:bg-violet-500">+ Epic</button>
-        </div>
+        </div>}
 
         {epics.length === 0 && (
           <div className="rounded-xl bg-surface/95 p-6 text-center text-sm text-slate-600 shadow-sm">
@@ -57,7 +57,7 @@ export function Storyline({ visible }: { visible: (c: Card) => boolean }) {
 }
 
 function EpicBlock({ epic, index, visible }: { epic: Card; index: number; visible: (c: Card) => boolean }) {
-  const { data, mutate, openCard } = useBoard();
+  const { data, mutate, openCard, perms } = useBoard();
   const { childrenOf, progress, isDone } = cardHelpers(data);
   const [adding, setAdding] = useState("");
   const [open, setOpen] = useState(true);
@@ -93,7 +93,7 @@ function EpicBlock({ epic, index, visible }: { epic: Card; index: number; visibl
         <div className="border-t px-4 py-2 sm:pl-16">
           {epic.description && <p className="mb-2 line-clamp-2 text-sm text-slate-600">{plainText(epic.description)}</p>}
           <div className="divide-y">{kids.map((c) => <StoryRow key={c.id} card={c} />)}</div>
-          <input className="my-2 w-full rounded-md border border-dashed px-3 py-1.5 text-sm" placeholder="+ Tambah story ke epic ini (Enter)" value={adding} onChange={(e) => setAdding(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addStory()} />
+          {perms.createCard && <input className="my-2 w-full rounded-md border border-dashed px-3 py-1.5 text-sm" placeholder="+ Tambah story ke epic ini (Enter)" value={adding} onChange={(e) => setAdding(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addStory()} />}
         </div>
       )}
     </section>
