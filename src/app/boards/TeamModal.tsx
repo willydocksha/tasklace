@@ -9,12 +9,12 @@ import { Icon } from "@/components/ui/Icon";
 import type { User } from "@/lib/auth";
 import { api } from "@/lib/client";
 import { isAdminRole, ROLE_LABEL, type Role, type TeamPolicy } from "@/lib/permissions";
-import { boardBg } from "@/lib/theme";
+import { BoardBadge } from "@/components/BoardLook";
 
 type Detail = {
   team: { id: string; name: string; avatar: string | null; invite_code: string | null; owner_id: string };
   members: { id: string; name: string; email: string; color: string; avatar: string | null; role: string }[];
-  boards: { id: string; name: string; color: string }[];
+  boards: { id: string; name: string; color: string; background: string | null; icon: string | null }[];
   policy: TeamPolicy;
   role: string;
 };
@@ -143,11 +143,11 @@ export function TeamModal({ teamId, user, myBoards, onClose, onChanged }: { team
               {d.boards.length === 0 && <div className="p-3 text-sm text-slate-400">Belum ada board di tim ini.</div>}
               {d.boards.map((b) => (
                 <div key={b.id} className="flex items-center gap-2.5 p-2">
-                  <span className="h-6 w-9 rounded" style={{ background: boardBg(b.color) }} />
+                  <BoardBadge board={b} className="h-6 w-9 rounded" iconClass="h-3.5 w-3.5" />
                   <a href={`/b/${b.id}`} className="flex-1 truncate text-sm font-medium hover:underline">{b.name}</a>
                   {admin && (
-                    <button onClick={async () => (await confirmDialog({ title: `Keluarkan "${b.name}" dari tim?`, message: "Board-nya tidak terhapus.", confirmLabel: "Keluarkan" })) && run(() => api(`/api/teams/${teamId}/boards/${b.id}`, "DELETE"))} className="rounded px-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600">
-                      ✕
+                    <button onClick={async () => (await confirmDialog({ title: `Keluarkan "${b.name}" dari tim?`, message: "Board-nya tidak terhapus.", confirmLabel: "Keluarkan" })) && run(() => api(`/api/teams/${teamId}/boards/${b.id}`, "DELETE"))} className="rounded px-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600" aria-label={`Keluarkan ${b.name} dari tim`}>
+                      <Icon name="x" className="h-3.5 w-3.5" />
                     </button>
                   )}
                 </div>

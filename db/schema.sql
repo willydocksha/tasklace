@@ -312,3 +312,16 @@ alter table board_positions enable row level security;
 
 -- onboarding tours a user has finished or skipped
 alter table users add column if not exists tours_seen text[] not null default '{}';
+
+-- board look: background (null = gradient color, "p:<preset>" = built-in scene, "u:<time>" = uploaded photo) and icon
+alter table boards add column if not exists background text;
+alter table boards add column if not exists icon text;
+-- uploaded board background (compressed in the browser), plus a small thumbnail for tiles and menus
+create table if not exists board_backgrounds (
+  board_id text primary key references boards(id) on delete cascade,
+  mime text not null,
+  data bytea not null,
+  thumb bytea not null,
+  updated_at bigint not null
+);
+alter table board_backgrounds enable row level security;

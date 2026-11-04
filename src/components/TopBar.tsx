@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import type { BoardLook } from "@/lib/theme";
 import { api } from "@/lib/client";
 import type { User } from "@/lib/auth";
 import { useTheme, type ThemeMode } from "@/lib/themeMode";
@@ -31,7 +32,7 @@ const ICONS: Record<ThemeMode, React.ReactNode> = {
 };
 
 // board: when set (inside a board), shows a switcher after the logo
-export function TopBar({ user, dark, board }: { user: User; dark?: boolean; board?: { id: string; name: string; color: string } }) {
+export function TopBar({ user, dark, board }: { user: User; dark?: boolean; board?: BoardLook & { name: string } }) {
   const theme = useTheme();
   const menu = usePopover({ placement: "bottom-end" });
 

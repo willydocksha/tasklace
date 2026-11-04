@@ -5,8 +5,11 @@ import { Modal } from "@/components/Modal";
 import { confirmDialog, promptDialog, toastError } from "@/components/ui/Dialog";
 import { api } from "@/lib/client";
 import { ROLE_LABEL, type Perms, type Role } from "@/lib/permissions";
-import { BOARD_COLORS, boardBg, LABEL_COLORS, labelText } from "@/lib/theme";
+import { LABEL_COLORS, labelText } from "@/lib/theme";
+import { uploadBoardBackground } from "@/lib/image";
+import { BackgroundPicker, IconPicker } from "@/components/BoardLook";
 import { useBoard } from "./context";
+import { Icon, type IconName } from "@/components/ui/Icon";
 
 type Tab = "members" | "look" | "labels" | "flow";
 
@@ -130,17 +133,40 @@ function Look({ onClose }: { onClose: () => void }) {
   const [name, setName] = useState(data.board.name);
   const [desc, setDesc] = useState(data.board.description);
   const [key, setKey] = useState(data.board.key);
-  const patch = (p: Record<string, string>) => mutate(() => api(`/api/boards/${data.board.id}`, "PATCH", p));
+  const [busy, setBusy] = useState<string | null>(null);
+  const patch = (p: Record<string, string | null>) => mutate(() => api(`/api/boards/${data.board.id}`, "PATCH", p));
+  const b = data.board;
+
+  // compress, upload and switch the board to the new photo
+  async function upload(f: File) {
+    try {
+      await uploadBoardBackground(b.id, f, setBusy);
+      await mutate(async () => {});
+    } catch (e) {
+      toastError(e);
+    } finally {
+      setBusy(null);
+    }
+  }
+
   if (!isAdmin) return <p className="text-sm text-slate-500">Hanya admin board yang bisa mengubah tampilan.</p>;
   return (
     <div className="space-y-4">
       <div>
-        <div className="mb-1.5 text-sm font-semibold">Warna board</div>
-        <div className="grid grid-cols-6 gap-2">
-          {Object.keys(BOARD_COLORS).map((c) => (
-            <button key={c} onClick={() => patch({ color: c })} title={c} className={`h-12 rounded-lg ${data.board.color === c ? "ring-2 ring-blue-600 ring-offset-2" : ""}`} style={{ background: boardBg(c) }} />
-          ))}
-        </div>
+        <div className="mb-1.5 text-sm font-semibold">Background</div>
+        <BackgroundPicker
+          color={b.color}
+          background={b.background}
+          photo={b.photo ? `/api/boards/${b.id}/background?v=${b.photo}&thumb=1` : null}
+          busy={busy}
+          onPick={(v) => void patch(v)}
+          onUpload={(f) => void upload(f)}
+          onRemovePhoto={async () => { if (await confirmDialog({ title: "Hapus foto background?", danger: true, confirmLabel: "Hapus" })) void mutate(() => api(`/api/boards/${b.id}/background`, "DELETE")); }}
+        />
+      </div>
+      <div>
+        <div className="mb-1.5 text-sm font-semibold">Ikon board</div>
+        <IconPicker board={b} onPick={(icon) => void patch({ icon })} />
       </div>
       <input className="w-full rounded-md border px-3 py-2 text-sm" value={name} onChange={(e) => setName(e.target.value)} onBlur={() => name.trim() && name !== data.board.name && patch({ name })} placeholder="Nama board" />
       <label className="flex items-center gap-2 text-sm text-slate-600">

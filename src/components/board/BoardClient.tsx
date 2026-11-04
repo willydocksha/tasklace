@@ -12,7 +12,7 @@ import type { User } from "@/lib/auth";
 import { api } from "@/lib/client";
 import { canEditCard } from "@/lib/permissions";
 import { realtimeEnabled, useBoardChannel } from "@/lib/realtime";
-import { boardBg, TYPE_META } from "@/lib/theme";
+import { boardBackground, TYPE_META } from "@/lib/theme";
 import type { BoardData, Card } from "@/lib/types";
 import { Backlog } from "./Backlog";
 import { CardModal } from "./CardModal";
@@ -215,7 +215,7 @@ export function BoardClient({ user, initial }: { user: User; initial: BoardData 
 
   return (
     <Ctx.Provider value={{ data, user, refresh, mutate, openCard: setOpenId, isAdmin, perms: data.perms, canEdit }}>
-      <div className="flex h-screen flex-col" style={{ background: `linear-gradient(var(--board-dim), var(--board-dim)), ${boardBg(data.board.color)}` }}>
+      <div className="flex h-screen flex-col" style={{ background: `linear-gradient(var(--board-dim), var(--board-dim)), ${boardBackground(data.board)}` }}>
         <TopBar user={user} dark board={data.board} />
         <div className="flex flex-wrap items-center gap-2 bg-black/15 px-3 py-2 text-white sm:px-4">
           <h1 className="mr-2 text-lg font-bold drop-shadow">{data.board.name}</h1>

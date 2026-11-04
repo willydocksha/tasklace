@@ -38,6 +38,9 @@ export type Board = {
   name: string;
   description: string;
   color: string;
+  background: string | null;
+  icon: string | null;
+  photo: number | null; // version of the uploaded background photo, if any
   key: string;
   invite_code: string;
   owner_id: string;

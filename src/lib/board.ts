@@ -19,7 +19,9 @@ export async function nextNumber(q: Sql, boardId: string) {
 export async function loadBoard(boardId: string, userId: string): Promise<BoardData> {
   // fetch every part of the board in parallel
   const [[board], role, perms, lists, labels, members, rows, cardLabels, cardAssignees, sprints, subtasks] = await Promise.all([
-    sql<BoardData["board"][]>`select id, name, description, color, key, invite_code, owner_id from boards where id = ${boardId}`,
+    sql<BoardData["board"][]>`select id, name, description, color, background, icon,
+      (select updated_at from board_backgrounds where board_id = boards.id) as photo,
+      key, invite_code, owner_id from boards where id = ${boardId}`,
     boardRole(boardId, userId),
     boardPerms(boardId, userId),
     sql<BoardData["lists"]>`select id, name, position, is_done, color, next_ids from lists where board_id = ${boardId} order by position`,
@@ -61,13 +63,13 @@ export async function loadBoard(boardId: string, userId: string): Promise<BoardD
 const DEFAULT_LISTS: [string, number][] = [["Backlog", 0], ["To Do", 0], ["In Progress", 0], ["Review", 0], ["Done", 1]];
 const DEFAULT_LABELS: [string, string][] = [["Frontend", "#579dff"], ["Backend", "#9f8fef"], ["Design", "#e774bb"], ["Penting", "#f87168"]];
 
-export async function createBoard(name: string, color: string, description: string, ownerId: string) {
+export async function createBoard(name: string, color: string, description: string, ownerId: string, look: { background?: string | null; icon?: string | null } = {}) {
   const id = newId();
   const invite = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
   // board, owner membership, default lists and labels in one transaction
   await sql.begin(async (tx) => {
-    await tx`insert into boards (id, name, description, color, key, invite_code, owner_id, created_at)
-      values (${id}, ${name}, ${description}, ${color}, ${makeKey(name)}, ${invite}, ${ownerId}, ${Date.now()})`;
+    await tx`insert into boards (id, name, description, color, background, icon, key, invite_code, owner_id, created_at)
+      values (${id}, ${name}, ${description}, ${color}, ${look.background ?? null}, ${look.icon ?? null}, ${makeKey(name)}, ${invite}, ${ownerId}, ${Date.now()})`;
     await tx`insert into board_members (board_id, user_id, role) values (${id}, ${ownerId}, 'owner')`;
     await tx`insert into lists ${tx(DEFAULT_LISTS.map(([n, done], i) => ({ id: newId(), board_id: id, name: n, position: i, is_done: done })))}`;
     await tx`insert into labels ${tx(DEFAULT_LABELS.map(([n, c]) => ({ id: newId(), board_id: id, name: n, color: c })))}`;
@@ -83,10 +85,13 @@ export async function duplicateBoard(srcId: string, ownerId: string, name: strin
   const now = Date.now();
   await sql.begin(async (tx) => {
     // board row and owner membership
-    const [src] = await tx<{ description: string; color: string; key: string; next_number: number }[]>`
-      select description, color, key, next_number from boards where id = ${srcId}`;
-    await tx`insert into boards (id, name, description, color, key, next_number, invite_code, owner_id, created_at)
-      values (${id}, ${name}, ${src.description}, ${src.color}, ${src.key}, ${withCards ? src.next_number : 1}, ${invite}, ${ownerId}, ${now})`;
+    const [src] = await tx<{ description: string; color: string; background: string | null; icon: string | null; key: string; next_number: number }[]>`
+      select description, color, background, icon, key, next_number from boards where id = ${srcId}`;
+    await tx`insert into boards (id, name, description, color, background, icon, key, next_number, invite_code, owner_id, created_at)
+      values (${id}, ${name}, ${src.description}, ${src.color}, ${src.background}, ${src.icon}, ${src.key}, ${withCards ? src.next_number : 1}, ${invite}, ${ownerId}, ${now})`;
+    // the uploaded background photo comes along too
+    await tx`insert into board_backgrounds (board_id, mime, data, thumb, updated_at)
+      select ${id}, mime, data, thumb, updated_at from board_backgrounds where board_id = ${srcId}`;
     await tx`insert into board_members (board_id, user_id, role) values (${id}, ${ownerId}, 'owner')`;
 
     // lists with new ids, then the status flow remapped to them

@@ -12,7 +12,7 @@ export const GET = route<P>(async ({ user, params }) => {
     sql`select id, name, avatar_url as avatar, invite_code, owner_id, permissions from teams where id = ${params.id}`,
     sql`select u.id, u.name, u.email, u.color, u.avatar_url as avatar, m.role from team_members m join users u on u.id = m.user_id
       where m.team_id = ${params.id} order by m.role = 'owner' desc, u.name`,
-    sql`select b.id, b.name, b.color from team_boards tb join boards b on b.id = tb.board_id where tb.team_id = ${params.id} order by b.name`,
+    sql`select b.id, b.name, b.color, b.background, b.icon from team_boards tb join boards b on b.id = tb.board_id where tb.team_id = ${params.id} order by b.name`,
   ]);
   // only admins see the invite code
   const { permissions, ...rest } = team;

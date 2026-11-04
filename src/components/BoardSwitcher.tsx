@@ -3,13 +3,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/client";
-import { boardBg } from "@/lib/theme";
+import type { BoardLook } from "@/lib/theme";
+import { BoardBadge } from "@/components/BoardLook";
+import { Icon } from "@/components/ui/Icon";
 import { PopoverPanel, usePopover } from "./ui/Popover";
 
-type Row = { id: string; name: string; color: string; role: string; card_count: number };
+type Row = BoardLook & { name: string; role: string; card_count: number };
 
 // github-style "owner / repo ▾" picker: jump to another board from the top bar
-export function BoardSwitcher({ current }: { current: { id: string; name: string; color: string } }) {
+export function BoardSwitcher({ current }: { current: BoardLook & { name: string } }) {
   const router = useRouter();
   const pop = usePopover({ placement: "bottom-start" });
   const [boards, setBoards] = useState<Row[] | null>(null);
@@ -53,7 +55,7 @@ export function BoardSwitcher({ current }: { current: { id: string; name: string
         data-open={pop.open}
         className="flex min-w-0 items-center gap-2 rounded-lg px-2 py-1 text-sm font-semibold transition hover:bg-white/20 data-[open=true]:bg-white/25"
       >
-        <span className="h-4 w-4 shrink-0 rounded ring-1 ring-white/40" style={{ background: boardBg(current.color) }} />
+        <BoardBadge board={current} className="h-5 w-5 rounded ring-1 ring-white/40" iconClass="h-3.5 w-3.5" />
         <span className="max-w-40 truncate sm:max-w-64">{current.name}</span>
         <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 shrink-0 opacity-70" fill="currentColor"><path d="M5.5 8 10 12.5 14.5 8z" /></svg>
       </button>
@@ -77,9 +79,9 @@ export function BoardSwitcher({ current }: { current: { id: string; name: string
               onMouseEnter={() => setHi(i)}
               className={`flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-sm ${i === hi ? "bg-slate-100" : ""}`}
             >
-              <span className="h-5 w-5 shrink-0 rounded" style={{ background: boardBg(b.color) }} />
+              <BoardBadge board={b} className="h-6 w-6 rounded" iconClass="h-4 w-4" />
               <span className={`min-w-0 flex-1 truncate ${b.id === current.id ? "font-semibold" : ""}`}>{b.name}</span>
-              {b.id === current.id ? <span className="text-xs text-blue-600">✓</span> : <span className="text-[11px] text-slate-400">{b.card_count} kartu</span>}
+              {b.id === current.id ? <Icon name="check" className="h-3.5 w-3.5 text-blue-600" /> : <span className="text-[11px] text-slate-400">{b.card_count} kartu</span>}
             </button>
           ))}
         </div>

@@ -18,6 +18,42 @@ export const BOARD_COLORS: Record<string, string> = {
 
 export const boardBg = (c: string) => BOARD_COLORS[c] ?? BOARD_COLORS.blue;
 
+// built-in background scenes (light svg files in public/backgrounds)
+export const BOARD_SCENES: Record<string, string> = {
+  mountains: "Pegunungan",
+  ocean: "Laut",
+  aurora: "Aurora",
+  dunes: "Gurun",
+  hills: "Bukit",
+  city: "Kota malam",
+  forest: "Hutan",
+  blobs: "Abstrak",
+};
+
+// what a board looks like: gradient color, optional background ("p:<scene>" or "u:<version>") and icon
+export type BoardLook = { id: string; color: string; background?: string | null; icon?: string | null };
+
+// image url of a board background, or null when it just uses its color
+export function boardImage(b: BoardLook, thumb = false) {
+  const bg = b.background;
+  if (bg?.startsWith("p:") && BOARD_SCENES[bg.slice(2)]) return `/backgrounds/${bg.slice(2)}.svg`;
+  if (bg?.startsWith("u:")) return `/api/boards/${b.id}/background?v=${bg.slice(2)}${thumb ? "&thumb=1" : ""}`;
+  return null;
+}
+
+// css background for a board: the image over its gradient (shown while the image loads)
+export function boardBackground(b: BoardLook, thumb = false) {
+  const img = boardImage(b, thumb);
+  return img ? `url("${img}") center / cover no-repeat, ${boardBg(b.color)}` : boardBg(b.color);
+}
+
+// icons a board can pick (names from components/ui/Icon)
+export const BOARD_ICONS: readonly IconName[] = [
+  "rocket", "briefcase", "code", "mobile", "globe", "home", "heart", "star", "bulb", "epic",
+  "target", "flag", "chart", "cart", "wallet", "megaphone", "calendar", "users", "graduation", "story",
+  "palette", "camera", "music", "gamepad", "coffee", "plane", "leaf", "wrench", "bug", "folder",
+] as const;
+
 export const LABEL_COLORS = ["#4bce97", "#f5cd47", "#fea362", "#f87168", "#9f8fef", "#579dff", "#6cc3e0", "#94c748", "#e774bb", "#8590a2"];
 
 export const EPIC_COLORS = ["#8b5cf6", "#3b82f6", "#14b8a6", "#22c55e", "#f59e0b", "#ef4444", "#ec4899", "#64748b"];

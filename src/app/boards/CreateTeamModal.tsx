@@ -6,9 +6,9 @@ import { Icon } from "@/components/ui/Icon";
 import { TeamAvatar } from "@/components/TeamAvatar";
 import { api } from "@/lib/client";
 import { isAdminRole } from "@/lib/permissions";
-import { boardBg } from "@/lib/theme";
+import { BoardBadge } from "@/components/BoardLook";
 
-type MyBoard = { id: string; name: string; color: string; role: string };
+type MyBoard = { id: string; name: string; color: string; background: string | null; icon: string | null; role: string };
 
 const MAX_NAME = 80;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -128,7 +128,7 @@ export function CreateTeamModal({ myBoards, onClose, onCreated }: { myBoards: My
                 return (
                   <label key={b.id} className={`flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 text-sm ${on ? "bg-blue-50 dark:bg-blue-500/15" : "hover:bg-slate-50"}`}>
                     <input type="checkbox" checked={on} onChange={() => setBoardIds((ids) => (on ? ids.filter((x) => x !== b.id) : [...ids, b.id]))} className="accent-blue-600" />
-                    <span className="h-4 w-6 shrink-0 rounded" style={{ background: boardBg(b.color) }} />
+                    <BoardBadge board={b} className="h-4 w-6 rounded" iconClass="h-3 w-3" />
                     <span className="truncate">{b.name}</span>
                   </label>
                 );

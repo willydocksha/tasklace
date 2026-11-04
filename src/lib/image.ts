@@ -85,3 +85,18 @@ export async function uploadCardImage(cardId: string, f: File, onStep?: (step: s
   if (!res.ok) throw new Error(json.error || "Gagal mengunggah gambar");
   return json.id as string;
 }
+
+// compress a photo for a board background and upload it; returns the new background value ("u:<version>")
+export async function uploadBoardBackground(boardId: string, f: File, onStep?: (step: string) => void): Promise<string> {
+  onStep?.("Mengompres…");
+  // full-screen size is plenty for a background; the thumb feeds board tiles and menus
+  const img = await compressImageFile(f, { maxSide: 1920, maxBytes: 350 * 1024, thumbSide: 480, thumbBytes: 30 * 1024 });
+  onStep?.("Mengunggah…");
+  const form = new FormData();
+  form.append("file", img.file);
+  form.append("thumb", img.thumb);
+  const res = await fetch(`/api/boards/${boardId}/background`, { method: "PUT", body: form });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || "Gagal mengunggah background");
+  return json.background as string;
+}
