@@ -348,3 +348,47 @@ alter table workflows enable row level security;
 -- a board follows at most one workflow; each of its lists remembers which status it is
 alter table boards add column if not exists workflow_id text references workflows(id) on delete set null;
 alter table lists add column if not exists workflow_key text;
+
+-- images live in supabase storage: path = object key (thumbnail at path || '.thumb').
+-- data/thumb only hold bytes on rows from before the move (or when storage is not configured).
+alter table user_avatars add column if not exists path text;
+alter table user_avatars alter column data drop not null;
+alter table team_avatars add column if not exists path text;
+alter table team_avatars alter column data drop not null;
+alter table board_backgrounds add column if not exists path text;
+alter table board_backgrounds alter column data drop not null;
+alter table board_backgrounds alter column thumb drop not null;
+alter table card_attachments add column if not exists path text;
+alter table card_attachments alter column data drop not null;
+alter table card_attachments alter column thumb drop not null;
+
+-- storage objects whose row is gone or replaced; the app deletes them from the bucket (src/lib/storage.ts)
+create table if not exists storage_trash (
+  path text primary key,
+  created_at bigint not null
+);
+alter table storage_trash enable row level security;
+
+-- queue the old file when an image row is deleted (also by cascade) or points to a new file
+create or replace function trash_stored_file() returns trigger language plpgsql as $$
+declare
+  now_ms bigint := (extract(epoch from clock_timestamp()) * 1000)::bigint;
+begin
+  if old.path is null then return null; end if;
+  if tg_op = 'UPDATE' then
+    if new.path is not distinct from old.path then return null; end if;
+  end if;
+  insert into storage_trash (path, created_at) values (old.path, now_ms) on conflict do nothing;
+  if tg_table_name in ('card_attachments', 'board_backgrounds') then
+    insert into storage_trash (path, created_at) values (old.path || '.thumb', now_ms) on conflict do nothing;
+  end if;
+  return null;
+end $$;
+drop trigger if exists trash_file on user_avatars;
+create trigger trash_file after delete or update of path on user_avatars for each row execute function trash_stored_file();
+drop trigger if exists trash_file on team_avatars;
+create trigger trash_file after delete or update of path on team_avatars for each row execute function trash_stored_file();
+drop trigger if exists trash_file on board_backgrounds;
+create trigger trash_file after delete or update of path on board_backgrounds for each row execute function trash_stored_file();
+drop trigger if exists trash_file on card_attachments;
+create trigger trash_file after delete or update of path on card_attachments for each row execute function trash_stored_file();

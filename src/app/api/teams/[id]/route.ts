@@ -1,5 +1,6 @@
 import { body, HttpError, route } from "@/lib/api";
 import { sql } from "@/lib/db";
+import { purgeLater } from "@/lib/storage";
 import { isAdminRole, policyOf } from "@/lib/permissions";
 import { requireTeam, requireTeamAdmin } from "@/lib/teams";
 
@@ -35,4 +36,6 @@ export const PATCH = route<P>(async ({ req, user, params }) => {
 export const DELETE = route<P>(async ({ user, params }) => {
   if ((await requireTeamAdmin(params.id, user.id)) !== "owner") throw new HttpError(403, "Hanya owner yang bisa menghapus tim");
   await sql`delete from teams where id = ${params.id}`;
+  // the team photo is queued by trigger; remove it
+  purgeLater();
 });

@@ -1,6 +1,7 @@
 import { DONE_LOCKED, logActivity } from "@/lib/activity";
 import { boardOf, HttpError, requireCardEdit, route } from "@/lib/api";
 import { newId, sql } from "@/lib/db";
+import { storeImage } from "@/lib/storage";
 
 type P = { id: string };
 
@@ -45,8 +46,10 @@ export const POST = route<P>(async ({ req, user, params }) => {
   const id = newId();
   const data = Buffer.from(await file.arrayBuffer());
   const small = Buffer.from(await thumb.arrayBuffer());
-  await sql`insert into card_attachments (id, card_id, user_id, name, mime, width, height, size, data, thumb, created_at)
-    values (${id}, ${params.id}, ${user.id}, ${name}, ${file.type}, ${width}, ${height}, ${data.length}, ${data}, ${small}, ${Date.now()})`;
+  // files go to storage (bytes stay in the row only when storage is off)
+  const path = await storeImage(`attachments/${id}`, file.type, data, small);
+  await sql`insert into card_attachments (id, card_id, user_id, name, mime, width, height, size, path, data, thumb, created_at)
+    values (${id}, ${params.id}, ${user.id}, ${name}, ${file.type}, ${width}, ${height}, ${data.length}, ${path}, ${path ? null : data}, ${path ? null : small}, ${Date.now()})`;
   await logActivity(sql, user.id, [{ cardId: params.id, kind: "attachment", data: { name } }]);
   return { id };
 });

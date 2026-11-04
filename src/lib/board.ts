@@ -1,6 +1,7 @@
 import { logActivity } from "./activity";
 import { boardPerms, boardRole } from "./api";
 import { newId, sql, type Sql } from "./db";
+import { copyFiles } from "./storage";
 import type { BoardData, Card } from "./types";
 
 // short issue key from a board name, e.g. "Website Toko Online" -> "WTO"
@@ -92,9 +93,12 @@ export async function duplicateBoard(srcId: string, ownerId: string, name: strin
       select description, color, background, icon, key, next_number, subtask_own_flow from boards where id = ${srcId}`;
     await tx`insert into boards (id, name, description, color, background, icon, key, next_number, subtask_own_flow, invite_code, owner_id, created_at)
       values (${id}, ${name}, ${src.description}, ${src.color}, ${src.background}, ${src.icon}, ${src.key}, ${withCards ? src.next_number : 1}, ${src.subtask_own_flow}, ${invite}, ${ownerId}, ${now})`;
-    // the uploaded background photo comes along too
-    await tx`insert into board_backgrounds (board_id, mime, data, thumb, updated_at)
-      select ${id}, mime, data, thumb, updated_at from board_backgrounds where board_id = ${srcId}`;
+    // the uploaded background photo comes along too (stored files are copied under the new board)
+    const [bg] = await tx<{ path: string | null; updated_at: number }[]>`select path, updated_at from board_backgrounds where board_id = ${srcId}`;
+    const bgPath = bg?.path ? `backgrounds/${id}-${bg.updated_at}` : null;
+    if (bg?.path) await copyFiles([[bg.path, bgPath!], [`${bg.path}.thumb`, `${bgPath}.thumb`]]);
+    await tx`insert into board_backgrounds (board_id, mime, path, data, thumb, updated_at)
+      select ${id}, mime, ${bgPath}, data, thumb, updated_at from board_backgrounds where board_id = ${srcId}`;
     await tx`insert into board_members (board_id, user_id, role) values (${id}, ${ownerId}, 'owner')`;
 
     // lists with new ids, then the status flow remapped to them
@@ -124,8 +128,8 @@ export async function duplicateBoard(srcId: string, ownerId: string, name: strin
     const cardMap = new Map(cards.map((c) => [c.id, newId()]));
 
     // attachments get new ids; descriptions that embed them are rewritten
-    const atts = await tx<{ id: string; card_id: string }[]>`
-      select a.id, a.card_id from card_attachments a join cards c on c.id = a.card_id where c.board_id = ${srcId}`;
+    const atts = await tx<{ id: string; card_id: string; path: string | null }[]>`
+      select a.id, a.card_id, a.path from card_attachments a join cards c on c.id = a.card_id where c.board_id = ${srcId}`;
     const attMap = new Map(atts.map((a) => [a.id, newId()]));
     const rewrite = (text: string) => (text.includes("/api/attachments/") ? text.replace(/\/api\/attachments\/([0-9a-f-]{36})/g, (m, a) => (attMap.has(a) ? `/api/attachments/${attMap.get(a)}` : m)) : text);
 
@@ -156,10 +160,12 @@ export async function duplicateBoard(srcId: string, ownerId: string, name: strin
     const mine = subs.filter((r) => r.mine);
     if (mine.length) await tx`insert into card_subtask_assignees ${tx(mine.map((r) => ({ subtask_id: subMap.get(r.id)!, user_id: ownerId })))}`;
 
-    // copy image bytes in sql, one row per attachment
+    // stored files are copied in the bucket; old rows copy their bytes in sql
+    const newPath = (a: { id: string; path: string | null }) => (a.path ? `attachments/${attMap.get(a.id)!}` : null);
+    await copyFiles(atts.filter((a) => a.path).flatMap((a): [string, string][] => [[a.path!, newPath(a)!], [`${a.path}.thumb`, `${newPath(a)}.thumb`]]));
     for (const a of atts)
-      await tx`insert into card_attachments (id, card_id, user_id, name, mime, width, height, size, data, thumb, created_at)
-        select ${attMap.get(a.id)!}, ${cardMap.get(a.card_id)!}, ${ownerId}, name, mime, width, height, size, data, thumb, created_at from card_attachments where id = ${a.id}`;
+      await tx`insert into card_attachments (id, card_id, user_id, name, mime, width, height, size, path, data, thumb, created_at)
+        select ${attMap.get(a.id)!}, ${cardMap.get(a.card_id)!}, ${ownerId}, name, mime, width, height, size, ${newPath(a)}, data, thumb, created_at from card_attachments where id = ${a.id}`;
 
     // each copied card starts its history in its current list
     const listName = new Map(lists.map((l) => [l.id, l.name]));

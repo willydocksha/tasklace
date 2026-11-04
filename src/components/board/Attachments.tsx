@@ -188,7 +188,7 @@ function Lightbox({ items, index, onIndex, onClose, onDelete }: {
             {items.length > 1 && ` · ${index + 1}/${items.length}`}
           </div>
         </div>
-        <a href={`/api/attachments/${a.id}`} download={a.name} className={btn}>Unduh</a>
+        <a href={`/api/attachments/${a.id}?download=1`} download={a.name} className={btn}>Unduh</a>
         {onDelete && <button onClick={() => onDelete(a)} className={`${btn} hover:bg-red-600`}>Hapus</button>}
         <button onClick={onClose} aria-label="Tutup" className={`${btn} w-9 px-0`}><Icon name="x" /></button>
       </div>

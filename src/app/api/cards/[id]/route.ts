@@ -2,6 +2,7 @@ import { DONE_LOCKED, logActivity, type ActivityRow } from "@/lib/activity";
 import { body, HttpError, requireCardEdit, route } from "@/lib/api";
 import { sql, type Sql } from "@/lib/db";
 import { canMove, flowError } from "@/lib/flow";
+import { purgeLater } from "@/lib/storage";
 
 type P = { id: string };
 
@@ -161,4 +162,6 @@ export const DELETE = route<P>(async ({ user, params }) => {
   const [c] = await sql<{ done: boolean }[]>`select l.is_done = 1 as done from cards c join lists l on l.id = c.list_id where c.id = ${params.id}`;
   if (c?.done) throw new HttpError(409, DONE_LOCKED);
   await sql`delete from cards where id = ${params.id}`;
+  // attachment files of the card are queued by trigger; remove them
+  purgeLater();
 });

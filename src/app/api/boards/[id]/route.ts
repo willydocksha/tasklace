@@ -1,6 +1,7 @@
 import { body, HttpError, requireAdmin, requireMember, route } from "@/lib/api";
 import { loadBoard } from "@/lib/board";
 import { sql } from "@/lib/db";
+import { purgeLater } from "@/lib/storage";
 import { BOARD_COLORS, BOARD_ICONS, BOARD_SCENES } from "@/lib/theme";
 import { requireUnlinked } from "@/lib/workflow";
 
@@ -43,4 +44,6 @@ export const PATCH = route<P>(async ({ req, user, params }) => {
 export const DELETE = route<P>(async ({ user, params }) => {
   if ((await requireAdmin(params.id, user.id)) !== "owner") throw new HttpError(403, "Hanya owner yang bisa menghapus board");
   await sql`delete from boards where id = ${params.id}`;
+  // background and attachment files are queued by trigger; remove them
+  purgeLater();
 });

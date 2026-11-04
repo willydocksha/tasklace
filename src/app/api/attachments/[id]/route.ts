@@ -3,24 +3,28 @@ import { DONE_LOCKED, logActivity } from "@/lib/activity";
 import { currentUser } from "@/lib/auth";
 import { boardRole, HttpError, requireCardEdit, route } from "@/lib/api";
 import { sql } from "@/lib/db";
+import { purgeLater, redirectToFile } from "@/lib/storage";
 
 type P = { id: string };
 
-// serve the image (or ?thumb=1) to board members; content never changes, so cache for good
+// serve the image (or ?thumb=1, or ?download=1 to save it) to board members; content never changes, so cache for good
 export async function GET(req: Request, { params }: { params: Promise<P> }) {
   const { id } = await params;
   const user = await currentUser();
   if (!user) return NextResponse.json({ error: "Belum login" }, { status: 401 });
-  const thumb = new URL(req.url).searchParams.has("thumb");
-  const [row] = await sql<{ board_id: string; mime: string; name: string; data: Buffer }[]>`
-    select c.board_id, a.mime, a.name, ${thumb ? sql`a.thumb` : sql`a.data`} as data
+  const query = new URL(req.url).searchParams;
+  const thumb = query.has("thumb");
+  const [row] = await sql<{ board_id: string; mime: string; name: string; path: string | null; data: Buffer | null }[]>`
+    select c.board_id, a.mime, a.name, a.path, ${thumb ? sql`a.thumb` : sql`a.data`} as data
     from card_attachments a join cards c on c.id = a.card_id where a.id = ${id}`;
   if (!row || !(await boardRole(row.board_id, user.id))) return NextResponse.json({ error: "Tidak ditemukan" }, { status: 404 });
-  return new Response(new Uint8Array(row.data), {
+  // stored file: send the browser to storage; old rows still carry the bytes
+  if (row.path) return redirectToFile(thumb ? `${row.path}.thumb` : row.path, query.has("download") ? row.name : undefined);
+  return new Response(new Uint8Array(row.data!), {
     headers: {
       "content-type": row.mime,
       "cache-control": "private, max-age=31536000, immutable",
-      "content-disposition": `inline; filename*=UTF-8''${encodeURIComponent(row.name)}`,
+      "content-disposition": `${query.has("download") ? "attachment" : "inline"}; filename*=UTF-8''${encodeURIComponent(row.name)}`,
     },
   });
 }
@@ -34,5 +38,6 @@ export const DELETE = route<P>(async ({ user, params }) => {
   await requireCardEdit(row.card_id, user.id);
   if (row.done) throw new HttpError(409, DONE_LOCKED);
   await sql`delete from card_attachments where id = ${params.id}`;
+  purgeLater();
   await logActivity(sql, user.id, [{ cardId: row.card_id, kind: "attachment", data: { name: row.name, removed: true } }]);
 });

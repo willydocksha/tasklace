@@ -1,5 +1,6 @@
 import { body, boardOf, requireAdmin, requirePerm, route } from "@/lib/api";
 import { sql } from "@/lib/db";
+import { purgeLater } from "@/lib/storage";
 import { requireUnlinked } from "@/lib/workflow";
 
 type P = { id: string };
@@ -41,4 +42,6 @@ export const DELETE = route<P>(async ({ user, params }) => {
     await tx`update lists set next_ids = array_remove(next_ids, ${params.id}) where board_id = ${boardId} and ${params.id} = any(next_ids)`;
     await tx`update lists set subtask_next_ids = array_remove(subtask_next_ids, ${params.id}) where board_id = ${boardId} and ${params.id} = any(subtask_next_ids)`;
   });
+  // attachment files of the list's cards are queued by trigger; remove them
+  purgeLater();
 });
