@@ -27,8 +27,11 @@ const rinaId = (await owner(`/api/boards/${id}`)).members.find((m) => m.email.st
 
 const day = (n) => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
 async function card(title, listId, type, extra = {}, parentId) {
-  const { id: cid } = await owner(`/api/boards/${id}/cards`, "POST", { title, listId, type, parentId });
+  // done cards are locked, so build them in review first and move them at the end
+  const start = listId === done ? review : listId;
+  const { id: cid } = await owner(`/api/boards/${id}/cards`, "POST", { title, listId: start, type, parentId });
   if (Object.keys(extra).length) await owner(`/api/cards/${cid}`, "PATCH", extra);
+  if (start !== listId) await owner(`/api/cards/${cid}`, "PATCH", { list_id: listId });
   return cid;
 }
 
