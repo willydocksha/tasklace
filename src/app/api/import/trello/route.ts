@@ -1,6 +1,7 @@
 import { body, HttpError, route } from "@/lib/api";
 import { makeKey } from "@/lib/board";
 import { newId, sql } from "@/lib/db";
+import { decodeEmoji } from "@/lib/emoji";
 import { slimTrello, TRELLO_BOARD_COLORS, TRELLO_LABEL_COLORS } from "@/lib/trello";
 
 const DONE_NAMES = /^(done|selesai|complete|completed|closed|finished)$/i;
@@ -30,10 +31,10 @@ export const POST = route(async ({ req, user }) => {
 
   // checklists, attachments and trello assignees are folded into the (markdown) description
   const describe = (c: (typeof cards)[number]) => {
-    const parts = [c.desc.trim()];
+    const parts = [decodeEmoji(c.desc.trim())];
     for (const cl of c.idChecklists.map((id) => checklists.get(id)).filter((x) => !!x).sort((a, b) => a.pos - b.pos)) {
-      const items = [...cl.checkItems].sort((a, b) => a.pos - b.pos).map((i) => `- [${i.state === "complete" ? "x" : " "}] ${i.name}`);
-      parts.push(`### ${cl.name}\n\n${items.join("\n")}`);
+      const items = [...cl.checkItems].sort((a, b) => a.pos - b.pos).map((i) => `- [${i.state === "complete" ? "x" : " "}] ${decodeEmoji(i.name)}`);
+      parts.push(`### ${decodeEmoji(cl.name)}\n\n${items.join("\n")}`);
     }
     if (c.attachments.length) parts.push(`### Lampiran\n\n${c.attachments.map((a) => `- [${(a.name || "file").replace(/[[\]]/g, "")}](<${a.url}>)`).join("\n")}`);
     const names = c.idMembers.map((id) => members.get(id)).filter(Boolean);
@@ -60,11 +61,11 @@ export const POST = route(async ({ req, user }) => {
 
   await sql.begin(async (tx) => {
     await tx`insert into boards (id, name, description, color, key, next_number, invite_code, owner_id, created_at)
-      values (${boardId}, ${name}, ${t.desc.slice(0, 2000)}, ${color}, ${makeKey(name)}, ${next}, ${invite}, ${user.id}, ${Date.now()})`;
+      values (${boardId}, ${name}, ${decodeEmoji(t.desc).slice(0, 2000)}, ${color}, ${makeKey(name)}, ${next}, ${invite}, ${user.id}, ${Date.now()})`;
     await tx`insert into board_members (board_id, user_id, role) values (${boardId}, ${user.id}, 'owner')`;
 
     if (lists.length)
-      await tx`insert into lists ${tx(lists.map((l, i) => ({ id: listIds.get(l.id)!, board_id: boardId, name: l.name.slice(0, 200) || "List", position: i, is_done: DONE_NAMES.test(l.name.trim()) ? 1 : 0 })))}`;
+      await tx`insert into lists ${tx(lists.map((l, i) => ({ id: listIds.get(l.id)!, board_id: boardId, name: decodeEmoji(l.name).slice(0, 200) || "List", position: i, is_done: DONE_NAMES.test(l.name.trim()) ? 1 : 0 })))}`;
 
     if (t.labels.length)
       await tx`insert into labels ${tx(t.labels.map((l) => ({ id: labelIds.get(l.id)!, board_id: boardId, name: l.name.slice(0, 80) || (l.color ?? "label"), color: TRELLO_LABEL_COLORS[l.color ?? ""] ?? "#8590a2" })))}`;
@@ -79,7 +80,7 @@ export const POST = route(async ({ req, user }) => {
         board_id: boardId,
         list_id: listIds.get(c.idList)!,
         type: "task",
-        title: c.name.slice(0, 500) || "(tanpa judul)",
+        title: decodeEmoji(c.name).slice(0, 500) || "(tanpa judul)",
         description: describe(c),
         priority: "medium",
         start_date: day(c.start),
@@ -107,7 +108,7 @@ export const POST = route(async ({ req, user }) => {
         id: newId(),
         card_id: cardIds.get(c.idCard)!,
         user_id: user.id,
-        body: `[Trello · ${c.author || "anggota"}]\n${c.text}`,
+        body: `[Trello · ${c.author || "anggota"}]\n${decodeEmoji(c.text)}`,
         created_at: Number.isNaN(Date.parse(c.date)) ? Date.now() : Date.parse(c.date),
       }));
     for (let i = 0; i < comments.length; i += 500) await tx`insert into comments ${tx(comments.slice(i, i + 500))}`;
