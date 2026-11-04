@@ -41,7 +41,7 @@ export function Storyline({ visible }: { visible: (c: Card) => boolean }) {
 
         {epics.length === 0 && (
           <div className="rounded-xl bg-surface/95 p-6 text-center text-sm text-slate-600 shadow-sm">
-            <Icon name="story" className="mx-auto mb-2 h-8 w-8 text-violet-500" />
+            <Icon name="story" className="!block mx-auto mb-2 h-8 w-8 text-violet-500" />
             <b>Storyline</b> membantu kamu menyusun cerita produk: buat <b>Epic</b> (tujuan besar), lalu pecah jadi <b>Story</b> dan <b>Task</b>.
             <br />Progress epic dihitung otomatis dari story yang sudah masuk list &quot;selesai&quot;.
           </div>
