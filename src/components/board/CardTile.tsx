@@ -1,14 +1,14 @@
 "use client";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Avatar } from "@/components/Avatar";
+import { MemberAvatar } from "./MemberAvatar";
 import { PRIORITY_META, TYPE_META, labelText } from "@/lib/theme";
 import type { Card } from "@/lib/types";
 import { cardHelpers, formatDate, subtaskProgress, today, useBoard } from "./context";
 import { Icon } from "@/components/ui/Icon";
 
 export function CardView({ card, overlay }: { card: Card; overlay?: boolean }) {
-  const { data, openCard, isOnline } = useBoard();
+  const { data, openCard } = useBoard();
   const { byId, isDone, progress, keyOf } = cardHelpers(data);
   const t = TYPE_META[card.type];
   const epic = card.parent_id ? byId.get(card.parent_id) : undefined;
@@ -79,7 +79,7 @@ export function CardView({ card, overlay }: { card: Card; overlay?: boolean }) {
         )}
         <span className="ml-auto flex -space-x-1.5">
           {people.map((p) => (
-            <Avatar key={p.id} name={p.name} color={p.color} src={p.avatar} size={22} ring online={isOnline(p.id)} />
+            <MemberAvatar key={p.id} person={p} size={22} ring />
           ))}
         </span>
       </div>

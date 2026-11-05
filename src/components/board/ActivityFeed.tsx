@@ -1,24 +1,16 @@
 "use client";
 import { useState } from "react";
 import { Avatar } from "@/components/Avatar";
+import { MemberAvatar } from "./MemberAvatar";
 import { PRIORITY_META, TYPE_META } from "@/lib/theme";
 import type { User } from "@/lib/auth";
 import type { Activity, Comment } from "@/lib/types";
-import { useBoard } from "./context";
+import { ago } from "@/lib/text";
 import { Icon, type IconName } from "@/components/ui/Icon";
 
 type Tab = "all" | "activity" | "comments" | "status";
 type Item = { at: number; activity?: Activity; comment?: Comment };
 
-// relative time for the feed ("5 menit lalu"), full date on hover
-export function ago(ts: number) {
-  const s = Math.round((Date.now() - ts) / 1000);
-  if (s < 60) return "baru saja";
-  if (s < 3600) return `${Math.floor(s / 60)} menit lalu`;
-  if (s < 86400) return `${Math.floor(s / 3600)} jam lalu`;
-  if (s < 7 * 86400) return `${Math.floor(s / 86400)} hari lalu`;
-  return new Date(ts).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
-}
 const full = (ts: number) => new Date(ts).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" });
 const date = (v: unknown) => (v ? new Date(`${v}T00:00:00`).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : null);
 
@@ -103,8 +95,6 @@ export function ActivityFeed({ activity, comments, user, doneLists, onComment, j
   // status journey, shown in its own tab
   journey?: React.ReactNode;
 }) {
-  // online dot on commenters
-  const { isOnline } = useBoard();
   const [tab, setTab] = useState<Tab>("all");
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
@@ -182,7 +172,7 @@ export function ActivityFeed({ activity, comments, user, doneLists, onComment, j
         {items.map((it) =>
           it.comment ? (
             <li key={`c${it.comment.id}`} className="flex gap-2">
-              <Avatar name={it.comment.name} color={it.comment.color} src={it.comment.avatar} size={30} online={isOnline(it.comment.user_id)} />
+              <MemberAvatar person={{ id: it.comment.user_id, name: it.comment.name, color: it.comment.color, avatar: it.comment.avatar }} size={30} />
               <div className="min-w-0 flex-1">
                 <div className="text-xs">
                   <b>{it.comment.name}</b> <span className="text-slate-400" title={full(it.at)}>{ago(it.at)}</span>

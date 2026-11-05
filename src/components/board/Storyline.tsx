@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Avatar } from "@/components/Avatar";
+import { MemberAvatar } from "./MemberAvatar";
 import { api } from "@/lib/client";
 import { plainText } from "@/lib/text";
 import { TYPE_META } from "@/lib/theme";
@@ -105,7 +105,7 @@ function EpicBlock({ epic, index, visible }: { epic: Card; index: number; visibl
 }
 
 function StoryRow({ card }: { card: Card }) {
-  const { data, openCard, isOnline } = useBoard();
+  const { data, openCard } = useBoard();
   const { isDone } = cardHelpers(data);
   const t = TYPE_META[card.type];
   const list = data.lists.find((l) => l.id === card.list_id);
@@ -116,7 +116,7 @@ function StoryRow({ card }: { card: Card }) {
       <span style={{ color: t.color }} title={t.label}><Icon name={t.icon} /></span>
       <span className={`min-w-0 flex-1 truncate ${done ? "text-slate-400 line-through" : ""}`}>{card.title}</span>
       {card.due_date && <span className={`text-xs ${!done && card.due_date < today() ? "text-red-600" : "text-slate-500"}`}>{formatDate(card.due_date)}</span>}
-      <span className="flex -space-x-1.5">{people.map((m) => <Avatar key={m.id} name={m.name} color={m.color} src={m.avatar} size={20} ring online={isOnline(m.id)} />)}</span>
+      <span className="flex -space-x-1.5">{people.map((m) => <MemberAvatar key={m.id} person={m} size={20} ring />)}</span>
       <span className={`rounded px-1.5 py-0.5 text-xs ${done ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-600"}`}>{list?.name}</span>
     </button>
   );

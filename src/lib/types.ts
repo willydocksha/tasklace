@@ -4,7 +4,7 @@ export type CardType = "epic" | "story" | "task" | "bug";
 export type Priority = "low" | "medium" | "high" | "urgent";
 
 // direct is false when the user only has access through a team
-export type Member = { id: string; name: string; email: string; color: string; avatar: string | null; role: string; direct: boolean };
+export type Member = { id: string; name: string; email: string; username: string | null; color: string; avatar: string | null; role: string; direct: boolean };
 export type Label = { id: string; name: string; color: string };
 // next_ids: lists a card here may move to (null = any list)
 // subtask: subtasks may use this status; subtask_next_ids: subtask flow when the board has its own (null = any)

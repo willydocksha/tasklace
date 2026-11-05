@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Avatar } from "@/components/Avatar";
+import { AvatarCard } from "@/components/AvatarCard";
 import { Modal } from "@/components/Modal";
 import { PhotoCropper } from "@/components/PhotoCropper";
 import { TeamAvatar } from "@/components/TeamAvatar";
@@ -9,14 +9,14 @@ import { Icon } from "@/components/ui/Icon";
 import { Select } from "@/components/ui/Select";
 import type { User } from "@/lib/auth";
 import { api } from "@/lib/client";
-import { usePresence } from "@/lib/usePresence";
+import { statusOf, usePresence } from "@/lib/usePresence";
 import { isAdminRole, ROLE_LABEL, type Role, type TeamPolicy } from "@/lib/permissions";
 import { BoardBadge } from "@/components/BoardLook";
 import { WorkflowTab } from "./WorkflowTab";
 
 type Detail = {
   team: { id: string; name: string; avatar: string | null; invite_code: string | null; owner_id: string };
-  members: { id: string; name: string; email: string; color: string; avatar: string | null; role: string }[];
+  members: { id: string; name: string; email: string; username: string | null; color: string; avatar: string | null; role: string }[];
   boards: { id: string; name: string; color: string; background: string | null; icon: string | null }[];
   policy: TeamPolicy;
   role: string;
@@ -27,7 +27,7 @@ type MyBoard = { id: string; name: string; role: string };
 export function TeamModal({ teamId, user, myBoards, onClose, onChanged }: { teamId: string; user: User; myBoards: MyBoard[]; onClose: () => void; onChanged: () => void }) {
   const [d, setD] = useState<Detail | null>(null);
   // online team members (null = presence off)
-  const online = usePresence({ teamId });
+  const presence = usePresence({ teamId });
   const [tab, setTab] = useState<"members" | "boards" | "workflows" | "access" | "settings">("members");
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
@@ -111,7 +111,7 @@ export function TeamModal({ teamId, user, myBoards, onClose, onChanged }: { team
             <div className="divide-y rounded-md border">
               {d.members.map((m) => (
                 <div key={m.id} className="flex items-center gap-2.5 p-2">
-                  <Avatar name={m.name} color={m.color} src={m.avatar} online={online ? online.has(m.id) : undefined} />
+                  <AvatarCard person={m} info={{ email: m.email, username: m.username, role: ROLE_LABEL[m.role as Role] ?? m.role, status: statusOf(presence, m.id) }} />
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-medium">{m.name}{m.id === user.id && " (kamu)"}</div>
                     <div className="truncate text-xs text-slate-500">{m.email}</div>

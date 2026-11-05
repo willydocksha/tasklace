@@ -2,12 +2,20 @@
 import { useEffect, useState } from "react";
 import { PRESENCE_PING_MS } from "./presence";
 
-// pings the presence route while the tab is visible; returns the ids of online
-// board or team members, or null when the feature is off (or before the first answer)
+// online ids plus each member's last seen time (unix ms)
+export type Presence = { online: Set<string>; seen: Record<string, number> };
+// one member's status for the avatar; undefined when presence is off
+export type Status = { online: boolean; seen: number | null };
+
+export const statusOf = (p: Presence | null, id: string): Status | undefined =>
+  p ? { online: p.online.has(id), seen: p.seen[id] ?? null } : undefined;
+
+// pings the presence route while the tab is visible; returns who is online on the
+// board or team, or null when the feature is off (or before the first answer)
 export function usePresence(scope: { boardId: string } | { teamId: string }) {
   // stable key so the effect only restarts when the board/team changes
   const key = JSON.stringify(scope);
-  const [online, setOnline] = useState<Set<string> | null>(null);
+  const [presence, setPresence] = useState<Presence | null>(null);
 
   useEffect(() => {
     let stopped = false;
@@ -18,14 +26,14 @@ export function usePresence(scope: { boardId: string } | { teamId: string }) {
       try {
         const res = await fetch("/api/presence", { method: "POST", headers: { "content-type": "application/json" }, body: key });
         if (!res.ok) return;
-        const json = (await res.json()) as { enabled: boolean; online?: string[] };
+        const json = (await res.json()) as { enabled: boolean; online?: string[]; seen?: Record<string, number> };
         if (!json.enabled) {
           stopped = true;
           clearInterval(timer);
-          setOnline(null);
+          setPresence(null);
           return;
         }
-        if (!stopped) setOnline(new Set(json.online));
+        if (!stopped) setPresence({ online: new Set(json.online), seen: json.seen ?? {} });
       } catch {}
     };
 
@@ -41,5 +49,5 @@ export function usePresence(scope: { boardId: string } | { teamId: string }) {
     };
   }, [key]);
 
-  return online;
+  return presence;
 }

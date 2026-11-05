@@ -32,7 +32,7 @@ export async function loadBoard(boardId: string, userId: string): Promise<BoardD
     sql<BoardData["labels"]>`select id, name, color from labels where board_id = ${boardId} order by seq`,
     // direct members and team members, each with their best role
     sql<BoardData["members"]>`
-      select u.id, u.name, u.email, u.color, u.avatar_url as avatar,
+      select u.id, u.name, u.email, u.username, u.color, u.avatar_url as avatar,
         (array_agg(a.role order by case a.role when 'owner' then 0 when 'admin' then 1 when 'member' then 2 else 3 end))[1] as role,
         bool_or(a.direct) as direct
       from board_access a join users u on u.id = a.user_id where a.board_id = ${boardId}

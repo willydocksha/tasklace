@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Avatar } from "@/components/Avatar";
+import { MemberAvatar } from "./MemberAvatar";
 import { Modal } from "@/components/Modal";
 import { confirmDialog, promptDialog, toastError } from "@/components/ui/Dialog";
 import { api } from "@/lib/client";
@@ -59,7 +59,7 @@ function MyRights({ role, perms }: { role: string; perms: Perms }) {
 }
 
 function Members() {
-  const { data, mutate, isAdmin, user, perms, online } = useBoard();
+  const { data, mutate, isAdmin, user, perms, presence } = useBoard();
   const [email, setEmail] = useState("");
   const [copied, setCopied] = useState(false);
   const link = typeof window !== "undefined" ? `${window.location.origin}/join/${data.board.invite_code}` : "";
@@ -96,12 +96,12 @@ function Members() {
         <div className="mb-2 text-sm font-semibold">
           {data.members.length} member
           {/* online count only when presence is on */}
-          {online && <span className="ml-1.5 font-normal text-slate-500">· {data.members.filter((m) => online.has(m.id)).length} online</span>}
+          {presence && <span className="ml-1.5 font-normal text-slate-500">· {data.members.filter((m) => presence.online.has(m.id)).length} online</span>}
         </div>
         <div className="divide-y rounded-md border">
           {data.members.map((m) => (
             <div key={m.id} className="flex items-center gap-2.5 p-2">
-              <Avatar name={m.name} color={m.color} src={m.avatar} online={online ? online.has(m.id) : undefined} />
+              <MemberAvatar person={m} />
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-medium">{m.name}{m.id === user.id && " (kamu)"}</div>
                 <div className="truncate text-xs text-slate-500">

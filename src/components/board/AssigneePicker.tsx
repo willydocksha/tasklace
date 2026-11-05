@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Avatar } from "@/components/Avatar";
+import { MemberAvatar } from "./MemberAvatar";
+import { statusOf } from "@/lib/usePresence";
 import { PopoverPanel, usePopover } from "@/components/ui/Popover";
 import { useBoard } from "./context";
 import { Icon } from "@/components/ui/Icon";
@@ -12,7 +14,7 @@ export function AssigneePicker({ value, onChange, disabled = false, variant = "f
   disabled?: boolean;
   variant?: "field" | "compact";
 }) {
-  const { data, user, isOnline } = useBoard();
+  const { data, user, presence } = useBoard();
   const pop = usePopover({ placement: variant === "field" ? "bottom-start" : "bottom-end", matchWidth: variant === "field" });
   const [q, setQ] = useState("");
   // local copy so checks flip instantly while the save runs
@@ -48,7 +50,7 @@ export function AssigneePicker({ value, onChange, disabled = false, variant = "f
             <span className="flex min-w-0 flex-1 flex-wrap gap-1">
               {people.map((m) => (
                 <span key={m.id} className="flex items-center gap-1 rounded-full bg-slate-100 py-0.5 pr-2 pl-0.5 text-xs font-medium">
-                  <Avatar name={m.name} color={m.color} src={m.avatar} size={18} online={isOnline(m.id)} />
+                  <MemberAvatar person={m} size={18} />
                   <span className="max-w-24 truncate">{m.id === user.id ? "Saya" : m.name}</span>
                 </span>
               ))}
@@ -68,7 +70,7 @@ export function AssigneePicker({ value, onChange, disabled = false, variant = "f
         >
           {people.length ? (
             <span className="flex -space-x-1.5">
-              {people.slice(0, 3).map((m) => <Avatar key={m.id} name={m.name} color={m.color} src={m.avatar} size={22} ring online={isOnline(m.id)} />)}
+              {people.slice(0, 3).map((m) => <MemberAvatar key={m.id} person={m} size={22} ring />)}
               {people.length > 3 && <span className="flex h-[22px] w-[22px] items-center justify-center rounded-full bg-slate-200 text-[10px] font-semibold ring-2 ring-surface">+{people.length - 3}</span>}
             </span>
           ) : (
@@ -94,7 +96,8 @@ export function AssigneePicker({ value, onChange, disabled = false, variant = "f
             const on = sel.includes(m.id);
             return (
               <button key={m.id} onClick={() => toggle(m.id)} className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm ${on ? "bg-blue-50/70" : "hover:bg-slate-50"}`}>
-                <Avatar name={m.name} color={m.color} src={m.avatar} size={22} online={isOnline(m.id)} />
+                {/* plain avatar inside the menu: a hover card here would cover the list */}
+                <Avatar name={m.name} color={m.color} src={m.avatar} size={22} online={statusOf(presence, m.id)?.online} />
                 <span className="min-w-0 flex-1 truncate">{m.name}{m.id === user.id && <span className="text-slate-400"> (saya)</span>}</span>
                 <span className={`flex h-4 w-4 items-center justify-center rounded border text-[10px] ${on ? "border-blue-600 bg-blue-600 text-white" : "border-slate-300"}`}>{on && <Icon name="check" className="h-3 w-3" />}</span>
               </button>

@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import { Avatar } from "@/components/Avatar";
+import { MemberAvatar } from "./MemberAvatar";
 import { Modal } from "@/components/Modal";
 import { RichText } from "@/components/RichText";
 import { Tour, type TourStep } from "@/components/Tour";
@@ -35,7 +35,7 @@ const TOUR: TourStep[] = [
 ];
 
 export function CardModal({ card, onClose }: { card: Card; onClose: () => void }) {
-  const { data, mutate, openCard, user, perms, canEdit, isOnline } = useBoard();
+  const { data, mutate, openCard, user, perms, canEdit } = useBoard();
   const { childrenOf, progress, isDone, keyOf, points } = cardHelpers(data);
   const [title, setTitle] = useState(card.title);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -140,7 +140,7 @@ export function CardModal({ card, onClose }: { card: Card; onClose: () => void }
               <div>
                 <span className={lbl}>Assignees</span>
                 <div className="flex gap-1">
-                  {data.members.filter((m) => card.assignees.includes(m.id)).map((m) => <Avatar key={m.id} name={m.name} color={m.color} src={m.avatar} size={30} online={isOnline(m.id)} />)}
+                  {data.members.filter((m) => card.assignees.includes(m.id)).map((m) => <MemberAvatar key={m.id} person={m} size={30} />)}
                 </div>
               </div>
             )}
