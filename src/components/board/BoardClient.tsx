@@ -4,7 +4,7 @@ import { arrayMove, horizontalListSortingStrategy, SortableContext, useSortable 
 import { CSS } from "@dnd-kit/utilities";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Avatar } from "@/components/Avatar";
-import { MemberAvatar } from "./MemberAvatar";
+import { MemberStack } from "./MemberStack";
 import { TopBar } from "@/components/TopBar";
 import { Tour, type TourStep } from "@/components/Tour";
 import { Select } from "@/components/ui/Select";
@@ -276,13 +276,8 @@ export function BoardClient({ user, initial }: { user: User; initial: BoardData 
             {filtering && <button onClick={() => (setQ(""), setFType(""), setFMember(""), setFSprint(""))} className="h-8 rounded-lg px-2.5 hover:bg-white/20">Reset</button>}
           </div>
           <div className="ml-auto flex items-center gap-2">
-            <button onClick={() => setSettings(true)} className="flex -space-x-2" title="Member">
-              {/* online members first so the dots show up front */}
-              {[...data.members].sort((a, b) => Number(!!presence?.online.has(b.id)) - Number(!!presence?.online.has(a.id))).slice(0, 5).map((m) => (
-                <MemberAvatar key={m.id} person={m} size={28} ring />
-              ))}
-              {data.members.length > 5 && <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/30 text-xs ring-2 ring-surface">+{data.members.length - 5}</span>}
-            </button>
+            {/* member avatars: online first, spread out on hover, rest behind "+N" */}
+            <MemberStack onManage={() => setSettings(true)} />
             <button data-tour="share" onClick={() => setSettings(true)} className="rounded-md bg-surface px-3 py-1 text-sm font-medium text-slate-800 hover:bg-slate-100">
               Bagikan / Atur
             </button>

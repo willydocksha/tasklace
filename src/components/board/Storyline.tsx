@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { ScrollHint } from "@/components/ui/ScrollHint";
 import { MemberAvatar } from "./MemberAvatar";
 import { api } from "@/lib/client";
 import { plainText } from "@/lib/text";
@@ -13,6 +14,8 @@ const toMs = (d: string) => new Date(d + "T00:00:00").getTime();
 
 export function Storyline({ visible }: { visible: (c: Card) => boolean }) {
   const { data, mutate, perms } = useBoard();
+  // scroll box for the scroll hint
+  const scrollBox = useRef<HTMLDivElement>(null);
   const [newEpic, setNewEpic] = useState("");
   const epics = data.cards
     .filter((c) => c.type === "epic")
@@ -27,7 +30,8 @@ export function Storyline({ visible }: { visible: (c: Card) => boolean }) {
   }
 
   return (
-    <div className="scroll-thin h-full overflow-y-auto p-3 sm:p-6">
+    <div className="relative h-full">
+      <div ref={scrollBox} className="scroll-thin h-full overflow-y-auto p-3 sm:p-6">
       <div className="mx-auto max-w-5xl space-y-5">
         <Timeline epics={epics} />
 
@@ -56,6 +60,9 @@ export function Storyline({ visible }: { visible: (c: Card) => boolean }) {
           </section>
         )}
       </div>
+      </div>
+      {/* "scroll" pill while more content is below */}
+      <ScrollHint box={scrollBox} />
     </div>
   );
 }

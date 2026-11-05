@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { ScrollHint } from "@/components/ui/ScrollHint";
 import { MemberAvatar } from "./MemberAvatar";
 import { PRIORITY_META, TYPE_META } from "@/lib/theme";
 import type { Card } from "@/lib/types";
@@ -26,6 +27,9 @@ const plusDays = (n: number) => {
 // all issues in one sortable table
 export function ListView({ visible }: { visible: (c: Card) => boolean }) {
   const { data, openCard } = useBoard();
+  // scroll box for the scroll hint
+  const scrollBox = useRef<HTMLDivElement>(null);
+  const tableBox = useRef<HTMLDivElement>(null);
   const { byId, isDone, keyOf } = cardHelpers(data);
   const [sort, setSort] = useState<{ col: Col; asc: boolean }>({ col: "key", asc: true });
   const [f, setF] = useState<Filters>(NO_FILTERS);
@@ -99,7 +103,8 @@ export function ListView({ visible }: { visible: (c: Card) => boolean }) {
   );
 
   return (
-    <div className="scroll-thin h-full overflow-auto p-3 sm:p-4">
+    <div className="relative h-full">
+      <div ref={scrollBox} className="scroll-thin h-full overflow-auto p-3 sm:p-4">
       <div className="overflow-hidden rounded-xl bg-surface shadow">
         {/* filter toolbar */}
         <div className="flex flex-wrap items-center gap-1 border-b px-2 py-1.5 text-sm">
@@ -169,7 +174,9 @@ export function ListView({ visible }: { visible: (c: Card) => boolean }) {
             {rows.length === base.length ? `${rows.length} issue` : `${rows.length} dari ${base.length} issue`}
           </span>
         </div>
-        <div className="scroll-thin overflow-x-auto">
+        {/* table scrolls sideways on narrow screens */}
+        <div className="relative">
+        <div ref={tableBox} className="scroll-thin overflow-x-auto">
           <table className="w-full min-w-[860px] text-sm">
             <thead className="border-b bg-slate-50 text-xs text-slate-500 uppercase">
               <tr>
@@ -230,7 +237,12 @@ export function ListView({ visible }: { visible: (c: Card) => boolean }) {
             </tbody>
           </table>
         </div>
+        <ScrollHint box={tableBox} axis="x" />
+        </div>
       </div>
+      </div>
+      {/* "scroll" pill while more content is below */}
+      <ScrollHint box={scrollBox} />
     </div>
   );
 }

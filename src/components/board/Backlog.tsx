@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { ScrollHint } from "@/components/ui/ScrollHint";
 import { MemberAvatar } from "./MemberAvatar";
 import { Modal } from "@/components/Modal";
 import { confirmDialog } from "@/components/ui/Dialog";
@@ -14,6 +15,8 @@ type Visible = (c: Card) => boolean;
 
 export function Backlog({ visible }: { visible: Visible }) {
   const { data, mutate, perms } = useBoard();
+  // scroll box for the scroll hint
+  const scrollBox = useRef<HTMLDivElement>(null);
   const [editing, setEditing] = useState<{ sprint: Sprint; start: boolean } | null>(null);
   const [completing, setCompleting] = useState<Sprint | null>(null);
   const [history, setHistory] = useState(false);
@@ -25,7 +28,8 @@ export function Backlog({ visible }: { visible: Visible }) {
   const hasActive = open.some((s) => s.status === "active");
 
   return (
-    <div className="scroll-thin h-full overflow-y-auto p-3 sm:p-4">
+    <div className="relative h-full">
+      <div ref={scrollBox} className="scroll-thin h-full overflow-y-auto p-3 sm:p-4">
       <div className="mx-auto max-w-5xl space-y-4">
         <div className="flex items-center gap-2">
           <h2 className="text-lg font-bold text-white drop-shadow">Backlog &amp; Sprint</h2>
@@ -62,6 +66,9 @@ export function Backlog({ visible }: { visible: Visible }) {
 
       {editing && <SprintForm sprint={editing.sprint} start={editing.start} onClose={() => setEditing(null)} />}
       {completing && <CompleteSprint sprint={completing} onClose={() => setCompleting(null)} />}
+      </div>
+      {/* "scroll" pill while more content is below */}
+      <ScrollHint box={scrollBox} />
     </div>
   );
 }

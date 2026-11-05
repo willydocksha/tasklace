@@ -106,7 +106,10 @@ body {
 /* small nudge for the scroll hint chevrons, swinging evenly around the text's middle */
 @keyframes scroll-nudge { 0%, 100% { transform: translateY(-1px); } 50% { transform: translateY(1px); } }
 .scroll-nudge { animation: scroll-nudge 1.6s ease-in-out infinite; }
-@media (prefers-reduced-motion: reduce) { .scroll-nudge { animation: none; } }
+/* same nudge sideways, for horizontal scroll hints */
+@keyframes scroll-nudge-x { 0%, 100% { transform: translateX(-1px); } 50% { transform: translateX(1px); } }
+.scroll-nudge-x { animation: scroll-nudge-x 1.6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .scroll-nudge, .scroll-nudge-x { animation: none; } }
 
 /* tailwind 4 defaults borders to currentColor; use a soft gray instead */
 @layer base {

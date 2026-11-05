@@ -15,6 +15,7 @@ import {
 import { arrayMove, horizontalListSortingStrategy, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useEffect, useRef, useState } from "react";
+import { ScrollHint } from "@/components/ui/ScrollHint";
 import { confirmDialog } from "@/components/ui/Dialog";
 import { api } from "@/lib/client";
 import { canMove } from "@/lib/flow";
@@ -44,6 +45,8 @@ export function Kanban({ visible, draggingRef }: { visible: (c: Card) => boolean
   const [cols, setCols] = useState(() => buildColumns(data.lists, data.cards));
   const [active, setActive] = useState<string | null>(null);
   const origin = useRef<string | null>(null);
+  // scroll box for the scroll hint
+  const scrollBox = useRef<HTMLDivElement>(null);
   const filtering = data.cards.some((c) => !visible(c));
 
   // resync from server data whenever we're not mid-drag
@@ -129,7 +132,8 @@ export function Kanban({ visible, draggingRef }: { visible: (c: Card) => boolean
 
   return (
     <DndContext id="kanban" sensors={sensors} collisionDetection={closestCorners} onDragStart={onStart} onDragOver={onOver} onDragEnd={onEnd} onDragCancel={() => ((draggingRef.current = false), setActive(null))}>
-      <div className="scroll-thin flex h-full items-start gap-3 overflow-x-auto p-3 sm:p-4">
+      <div className="relative h-full">
+      <div ref={scrollBox} className="scroll-thin flex h-full items-start gap-3 overflow-x-auto p-3 sm:p-4">
         <SortableContext items={listOrder.map((id) => "l:" + id)} strategy={horizontalListSortingStrategy}>
           {listOrder.map((id) => {
             const list = listById.get(id);
@@ -139,6 +143,9 @@ export function Kanban({ visible, draggingRef }: { visible: (c: Card) => boolean
           })}
         </SortableContext>
         {structure && <AddList />}
+      </div>
+      {/* "scroll" pill while more content is to the right */}
+      <ScrollHint box={scrollBox} axis="x" />
       </div>
       <DragOverlay>
         {activeCard && <CardView card={activeCard} overlay />}
