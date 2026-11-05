@@ -10,6 +10,6 @@ export default async function Page({ params }: { params: Promise<{ code: string 
   if (!t)
     return <div className="flex min-h-screen items-center justify-center p-6 text-center text-slate-600">Link undangan tim tidak valid atau sudah diganti oleh admin tim.</div>;
   // join as a regular member; keep the existing role if already in
-  await sql`insert into team_members (team_id, user_id, role) values (${t.id}, ${user.id}, 'member') on conflict do nothing`;
+  await sql`insert into team_members (team_id, user_id, role) values (${t.id}, ${user.id}, 'viewer') on conflict do nothing`;
   redirect(`/boards?team=${t.id}`);
 }

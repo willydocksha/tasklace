@@ -29,7 +29,7 @@ create table if not exists boards (
 create table if not exists board_members (
   board_id text not null references boards(id) on delete cascade,
   user_id text not null references users(id) on delete cascade,
-  role text not null default 'member',
+  role text not null default 'viewer',
   primary key (board_id, user_id)
 );
 
@@ -136,7 +136,7 @@ create table if not exists teams (
 create table if not exists team_members (
   team_id text not null references teams(id) on delete cascade,
   user_id text not null references users(id) on delete cascade,
-  role text not null default 'member',
+  role text not null default 'viewer',
   primary key (team_id, user_id)
 );
 

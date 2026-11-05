@@ -10,6 +10,6 @@ export default async function Page({ params }: { params: Promise<{ code: string 
   if (!b)
     return <div className="flex min-h-screen items-center justify-center p-6 text-center text-slate-600">Link undangan tidak valid atau sudah diganti oleh admin board.</div>;
   // join as a regular member; keep the existing role if already in
-  await sql`insert into board_members (board_id, user_id, role) values (${b.id}, ${user.id}, 'member') on conflict do nothing`;
+  await sql`insert into board_members (board_id, user_id, role) values (${b.id}, ${user.id}, 'viewer') on conflict do nothing`;
   redirect(`/b/${b.id}`);
 }
