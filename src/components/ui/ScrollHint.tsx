@@ -52,7 +52,7 @@ export function ScrollHint({ box, axis = "y", tint = "none" }: { box: RefObject<
       {/* blurred edge that fades in toward the end, gone once the end is reached */}
       <div
         aria-hidden
-        className={`pointer-events-none absolute z-10 transition-opacity duration-200 ${y ? "scroll-fade-y inset-x-0 bottom-0 h-20" : "scroll-fade-x inset-y-0 right-0 w-24"} ${tint !== "none" ? `${y ? "bg-gradient-to-t" : "bg-gradient-to-l"} ${TINT[tint]} to-transparent` : ""} ${more ? "opacity-100" : "opacity-0"}`}
+        className={`pointer-events-none absolute z-10 transition-opacity duration-200 backdrop-blur-lg ${y ? "scroll-fade-y inset-x-0 bottom-0 h-28" : "scroll-fade-x inset-y-0 right-0 w-32"} ${tint !== "none" ? `${y ? "bg-gradient-to-t" : "bg-gradient-to-l"} ${TINT[tint]} to-transparent` : ""} ${more ? "opacity-100" : "opacity-0"}`}
       />
       {/* outer box positions the pill, inner button animates in and out */}
       <div className={`pointer-events-none absolute z-20 ${y ? "bottom-2 left-1/2 -translate-x-1/2" : "top-1/2 right-3 -translate-y-1/2"}`}>

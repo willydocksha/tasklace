@@ -13,7 +13,7 @@ export function Avatar({ online, ...props }: AvatarProps & { online?: boolean })
   // dot scales with the avatar but never gets too small to see
   const dot = Math.max(7, Math.round((props.size ?? 28) * 0.3));
   return (
-    <span className="relative inline-flex shrink-0" title={props.noTitle ? undefined : `${props.name} · ${online ? "online" : "offline"}`}>
+    <span className="relative inline-flex h-fit shrink-0" title={props.noTitle ? undefined : `${props.name} · ${online ? "online" : "offline"}`}>
       <AvatarFace {...props} />
       <span
         className={`absolute bottom-0 right-0 rounded-full ring-2 ring-surface ${online ? "bg-green-500" : "bg-slate-400"}`}

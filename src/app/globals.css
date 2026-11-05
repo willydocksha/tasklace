@@ -116,10 +116,11 @@ body {
   box-shadow: 0 0 0 1px rgb(255 255 255 / 0.22), 0 6px 18px -4px rgb(0 0 0 / 0.6);
 }
 
-/* blurred fade at the end of a scroll box: the blur is masked so it grows toward the edge */
-.scroll-fade-y, .scroll-fade-x { backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
-.scroll-fade-y { mask-image: linear-gradient(to top, #000 35%, transparent); -webkit-mask-image: linear-gradient(to top, #000 35%, transparent); }
-.scroll-fade-x { mask-image: linear-gradient(to left, #000 35%, transparent); -webkit-mask-image: linear-gradient(to left, #000 35%, transparent); }
+/* blurred fade at the end of a scroll box: the blur is masked so it grows toward the edge.
+   the blur itself is the tailwind backdrop-blur utility in ScrollHint (a hand-written
+   backdrop-filter here lost its unprefixed form in the minified production css) */
+.scroll-fade-y { mask-image: linear-gradient(to top, #000 45%, transparent); -webkit-mask-image: linear-gradient(to top, #000 45%, transparent); }
+.scroll-fade-x { mask-image: linear-gradient(to left, #000 45%, transparent); -webkit-mask-image: linear-gradient(to left, #000 45%, transparent); }
 
 /* same nudge sideways, for horizontal scroll hints */
 @keyframes scroll-nudge-x { 0%, 100% { transform: translateX(-1px); } 50% { transform: translateX(1px); } }
