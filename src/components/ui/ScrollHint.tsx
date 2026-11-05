@@ -31,9 +31,12 @@ export function useScrollMore(box: RefObject<HTMLElement | null>, axis: Axis) {
   return more;
 }
 
+// wash color under the blur: the panel's own background so the edge melts into it
+const TINT = { surface: "from-surface", column: "from-[var(--col-bg,var(--color-column))]", none: "" } as const;
+
 // "scroll" pill over a blurred, fading edge at the end of a scroll box; place inside a `relative` parent.
-// tint adds a surface-colored wash, for panels (not for board backgrounds).
-export function ScrollHint({ box, axis = "y", tint = false }: { box: RefObject<HTMLElement | null>; axis?: Axis; tint?: boolean }) {
+// tint picks the wash color: surface for panels, column for kanban columns, none on board backgrounds.
+export function ScrollHint({ box, axis = "y", tint = "none" }: { box: RefObject<HTMLElement | null>; axis?: Axis; tint?: keyof typeof TINT }) {
   const more = useScrollMore(box, axis);
   const y = axis === "y";
 
@@ -49,7 +52,7 @@ export function ScrollHint({ box, axis = "y", tint = false }: { box: RefObject<H
       {/* blurred edge that fades in toward the end, gone once the end is reached */}
       <div
         aria-hidden
-        className={`pointer-events-none absolute z-10 transition-opacity duration-200 ${y ? "scroll-fade-y inset-x-0 bottom-0 h-12" : "scroll-fade-x inset-y-0 right-0 w-14"} ${tint ? (y ? "bg-gradient-to-t" : "bg-gradient-to-l") + " from-surface/80 to-transparent" : ""} ${more ? "opacity-100" : "opacity-0"}`}
+        className={`pointer-events-none absolute z-10 transition-opacity duration-200 ${y ? "scroll-fade-y inset-x-0 bottom-0 h-20" : "scroll-fade-x inset-y-0 right-0 w-24"} ${tint !== "none" ? `${y ? "bg-gradient-to-t" : "bg-gradient-to-l"} ${TINT[tint]} to-transparent` : ""} ${more ? "opacity-100" : "opacity-0"}`}
       />
       {/* outer box positions the pill, inner button animates in and out */}
       <div className={`pointer-events-none absolute z-20 ${y ? "bottom-2 left-1/2 -translate-x-1/2" : "top-1/2 right-3 -translate-y-1/2"}`}>

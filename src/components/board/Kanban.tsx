@@ -155,9 +155,13 @@ export function Kanban({ visible, draggingRef }: { visible: (c: Card) => boolean
   );
 }
 
-// tint the column background with the list color (mixed so it works in light and dark)
-const listTint = (color: string | null) =>
-  color ? { background: `color-mix(in srgb, ${color} 28%, var(--color-column))`, boxShadow: `inset 0 3px 0 ${color}` } : {};
+// tint the column background with the list color (mixed so it works in light and dark);
+// --col-bg lets the scroll fade match the tinted background
+const listTint = (color: string | null): React.CSSProperties => {
+  if (!color) return {};
+  const bg = `color-mix(in srgb, ${color} 28%, var(--color-column))`;
+  return { background: bg, boxShadow: `inset 0 3px 0 ${color}`, ["--col-bg" as string]: bg };
+};
 
 function Column({ list, cards, dragDisabled, blocked, first }: { list: List; cards: Card[]; dragDisabled: boolean; blocked: boolean; first: boolean }) {
   const { data, mutate, perms, canEdit } = useBoard();
@@ -233,7 +237,7 @@ function Column({ list, cards, dragDisabled, blocked, first }: { list: List; car
             ))}
           </SortableContext>
         </div>
-        <ScrollHint box={cardsBox} />
+        <ScrollHint box={cardsBox} tint="column" />
       </div>
       {perms.createCard && <AddCard listId={list.id} tour={first} />}
     </div>

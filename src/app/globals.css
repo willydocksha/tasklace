@@ -117,9 +117,9 @@ body {
 }
 
 /* blurred fade at the end of a scroll box: the blur is masked so it grows toward the edge */
-.scroll-fade-y, .scroll-fade-x { backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
-.scroll-fade-y { mask-image: linear-gradient(to top, #000 15%, transparent); -webkit-mask-image: linear-gradient(to top, #000 15%, transparent); }
-.scroll-fade-x { mask-image: linear-gradient(to left, #000 15%, transparent); -webkit-mask-image: linear-gradient(to left, #000 15%, transparent); }
+.scroll-fade-y, .scroll-fade-x { backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.scroll-fade-y { mask-image: linear-gradient(to top, #000 35%, transparent); -webkit-mask-image: linear-gradient(to top, #000 35%, transparent); }
+.scroll-fade-x { mask-image: linear-gradient(to left, #000 35%, transparent); -webkit-mask-image: linear-gradient(to left, #000 35%, transparent); }
 
 /* same nudge sideways, for horizontal scroll hints */
 @keyframes scroll-nudge-x { 0%, 100% { transform: translateX(-1px); } 50% { transform: translateX(1px); } }

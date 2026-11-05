@@ -237,7 +237,7 @@ export function ListView({ visible }: { visible: (c: Card) => boolean }) {
             </tbody>
           </table>
         </div>
-        <ScrollHint box={tableBox} axis="x" />
+        <ScrollHint box={tableBox} axis="x" tint="surface" />
         </div>
       </div>
       </div>
