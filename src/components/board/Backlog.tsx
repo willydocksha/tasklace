@@ -155,7 +155,7 @@ function Section({
 
 // a compact issue row with a quick "move to sprint" picker
 function Row({ card }: { card: Card }) {
-  const { data, mutate, openCard, canEdit } = useBoard();
+  const { data, mutate, openCard, canEdit, isOnline } = useBoard();
   const { byId, isDone, keyOf } = cardHelpers(data);
   const t = TYPE_META[card.type];
   const epic = card.parent_id ? byId.get(card.parent_id) : undefined;
@@ -183,7 +183,7 @@ function Row({ card }: { card: Card }) {
       </span>
       <span className="hidden w-12 justify-end -space-x-1.5 sm:flex">
         {people.slice(0, 3).map((p) => (
-          <Avatar key={p.id} name={p.name} color={p.color} src={p.avatar} size={22} ring />
+          <Avatar key={p.id} name={p.name} color={p.color} src={p.avatar} size={22} ring online={isOnline(p.id)} />
         ))}
       </span>
       {/* quick sprint move; wrapper keeps clicks and drags from reaching the row */}

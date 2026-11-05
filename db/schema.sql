@@ -392,3 +392,6 @@ drop trigger if exists trash_file on board_backgrounds;
 create trigger trash_file after delete or update of path on board_backgrounds for each row execute function trash_stored_file();
 drop trigger if exists trash_file on card_attachments;
 create trigger trash_file after delete or update of path on card_attachments for each row execute function trash_stored_file();
+
+-- online status: bumped by the presence heartbeat (see PRESENCE_ENABLED)
+alter table users add column if not exists last_seen_at bigint;

@@ -8,7 +8,7 @@ import { cardHelpers, formatDate, subtaskProgress, today, useBoard } from "./con
 import { Icon } from "@/components/ui/Icon";
 
 export function CardView({ card, overlay }: { card: Card; overlay?: boolean }) {
-  const { data, openCard } = useBoard();
+  const { data, openCard, isOnline } = useBoard();
   const { byId, isDone, progress, keyOf } = cardHelpers(data);
   const t = TYPE_META[card.type];
   const epic = card.parent_id ? byId.get(card.parent_id) : undefined;
@@ -79,7 +79,7 @@ export function CardView({ card, overlay }: { card: Card; overlay?: boolean }) {
         )}
         <span className="ml-auto flex -space-x-1.5">
           {people.map((p) => (
-            <Avatar key={p.id} name={p.name} color={p.color} src={p.avatar} size={22} ring />
+            <Avatar key={p.id} name={p.name} color={p.color} src={p.avatar} size={22} ring online={isOnline(p.id)} />
           ))}
         </span>
       </div>

@@ -16,6 +16,10 @@ export type BoardCtx = {
   // what the user may do here (see lib/permissions.ts)
   perms: Perms;
   canEdit: (c: Card) => boolean;
+  // ids of online members; null when the presence feature is off
+  online: Set<string> | null;
+  // avatar online prop for a member: undefined (no dot) when presence is off
+  isOnline: (id: string) => boolean | undefined;
 };
 
 export const Ctx = createContext<BoardCtx | null>(null);

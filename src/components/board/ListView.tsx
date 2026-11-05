@@ -25,7 +25,7 @@ const plusDays = (n: number) => {
 
 // all issues in one sortable table
 export function ListView({ visible }: { visible: (c: Card) => boolean }) {
-  const { data, openCard } = useBoard();
+  const { data, openCard, isOnline } = useBoard();
   const { byId, isDone, keyOf } = cardHelpers(data);
   const [sort, setSort] = useState<{ col: Col; asc: boolean }>({ col: "key", asc: true });
   const [f, setF] = useState<Filters>(NO_FILTERS);
@@ -220,7 +220,7 @@ export function ListView({ visible }: { visible: (c: Card) => boolean }) {
                     <td className="px-3 py-2 text-center">{c.points ?? <span className="text-slate-300">–</span>}</td>
                     <td className="px-3 py-2">
                       <span className="flex -space-x-1.5">
-                        {data.members.filter((m) => c.assignees.includes(m.id)).map((m) => <Avatar key={m.id} name={m.name} color={m.color} src={m.avatar} size={22} ring />)}
+                        {data.members.filter((m) => c.assignees.includes(m.id)).map((m) => <Avatar key={m.id} name={m.name} color={m.color} src={m.avatar} size={22} ring online={isOnline(m.id)} />)}
                       </span>
                     </td>
                     <td className={`px-3 py-2 whitespace-nowrap ${overdue ? "text-red-600" : "text-slate-600"}`}>{formatDate(c.due_date) || <span className="text-slate-300">–</span>}</td>

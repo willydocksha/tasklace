@@ -9,6 +9,7 @@ import { Icon } from "@/components/ui/Icon";
 import { Select } from "@/components/ui/Select";
 import type { User } from "@/lib/auth";
 import { api } from "@/lib/client";
+import { usePresence } from "@/lib/usePresence";
 import { isAdminRole, ROLE_LABEL, type Role, type TeamPolicy } from "@/lib/permissions";
 import { BoardBadge } from "@/components/BoardLook";
 import { WorkflowTab } from "./WorkflowTab";
@@ -25,6 +26,8 @@ type MyBoard = { id: string; name: string; role: string };
 // manage a team: members, shared boards, name; changes call onChanged so the page reloads
 export function TeamModal({ teamId, user, myBoards, onClose, onChanged }: { teamId: string; user: User; myBoards: MyBoard[]; onClose: () => void; onChanged: () => void }) {
   const [d, setD] = useState<Detail | null>(null);
+  // online team members (null = presence off)
+  const online = usePresence({ teamId });
   const [tab, setTab] = useState<"members" | "boards" | "workflows" | "access" | "settings">("members");
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
@@ -108,7 +111,7 @@ export function TeamModal({ teamId, user, myBoards, onClose, onChanged }: { team
             <div className="divide-y rounded-md border">
               {d.members.map((m) => (
                 <div key={m.id} className="flex items-center gap-2.5 p-2">
-                  <Avatar name={m.name} color={m.color} src={m.avatar} />
+                  <Avatar name={m.name} color={m.color} src={m.avatar} online={online ? online.has(m.id) : undefined} />
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-medium">{m.name}{m.id === user.id && " (kamu)"}</div>
                     <div className="truncate text-xs text-slate-500">{m.email}</div>

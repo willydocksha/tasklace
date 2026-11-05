@@ -13,6 +13,7 @@ import { api } from "@/lib/client";
 import { canEditCard } from "@/lib/permissions";
 import { realtimeEnabled, useBoardChannel } from "@/lib/realtime";
 import { boardBackground, TYPE_META } from "@/lib/theme";
+import { usePresence } from "@/lib/usePresence";
 import type { BoardData, Card } from "@/lib/types";
 import { Backlog } from "./Backlog";
 import { CardModal } from "./CardModal";
@@ -140,6 +141,9 @@ export function BoardClient({ user, initial }: { user: User; initial: BoardData 
     if (!dragging.current) refresh().catch(() => {});
   });
 
+  // who is online on this board (null = feature off)
+  const online = usePresence({ boardId: initial.board.id });
+
   const mutate = useCallback(
     async (fn: () => Promise<unknown>) => {
       try {
@@ -214,7 +218,7 @@ export function BoardClient({ user, initial }: { user: User; initial: BoardData 
   const sprintLeft = daysLeft(activeSprint?.end_date ?? null);
 
   return (
-    <Ctx.Provider value={{ data, user, refresh, mutate, openCard: setOpenId, isAdmin, perms: data.perms, canEdit }}>
+    <Ctx.Provider value={{ data, user, refresh, mutate, openCard: setOpenId, isAdmin, perms: data.perms, canEdit, online, isOnline: (id) => (online ? online.has(id) : undefined) }}>
       <div className="flex h-screen flex-col" style={{ background: `linear-gradient(var(--board-dim), var(--board-dim)), ${boardBackground(data.board)}` }}>
         <TopBar user={user} dark board={data.board} />
         <div className="flex flex-wrap items-center gap-2 bg-black/15 px-3 py-2 text-white sm:px-4">
@@ -243,7 +247,7 @@ export function BoardClient({ user, initial }: { user: User; initial: BoardData 
               options={[
                 { value: "", label: "Semua member" },
                 { value: user.id, label: "Tugas saya", icon: <Avatar name={user.name} color={user.color} src={user.avatar} size={20} /> },
-                ...data.members.filter((m) => m.id !== user.id).map((m) => ({ value: m.id, label: m.name, icon: <Avatar name={m.name} color={m.color} src={m.avatar} size={20} /> })),
+                ...data.members.filter((m) => m.id !== user.id).map((m) => ({ value: m.id, label: m.name, icon: <Avatar name={m.name} color={m.color} src={m.avatar} size={20} online={online ? online.has(m.id) : undefined} /> })),
               ]}
               onChange={setFMember}
               menuWidth={220}
@@ -272,7 +276,10 @@ export function BoardClient({ user, initial }: { user: User; initial: BoardData 
           </div>
           <div className="ml-auto flex items-center gap-2">
             <button onClick={() => setSettings(true)} className="flex -space-x-2" title="Member">
-              {data.members.slice(0, 5).map((m) => <Avatar key={m.id} name={m.name} color={m.color} src={m.avatar} size={28} ring />)}
+              {/* online members first so the dots show up front */}
+              {[...data.members].sort((a, b) => Number(!!online?.has(b.id)) - Number(!!online?.has(a.id))).slice(0, 5).map((m) => (
+                <Avatar key={m.id} name={m.name} color={m.color} src={m.avatar} size={28} ring online={online ? online.has(m.id) : undefined} />
+              ))}
               {data.members.length > 5 && <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/30 text-xs ring-2 ring-surface">+{data.members.length - 5}</span>}
             </button>
             <button data-tour="share" onClick={() => setSettings(true)} className="rounded-md bg-surface px-3 py-1 text-sm font-medium text-slate-800 hover:bg-slate-100">
