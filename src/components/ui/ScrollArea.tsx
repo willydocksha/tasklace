@@ -19,7 +19,7 @@ export function ScrollArea({ children, className = "", innerClassName = "", wrap
       <div ref={box} className={className}>
         <div className={innerClassName}>{children}</div>
       </div>
-      <ScrollHint box={box} fade />
+      <ScrollHint box={box} tint />
     </div>
   );
 }

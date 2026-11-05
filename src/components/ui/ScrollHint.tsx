@@ -31,9 +31,9 @@ export function useScrollMore(box: RefObject<HTMLElement | null>, axis: Axis) {
   return more;
 }
 
-// "scroll" pill (and optional fade) over the end of a scroll box; place inside a `relative` parent.
-// fade only makes sense on surface-colored panels, not on board backgrounds.
-export function ScrollHint({ box, axis = "y", fade = false }: { box: RefObject<HTMLElement | null>; axis?: Axis; fade?: boolean }) {
+// "scroll" pill over a blurred, fading edge at the end of a scroll box; place inside a `relative` parent.
+// tint adds a surface-colored wash, for panels (not for board backgrounds).
+export function ScrollHint({ box, axis = "y", tint = false }: { box: RefObject<HTMLElement | null>; axis?: Axis; tint?: boolean }) {
   const more = useScrollMore(box, axis);
   const y = axis === "y";
 
@@ -46,12 +46,11 @@ export function ScrollHint({ box, axis = "y", fade = false }: { box: RefObject<H
   const show = more ? "pointer-events-auto opacity-100" : `opacity-0 ${y ? "translate-y-1" : "translate-x-1"}`;
   return (
     <>
-      {fade && (
-        <div
-          aria-hidden
-          className={`pointer-events-none absolute transition-opacity duration-200 ${y ? "inset-x-0 bottom-0 h-10 bg-gradient-to-t" : "inset-y-0 right-0 w-10 bg-gradient-to-l"} from-surface to-transparent ${more ? "opacity-100" : "opacity-0"}`}
-        />
-      )}
+      {/* blurred edge that fades in toward the end, gone once the end is reached */}
+      <div
+        aria-hidden
+        className={`pointer-events-none absolute z-10 transition-opacity duration-200 ${y ? "scroll-fade-y inset-x-0 bottom-0 h-12" : "scroll-fade-x inset-y-0 right-0 w-14"} ${tint ? (y ? "bg-gradient-to-t" : "bg-gradient-to-l") + " from-surface/80 to-transparent" : ""} ${more ? "opacity-100" : "opacity-0"}`}
+      />
       {/* outer box positions the pill, inner button animates in and out */}
       <div className={`pointer-events-none absolute z-20 ${y ? "bottom-2 left-1/2 -translate-x-1/2" : "top-1/2 right-3 -translate-y-1/2"}`}>
         <button
