@@ -165,6 +165,8 @@ function Column({ list, cards, dragDisabled, blocked, first }: { list: List; car
   const structure = perms.structure && !data.board.workflow;
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({ id: "l:" + list.id, data: { type: "list" }, disabled: dragDisabled || !structure });
   const [editing, setEditing] = useState(false);
+  // scrolling card list, for the scroll hint
+  const cardsBox = useRef<HTMLDivElement>(null);
   const [name, setName] = useState(list.name);
   const menu = usePopover({ placement: "bottom-end" });
 
@@ -222,12 +224,16 @@ function Column({ list, cards, dragDisabled, blocked, first }: { list: List; car
         </div>
       )}
       {blocked && <div className="mx-2 mb-1.5 rounded-md bg-black/5 px-2 py-1 text-center flex items-center justify-center gap-1 text-[11px] text-slate-500"><Icon name="ban" className="h-3 w-3" />Tidak sesuai alur status</div>}
-      <div className="scroll-thin flex min-h-2 flex-col gap-2 overflow-y-auto px-2 pt-0.5 pb-1">
-        <SortableContext items={cards.map((c) => "c:" + c.id)} strategy={verticalListSortingStrategy}>
-          {cards.map((c, i) => (
-            <SortableCard key={c.id} card={c} disabled={dragDisabled || !canEdit(c)} tour={first && i === 0} />
-          ))}
-        </SortableContext>
+      {/* card list scrolls inside the column; the pill shows while more cards are below */}
+      <div className="relative flex min-h-0 flex-col">
+        <div ref={cardsBox} className="scroll-thin flex min-h-2 flex-col gap-2 overflow-y-auto px-2 pt-0.5 pb-1">
+          <SortableContext items={cards.map((c) => "c:" + c.id)} strategy={verticalListSortingStrategy}>
+            {cards.map((c, i) => (
+              <SortableCard key={c.id} card={c} disabled={dragDisabled || !canEdit(c)} tour={first && i === 0} />
+            ))}
+          </SortableContext>
+        </div>
+        <ScrollHint box={cardsBox} />
       </div>
       {perms.createCard && <AddCard listId={list.id} tour={first} />}
     </div>

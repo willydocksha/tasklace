@@ -29,7 +29,7 @@ export function AvatarCard({ person, info, size, ring }: { person: Person; info:
   const status = info.status;
   return (
     <>
-      <span ref={pop.refs.setReference} className="inline-flex shrink-0" onMouseEnter={() => later(true)} onMouseLeave={() => later(false)}>
+      <span ref={pop.refs.setReference} className="inline-flex shrink-0 align-middle" onMouseEnter={() => later(true)} onMouseLeave={() => later(false)}>
         <Avatar name={person.name} color={person.color} src={person.avatar} size={size} ring={ring} online={status?.online} noTitle />
       </span>
       <PopoverPanel pop={pop} className="w-64 p-3">

@@ -59,8 +59,8 @@ export function ScrollHint({ box, axis = "y", fade = false }: { box: RefObject<H
           tabIndex={more ? 0 : -1}
           onClick={go}
           aria-label={y ? "Gulir ke bawah" : "Gulir ke kanan"}
-          // dark mode uses a bright accent so the pill stands out on dark panels
-          className={`inline-flex items-center gap-1 rounded-full bg-slate-800/85 py-1 pr-2 pl-2.5 text-[11px] font-medium text-white shadow-md backdrop-blur transition duration-200 hover:bg-slate-800 dark:bg-[#3d8bff] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.15),0_6px_20px_-4px_rgba(61,139,255,0.7)] dark:hover:bg-[#5a9cff] ${show}`}
+          // colors come from .scroll-pill (board color, swapped per theme)
+          className={`scroll-pill inline-flex items-center gap-1 rounded-full py-1 pr-2 pl-2.5 text-[11px] font-medium text-white shadow-md transition duration-200 hover:brightness-110 ${show}`}
         >
           Scroll
           {/* stacked double chevron, pointing the way to scroll */}

@@ -13,7 +13,7 @@ import type { User } from "@/lib/auth";
 import { api } from "@/lib/client";
 import { canEditCard } from "@/lib/permissions";
 import { realtimeEnabled, useBoardChannel } from "@/lib/realtime";
-import { boardBackground, TYPE_META } from "@/lib/theme";
+import { boardBackground, boardBg, TYPE_META } from "@/lib/theme";
 import { statusOf, usePresence } from "@/lib/usePresence";
 import type { BoardData, Card } from "@/lib/types";
 import { Backlog } from "./Backlog";
@@ -132,6 +132,13 @@ export function BoardClient({ user, initial }: { user: User; initial: BoardData 
   // "" all, "active" current sprint, "none" backlog only, or a sprint id
   const [fSprint, setFSprint] = useState("");
   const dragging = useRef(false);
+
+  // expose the board gradient for theme-aware accents (scroll hint pill), also in portaled modals
+  useEffect(() => {
+    const root = document.documentElement.style;
+    root.setProperty("--board-bg", boardBg(data.board.color));
+    return () => void root.removeProperty("--board-bg");
+  }, [data.board.color]);
 
   const refresh = useCallback(async () => {
     setData(await api<BoardData>(`/api/boards/${initial.board.id}`));

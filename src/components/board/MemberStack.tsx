@@ -35,7 +35,7 @@ export function MemberStack({ onManage }: { onManage: () => void }) {
     <div className="group/stack flex items-center">
       {shown.map((m, i) => (
         // earlier avatars get a higher z-index so #1 is in front
-        <button key={m.id} type="button" onClick={onManage} className={`relative rounded-full transition-[margin] duration-200 ${slot(i)}`} style={{ zIndex: MAX + 1 - i }}>
+        <button key={m.id} type="button" onClick={onManage} className={`relative flex rounded-full transition-[margin] duration-200 ${slot(i)}`} style={{ zIndex: MAX + 1 - i }}>
           <MemberAvatar person={m} size={28} ring />
         </button>
       ))}

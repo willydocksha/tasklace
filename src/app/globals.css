@@ -106,6 +106,16 @@ body {
 /* small nudge for the scroll hint chevrons, swinging evenly around the text's middle */
 @keyframes scroll-nudge { 0%, 100% { transform: translateY(-1px); } 50% { transform: translateY(1px); } }
 .scroll-nudge { animation: scroll-nudge 1.6s ease-in-out infinite; }
+/* scroll hint pill uses the board color, swapped per theme so it stands out:
+   light mode gets the board as it looks in dark mode (dimmed), dark mode gets the bright light-mode color.
+   --board-bg (the board gradient) is set by the open board; without it the pill falls back to slate / blue.
+   the dim layer matches --board-dim of the dark theme */
+.scroll-pill { background: linear-gradient(rgb(6 9 15 / 0.42), rgb(6 9 15 / 0.42)), var(--board-bg, linear-gradient(#1e293b, #1e293b)); }
+.dark .scroll-pill {
+  background: var(--board-bg, linear-gradient(#3d8bff, #3d8bff));
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.22), 0 6px 18px -4px rgb(0 0 0 / 0.6);
+}
+
 /* same nudge sideways, for horizontal scroll hints */
 @keyframes scroll-nudge-x { 0%, 100% { transform: translateX(-1px); } 50% { transform: translateX(1px); } }
 .scroll-nudge-x { animation: scroll-nudge-x 1.6s ease-in-out infinite; }
