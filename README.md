@@ -17,6 +17,39 @@ Project board ala Trello/Jira/ClickUp yang **gratis**: tidak ada batas member, b
 - **Filter**: cari judul atau kode issue, filter tipe, sprint, "tugas saya"
 - **Sinkron real-time** antar member lewat Supabase Realtime (fallback polling kalau belum diatur)
 
+## Teknologi
+
+| Bagian | Teknologi | Dipakai untuk | Kenapa |
+|---|---|---|---|
+| Framework | **Next.js 15** (App Router) + **React 19** + **TypeScript** | Halaman sekaligus REST API (`src/app/api/**`) dalam satu project | Frontend dan backend di satu repo, langsung jalan di Vercel tanpa server terpisah |
+| Styling | **Tailwind CSS v4** | Semua tampilan, tema warna board, dark mode | Cepat untuk UI yang banyak variasi warna, tanpa file CSS per komponen |
+| Database | **PostgreSQL di Supabase** + **postgres.js** | Semua data: board, list, kartu, sprint, tim, user | Supabase Free cukup besar untuk tim kecil. postgres.js ringan dan aman dipakai lewat transaction pooler (port 6543) di serverless |
+| Real-time | **@supabase/realtime-js** | Sinyal "board X berubah" ke semua tab yang membuka board itu | Hanya mengirim sinyal tanpa isi data. Client lalu mengambil ulang data lewat API, jadi semua pengecekan hak akses tetap di server |
+| Penyimpanan gambar | **Supabase Storage** (bucket privat) | Avatar, gambar di deskripsi/komentar, lampiran | Supaya database 500 MB tidak cepat penuh. Tanpa service role key, gambar disimpan di kolom `bytea` (praktis untuk dev lokal) |
+| Auth | Buatan sendiri: **bcryptjs** + cookie httpOnly, OAuth 2 GitHub/Google | Daftar, masuk, sesi, login sosial | Tidak memakai Supabase Auth, jadi tidak kena batas MAU dan user bebas ditambah |
+| Email | **nodemailer** (SMTP, misalnya Gmail) | Link verifikasi akun dan undangan | Gratis lewat App Password Gmail, tanpa layanan email berbayar |
+| Drag & drop | **@dnd-kit** (core, sortable) | Geser kartu dan list di Kanban, termasuk tekan lama di HP | Mendukung sentuh dan keyboard, lebih ringan dari library DnD lama |
+| Editor teks | **TipTap v3** (+ markdown, image, code block **lowlight**) | Deskripsi kartu dan komentar dengan format, gambar, dan blok kode | Editor WYSIWYG yang bisa disimpan sebagai Markdown |
+| Lain-lain | **@floating-ui** (posisi popover/menu), **gemoji** (shortcode emoji `:smile:`), **prettier** + **sql-formatter** (merapikan blok kode di editor) | | |
+| Hosting | **Vercel Hobby** | Halaman dan API route sebagai fungsi serverless | Gratis, deploy otomatis dari GitHub |
+
+### Alur data
+
+```
+Browser (React)
+   │  fetch JSON
+   ▼
+Next.js API route (src/app/api/**)  ── cek sesi + hak akses (src/lib/auth.ts, permissions.ts)
+   │  postgres.js lewat Supabase pooler
+   ▼
+PostgreSQL (Supabase)          gambar → Supabase Storage
+   │
+   └─ setelah data berubah: kirim sinyal "board berubah" lewat Supabase Realtime
+         → tab lain menerima sinyal → fetch ulang data board
+```
+
+Tabel memakai Row Level Security tanpa policy, jadi yang bisa membaca data hanya server (lewat `DATABASE_URL`), bukan browser.
+
 ## Setup Supabase (sekali)
 
 1. Buat project gratis di https://supabase.com (region terdekat, misalnya Singapore). Simpan password database-nya.
@@ -66,8 +99,12 @@ node scripts/seed-demo.mjs
 ## Deploy ke Vercel
 
 1. Push repo ini ke GitHub, lalu **Import Project** di https://vercel.com.
-2. Di **Environment Variables** isi `DATABASE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (sama dengan `.env.local`).
-3. Deploy. Cookie otomatis `secure` di Vercel. Fungsi server dijalankan di Dublin (`vercel.json`) supaya dekat dengan database Supabase di eu-west-1; ganti kalau region Supabase-mu berbeda.
+2. Di **Environment Variables** isi `DATABASE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (sama dengan `.env.local`). Tambahkan juga sesuai fitur yang dipakai (lihat `.env.example`):
+   - `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_STORAGE_BUCKET`: simpan gambar di Supabase Storage
+   - `SMTP_*`, `MAIL_FROM`, `APP_URL`: email verifikasi
+   - `GITHUB_*`, `GOOGLE_*`: login GitHub / Google
+   - `PRESENCE_ENABLED`: status online member
+3. Deploy. `npm run build` otomatis menjalankan migrasi database dulu (`scripts/migrate.mjs --deploy`). Cookie otomatis `secure` di Vercel. Fungsi server dijalankan di Dublin (`vercel.json`) supaya dekat dengan database Supabase di eu-west-1; ganti kalau region Supabase-mu berbeda.
 
 Catatan batas gratis:
 
@@ -80,5 +117,11 @@ Catatan batas gratis:
 - `src/lib/db.ts` – koneksi Postgres (postgres.js, lewat pooler Supabase)
 - `src/lib/auth.ts` – akun & sesi (cookie httpOnly, bcrypt)
 - `src/lib/realtime.ts` – sinyal perubahan board lewat Supabase Realtime
+- `src/lib/oauth.ts` – login GitHub / Google
+- `src/lib/permissions.ts` – aturan siapa boleh apa di board (dipakai server dan browser)
+- `src/lib/storage.ts` – upload gambar ke Supabase Storage (fallback ke kolom `bytea`)
+- `src/lib/mail.ts`, `src/lib/verify.ts` – kirim email dan verifikasi akun
+- `src/lib/trello.ts` – import JSON export Trello
 - `src/app/api/**` – REST API JSON
-- `src/components/board/*` – Kanban, Storyline, modal kartu, pengaturan
+- `src/components/board/*` – Kanban, Storyline, Backlog, modal kartu, pengaturan
+- `scripts/` – migrasi (`migrate.mjs`), data demo (`seed-demo.mjs`), pindah gambar dari database ke Storage (`npm run images:move`)
