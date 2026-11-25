@@ -83,6 +83,27 @@ Tanpa `SMTP_HOST`, production langsung mengaktifkan akun tanpa verifikasi, sedan
 
 Tombolnya muncul otomatis di halaman masuk/daftar begitu kredensialnya diisi. Untuk dev lokal, tambahkan juga callback `http://localhost:3100/...` di masing-masing app.
 
+## Pasang AI lewat MCP
+
+Tasklace punya server MCP di `/api/mcp` (HTTP, tanpa dependensi tambahan). AI yang terhubung bekerja atas nama pemilik token dan memakai handler API yang sama dengan aplikasi, jadi izin board, alur status, kartu Done yang terkunci, dan riwayat aktivitas tetap berlaku.
+
+1. Masuk ke Tasklace → **Profil → Token API & MCP** → **Buat token**. Salin token (`tlc_...`), hanya tampil sekali.
+2. Pasang di klien AI:
+
+   ```bash
+   claude mcp add --transport http tasklace https://<domain>/api/mcp --header "Authorization: Bearer tlc_xxx"
+   ```
+
+   Klien lain (Cursor, dll.) cukup file konfigurasi MCP:
+
+   ```json
+   { "mcpServers": { "tasklace": { "type": "http", "url": "https://<domain>/api/mcp", "headers": { "Authorization": "Bearer tlc_xxx" } } } }
+   ```
+
+Tool yang tersedia: `list_boards`, `get_board`, `get_card`, `create_card`, `update_card` (termasuk pindah status), `add_comment`. Kartu bisa dirujuk lewat id atau kode issue seperti `TLC-12`. Tidak ada tool hapus, jadi AI tidak bisa menghapus kartu atau board.
+
+Token disimpan sebagai hash SHA-256 (tabel `api_tokens`), bisa dihapus kapan saja dari halaman profil, dan hanya berlaku di `/api/mcp`, bukan di API biasa. Jalankan `npm run db:migrate` sekali untuk membuat tabelnya (build production melakukannya otomatis).
+
 ## Menjalankan lokal
 
 ```bash
@@ -118,6 +139,8 @@ Catatan batas gratis:
 - `src/lib/auth.ts` – akun & sesi (cookie httpOnly, bcrypt)
 - `src/lib/realtime.ts` – sinyal perubahan board lewat Supabase Realtime
 - `src/lib/oauth.ts` – login GitHub / Google
+- `src/lib/tokens.ts` – token pribadi untuk MCP
+- `src/app/api/mcp/route.ts` – server MCP (tool memanggil handler API yang ada)
 - `src/lib/permissions.ts` – aturan siapa boleh apa di board (dipakai server dan browser)
 - `src/lib/storage.ts` – upload gambar ke Supabase Storage (fallback ke kolom `bytea`)
 - `src/lib/mail.ts`, `src/lib/verify.ts` – kirim email dan verifikasi akun

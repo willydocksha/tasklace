@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from "node:async_hooks";
 import { NextResponse } from "next/server";
 import { currentUser, type User } from "./auth";
 import { sql } from "./db";
@@ -11,13 +12,17 @@ export class HttpError extends Error {
 
 type Ctx<P> = { params: Promise<P> };
 
+// set only by the mcp endpoint after it checked a bearer token, so existing handlers run as that user
+// (server-side only: a client can never fill this in)
+export const actingUser = new AsyncLocalStorage<User>();
+
 // wraps a route handler with auth + json error handling
 export function route<P = Record<string, string>>(
   fn: (args: { req: Request; user: User; params: P }) => Promise<unknown> | unknown,
 ) {
   return async (req: Request, ctx: Ctx<P>) => {
     try {
-      const user = await currentUser();
+      const user = actingUser.getStore() ?? (await currentUser());
       if (!user) throw new HttpError(401, "Belum login");
       const result = await fn({ req, user, params: await ctx.params });
       return NextResponse.json(result ?? { ok: true });

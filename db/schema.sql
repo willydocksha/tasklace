@@ -395,3 +395,16 @@ create trigger trash_file after delete or update of path on card_attachments for
 
 -- online status: bumped by the presence heartbeat (see PRESENCE_ENABLED)
 alter table users add column if not exists last_seen_at bigint;
+
+-- personal access tokens for the mcp endpoint (only the sha-256 hash is stored)
+create table if not exists api_tokens (
+  id text primary key,
+  user_id text not null references users(id) on delete cascade,
+  name text not null,
+  token_hash text not null unique,
+  prefix text not null,
+  created_at bigint not null,
+  last_used_at bigint
+);
+create index if not exists idx_api_tokens_user on api_tokens(user_id);
+alter table api_tokens enable row level security;

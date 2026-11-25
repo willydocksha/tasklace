@@ -6,6 +6,7 @@ import { PhotoCropper } from "@/components/PhotoCropper";
 import { TopBar } from "@/components/TopBar";
 import { Icon } from "@/components/ui/Icon";
 import { api } from "@/lib/client";
+import { TokenSection } from "./TokenSection";
 import type { User } from "@/lib/auth";
 
 const INPUT =
@@ -286,6 +287,9 @@ export function ProfileClient({ user: initial, hasPassword: hadPassword, provide
           </form>
           <Feedback note={pwNote} />
         </Section>
+
+        {/* api tokens for mcp */}
+        <TokenSection />
 
         {/* linked sign-in providers */}
         {providers.length > 0 && (
